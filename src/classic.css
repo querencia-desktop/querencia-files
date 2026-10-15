@@ -1,0 +1,271 @@
+/* Querencia Files: classic GNOME 2 chrome. Every rule is scoped to windows
+   carrying `.querencia-classic`, so the file chooser and portal windows keep
+   Strata's own appearance. Colors stay on the semantic @strata_* tokens; the
+   default theme "Classic Light" supplies the light neutral palette. */
+
+window.querencia-classic,
+window.querencia-classic * {
+  font-family: sans-serif;
+}
+
+/* Content that is monospace by design keeps its font. */
+window.querencia-classic .preview-text,
+window.querencia-classic .preview-text text,
+window.querencia-classic .preview-source-lines,
+window.querencia-classic .preview-source-lines text,
+window.querencia-classic entry.preview-command-entry,
+window.querencia-classic .icons-thumbnail-value,
+window.querencia-classic .job-log {
+  font-family: monospace;
+}
+
+/* Menu bar */
+
+window.querencia-classic menubar.classic-menu-bar {
+  background: @strata_surface;
+  border-bottom: 1px solid @strata_border;
+  box-shadow: none;
+  color: @strata_text;
+  min-height: 24px;
+  padding: 0 2px;
+}
+
+window.querencia-classic menubar.classic-menu-bar > item {
+  border-radius: 0;
+  color: @strata_text;
+  min-height: 20px;
+  padding: 2px 8px;
+}
+
+window.querencia-classic menubar.classic-menu-bar > item:hover,
+window.querencia-classic menubar.classic-menu-bar > item:selected {
+  background: @strata_accent;
+  color: @strata_bg;
+}
+
+/* Menus dropped from the bar: flat, square, no glow. */
+
+window.querencia-classic popover.menu.background {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+}
+
+window.querencia-classic popover.menu > arrow {
+  background: transparent;
+  border: none;
+}
+
+window.querencia-classic popover.menu > contents {
+  background: @strata_surface;
+  border: 1px solid @strata_border;
+  border-radius: 0;
+  box-shadow: none;
+  color: @strata_text;
+  padding: 2px;
+}
+
+window.querencia-classic popover.menu modelbutton {
+  border-radius: 0;
+  color: @strata_text;
+  min-height: 22px;
+  padding: 2px 10px;
+  transition: none;
+}
+
+window.querencia-classic popover.menu modelbutton:hover {
+  background: @strata_accent;
+  color: @strata_bg;
+}
+
+window.querencia-classic popover.menu modelbutton:disabled {
+  color: @strata_dim_text;
+}
+
+window.querencia-classic popover.menu separator {
+  background: @strata_border;
+  margin: 2px 0;
+  min-height: 1px;
+}
+
+/* Toolbar: compact, 24 px theme icons beside their labels. */
+
+window.querencia-classic .classic-toolbar {
+  background: @strata_surface;
+  border-bottom: 1px solid @strata_border;
+  padding: 2px 4px;
+}
+
+window.querencia-classic button.classic-tool-button {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  box-shadow: none;
+  color: @strata_text;
+  min-height: 28px;
+  padding: 1px 6px;
+  transition: none;
+}
+
+window.querencia-classic button.classic-tool-button:hover {
+  background: @strata_muted;
+  border-color: @strata_border;
+}
+
+window.querencia-classic button.classic-tool-button:active {
+  background: @strata_highlight;
+}
+
+window.querencia-classic button.classic-tool-button:disabled {
+  color: @strata_dim_text;
+}
+
+window.querencia-classic button.classic-tool-button:disabled image {
+  opacity: 0.45;
+}
+
+window.querencia-classic .classic-tool-icon {
+  -gtk-icon-size: 24px;
+  color: @strata_text;
+}
+
+/* Strata's appearance button keeps working but drops its pill styling. */
+window.querencia-classic .classic-toolbar menubutton.header-action > button {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  box-shadow: none;
+}
+
+window.querencia-classic .classic-toolbar menubutton.header-action > button:hover {
+  background: @strata_muted;
+  border-color: @strata_border;
+}
+
+/* Location row */
+
+window.querencia-classic .classic-location-row {
+  background: @strata_bg;
+  border-bottom: 1px solid @strata_border;
+  padding: 3px 6px;
+}
+
+window.querencia-classic .classic-location-caption {
+  color: @strata_text;
+}
+
+/* Places sidebar: flat list on the surface color, square rows, clear active row. */
+
+window.querencia-classic .sidebar,
+window.querencia-classic .sidebar-shell,
+window.querencia-classic .sidebar-scroll,
+window.querencia-classic .sidebar-scroll viewport {
+  background: @strata_surface;
+}
+
+window.querencia-classic .sidebar {
+  padding: 2px 0;
+}
+
+window.querencia-classic .sidebar-shell {
+  border-right: 1px solid @strata_border;
+}
+
+window.querencia-classic .sidebar-row,
+window.querencia-classic .sidebar-device {
+  border-radius: 0;
+  box-shadow: none;
+  outline: none;
+  transition: none;
+}
+
+window.querencia-classic .sidebar-row:hover,
+window.querencia-classic .sidebar-device:hover {
+  background: @strata_muted;
+}
+
+window.querencia-classic .sidebar-row.active,
+window.querencia-classic .sidebar-row.active:hover,
+window.querencia-classic .sidebar-device.active,
+window.querencia-classic .sidebar-device.active:hover {
+  background: @strata_accent;
+  color: @strata_bg;
+}
+
+window.querencia-classic .sidebar-row.active image,
+window.querencia-classic .sidebar-device.active .sidebar-row image {
+  color: @strata_bg;
+}
+
+window.querencia-classic .sidebar-heading {
+  color: @strata_dim_text;
+}
+
+/* Sidebar/browser divider */
+
+window.querencia-classic paned.sidebar-split > separator,
+window.querencia-classic paned.preview-split > separator {
+  background: @strata_border;
+  box-shadow: none;
+  min-width: 1px;
+}
+
+/* File area: plain background, square cards, solid selection. */
+
+window.querencia-classic .mode-pane-header {
+  background: @strata_surface;
+  border-bottom: 1px solid @strata_border;
+  box-shadow: none;
+  min-height: 28px;
+}
+
+window.querencia-classic .icons-card,
+window.querencia-classic .file-row,
+window.querencia-classic .preview-archive-row {
+  border-radius: 2px;
+  box-shadow: none;
+  transition: none;
+}
+
+window.querencia-classic gridview > child:selected,
+window.querencia-classic gridview > child:selected:hover {
+  background: @strata_accent;
+  color: @strata_bg;
+}
+
+window.querencia-classic gridview > child:selected label,
+window.querencia-classic gridview > child:selected image {
+  color: @strata_bg;
+}
+
+window.querencia-classic .file-list row:selected,
+window.querencia-classic .file-list-mode row:selected,
+window.querencia-classic .file-list row:selected:hover,
+window.querencia-classic .file-list-mode row:selected:hover {
+  background: @strata_accent;
+  color: @strata_bg;
+}
+
+window.querencia-classic .file-list row:selected label,
+window.querencia-classic .file-list-mode row:selected label,
+window.querencia-classic .file-list row:selected image,
+window.querencia-classic .file-list-mode row:selected image {
+  color: @strata_bg;
+}
+
+/* Status bar */
+
+window.querencia-classic .classic-status-bar {
+  background: @strata_surface;
+  border-top: 1px solid @strata_border;
+  color: @strata_text;
+  min-height: 22px;
+  padding: 2px 8px;
+}
+
+/* Strata's own footer serves 10xer mode only. */
+
+window.querencia-classic .classic-footer-host .shortcut-footer {
+  border-top: 1px solid @strata_border;
+}

@@ -617,19 +617,19 @@ fn unlisted_auto_refresh_intervals_round_up_on_load_and_set() {
 }
 
 #[test]
-fn fresh_preferences_select_tokyo_night_before_settings_opens() {
+fn fresh_preferences_select_classic_light_before_settings_opens() {
     gtk_test(
-        "ui::preferences::tests::preferences::fresh_preferences_select_tokyo_night_before_settings_opens",
+        "ui::preferences::tests::preferences::fresh_preferences_select_classic_light_before_settings_opens",
         || {
             assert!(!settings_path().exists());
             let themes = ThemeManager::shared();
             let manager = PreferenceManager::shared();
-            assert_eq!(themes.selected_id(), "tokyo-night");
+            assert_eq!(themes.selected_id(), "classic-light");
             assert!(manager.filter_include_subfolders());
             assert!(!themes.follows_omarchy());
             assert_eq!(
                 themes.current_tokens().expect("selected theme").name,
-                "Tokyo Night"
+                "Classic Light"
             );
             assert!(!settings_path().exists());
         },
@@ -644,11 +644,11 @@ fn fresh_preferences_still_follow_available_omarchy_theme() {
             seed_omarchy_for_test();
             let themes = ThemeManager::shared();
             assert!(themes.follows_omarchy());
-            assert_eq!(themes.selected_id(), "tokyo-night");
+            assert_eq!(themes.selected_id(), "classic-light");
             themes.set_follow_omarchy(false);
             assert_eq!(
                 themes.current_tokens().expect("selected theme").name,
-                "Tokyo Night"
+                "Classic Light"
             );
         },
     );

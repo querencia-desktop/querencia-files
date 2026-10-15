@@ -1347,6 +1347,14 @@ impl ShortcutFooter {
         self.session.is_open()
     }
 
+    pub(in crate::ui) fn toggle_reference(&self) {
+        if self.session.is_open() {
+            self.session.close();
+        } else {
+            self.session.open(&self.root);
+        }
+    }
+
     pub(in crate::ui) fn handle_key(&self, press: &KeyPress) -> Option<glib::Propagation> {
         const SHIFT: gdk::ModifierType = gdk::ModifierType::SHIFT_MASK;
         let reference_open = self.session.is_open();

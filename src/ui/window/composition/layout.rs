@@ -20,16 +20,19 @@ use crate::{
     },
 };
 
-use super::super::{
-    MIN_SIDEBAR_WIDTH, SIDEBAR_WIDTH, SidebarView, animate_sidebar, build_appearance_menu,
-    pin_status, sidebar_rail_width,
+use super::{
+    super::{
+        MIN_SIDEBAR_WIDTH, SIDEBAR_WIDTH, SidebarView, animate_sidebar, build_appearance_menu,
+        pin_status, sidebar_rail_width,
+    },
+    classic::ClassicChrome,
 };
 
 pub(super) struct Header {
     widget: gtk::HeaderBar,
     pub(super) actions: gtk::Box,
+    pub(super) appearance: gtk::MenuButton,
     pub(super) new_tab: gtk::Button,
-    pub(super) content: gtk::Box,
     pub(super) sidebar_toggle: SidebarToggle,
     pub(super) search: gtk::Button,
     pub(super) settings: gtk::Button,
@@ -148,10 +151,10 @@ impl Header {
         widget.set_title_widget(Some(&content));
         Self {
             widget,
-            content,
             sidebar_toggle,
             search,
             settings,
+            appearance,
             #[cfg(test)]
             minimize,
             #[cfg(test)]
@@ -210,14 +213,20 @@ pub(super) fn preview(browser: &BrowserView, preferences: &Rc<PreferenceManager>
 }
 
 pub(super) fn browser_layout(
+    window: &gtk::ApplicationWindow,
     browser: &BrowserView,
     preview: &PreviewDrawer,
     sidebar: &SidebarView,
     header: &Header,
     preferences: &Rc<PreferenceManager>,
-) -> gtk::Box {
+) -> (gtk::Box, Rc<ClassicChrome>) {
     let root = gtk::Box::new(gtk::Orientation::Vertical, 0);
+    // The classic chrome replaces Strata's header bar on screen; the bar stays
+    // in the tree because its sidebar toggle and settings button own bindings.
     root.append(&header.widget);
+    header.widget.set_visible(false);
+    let classic = ClassicChrome::new(window, &root, browser, sidebar, header, preferences);
+    root.append(&classic.chrome);
     bind_pin_handlers(browser, sidebar);
     let preview_for_print = preview.clone();
     browser.set_print_handler(Rc::new(move |entry| preview_for_print.print_entry(entry)));
@@ -247,7 +256,7 @@ pub(super) fn browser_layout(
         OriginClick::keeps_selection_within(&preview.pane_widget()),
     );
     root.append(&preview_split);
-    root
+    (root, classic)
 }
 
 fn bind_pin_handlers(browser: &BrowserView, sidebar: &SidebarView) {
@@ -437,16 +446,31 @@ impl FooterBinding {
         root: &gtk::Box,
         browser: &BrowserView,
         preferences: &PreferenceManager,
+        activity_host: &gtk::Box,
     ) -> Self {
         let shortcuts = ShortcutFooter::new(browser.view_mode());
         shortcuts.bind_preferences(preferences);
         shortcuts.observe_browser(&browser.browser());
         let jobs = crate::ui::jobs::JobsIndicator::new();
         jobs.bind_window(window);
+        // Strata registers the indicator with its footer; the classic status
+        // bar shows it instead, so it stays visible while the footer is not.
         shortcuts.set_activity(jobs.widget());
+        if let Some(parent) = jobs.widget().parent().and_downcast::<gtk::Box>() {
+            parent.remove(jobs.widget());
+        }
+        activity_host.append(jobs.widget());
         let clipboard = window.clipboard();
         let clipboard_handler = RefCell::new(Some(shortcuts.connect_clipboard(&clipboard)));
-        root.append(shortcuts.widget());
+        // The classic status bar carries the item count; Strata's footer stays
+        // for 10xer mode, whose prompts and chord hints live there.
+        let host = gtk::Box::new(gtk::Orientation::Vertical, 0);
+        host.add_css_class("classic-footer-host");
+        host.append(shortcuts.widget());
+        preferences.bind_preference(&host, PreferenceManager::tenxer_mode, |host, enabled| {
+            host.set_visible(enabled);
+        });
+        root.append(&host);
         let updated_shortcuts = shortcuts.clone();
         browser.connect_view_mode_changed(move |mode| updated_shortcuts.set_mode(mode));
         Self {

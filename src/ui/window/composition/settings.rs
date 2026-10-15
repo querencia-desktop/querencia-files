@@ -59,6 +59,12 @@ pub(super) fn install(
             launcher.show();
         }
     });
+    let about_launcher = Rc::downgrade(&launcher);
+    content.classic.bind_about(move || {
+        if let Some(launcher) = about_launcher.upgrade() {
+            launcher.show_page("about");
+        }
+    });
     let shortcut = gtk::EventControllerKey::new();
     let active_root = content.overlay.downgrade();
     keys::on_press(&shortcut, move |_, press| {
@@ -138,6 +144,31 @@ impl SettingsLauncher {
         self.button.add_css_class("active");
         crate::ui::browser::animate_in(&layer);
     }
+
+    /// Opens Settings on `page`, which names a navigation button the same way
+    /// Settings search does; an unknown page just shows Settings.
+    fn show_page(&self, page: &str) {
+        self.show();
+        if let Some(button) = navigation_button(&self.layer(), page) {
+            button.emit_clicked();
+        }
+    }
+}
+
+fn navigation_button(widget: &impl IsA<gtk::Widget>, page: &str) -> Option<gtk::Button> {
+    let mut child = widget.as_ref().first_child();
+    while let Some(widget) = child {
+        if let Ok(button) = widget.clone().downcast::<gtk::Button>()
+            && button.widget_name() == page
+        {
+            return Some(button);
+        }
+        if let Some(found) = navigation_button(&widget, page) {
+            return Some(found);
+        }
+        child = widget.next_sibling();
+    }
+    None
 }
 
 fn bind_update_notice(

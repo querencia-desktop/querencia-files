@@ -308,7 +308,7 @@ pub(super) fn present_target(
 
     let window = gtk::ApplicationWindow::builder()
         .application(application)
-        .title("Strata")
+        .title("Querencia Files")
         .default_width(1200)
         .default_height(760)
         .build();
@@ -4168,14 +4168,23 @@ fn startup_location(manager: &PreferenceManager) -> Location {
 mod tests;
 
 pub(super) fn load_styles() {
-    let provider = gtk::CssProvider::new();
-    provider.load_from_string(include_str!("../style.css"));
-
-    if let Some(display) = gtk::gdk::Display::default() {
-        gtk::style_context_add_provider_for_display(
-            &display,
-            &provider,
+    let Some(display) = gtk::gdk::Display::default() else {
+        return;
+    };
+    // The classic sheet sits above the theme token provider (APPLICATION + 1)
+    // so its chrome rules win over Strata's defaults for `.querencia-classic`.
+    for (css, priority) in [
+        (
+            include_str!("../style.css"),
             gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
-        );
+        ),
+        (
+            include_str!("../classic.css"),
+            gtk::STYLE_PROVIDER_PRIORITY_APPLICATION + 2,
+        ),
+    ] {
+        let provider = gtk::CssProvider::new();
+        provider.load_from_string(css);
+        gtk::style_context_add_provider_for_display(&display, &provider, priority);
     }
 }

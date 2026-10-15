@@ -241,7 +241,7 @@ impl Default for Preferences {
     fn default() -> Self {
         Self {
             mode: "theme".to_owned(),
-            theme: "tokyo-night".to_owned(),
+            theme: "classic-light".to_owned(),
             omarchy_variant: OmarchyVariant::default(),
             folder_peeking: false,
             single_click_previews: true,
@@ -328,7 +328,7 @@ fn default_release_channel() -> String {
 }
 
 fn default_browser_mode() -> String {
-    "columns".to_owned()
+    "icons".to_owned()
 }
 
 fn browser_mode_from_stored(value: &str) -> super::browser_modes::BrowserMode {
@@ -532,7 +532,7 @@ impl PreferenceManager {
     ) {
         let mut preferences = self.preferences.borrow_mut();
         if !theme_is_known(&preferences.theme) {
-            preferences.theme = "azure-glow".to_owned();
+            preferences.theme = "classic-light".to_owned();
         }
         if preferences.mode == "omarchy" && !omarchy_available {
             preferences.mode = "theme".to_owned();

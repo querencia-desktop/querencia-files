@@ -11,6 +11,7 @@ use crate::ui::{
 
 use super::{SidebarView, TypeToSearch, keyboard};
 
+mod classic;
 mod input;
 mod layout;
 mod search;
@@ -28,6 +29,7 @@ pub(super) struct WindowContent {
     overlay: gtk::Overlay,
     blurred_root: BlurBin,
     footer: layout::FooterBinding,
+    classic: Rc<classic::ClassicChrome>,
     actions: gio::SimpleActionGroup,
     key_controllers: RefCell<Vec<gtk::EventController>>,
 }
@@ -41,8 +43,13 @@ impl WindowContent {
         let preview = layout::preview(&browser, preferences);
         let header = layout::Header::new(window, &browser, &preview, preferences);
         let sidebar = super::build_sidebar(browser.clone(), preferences.clone(), false);
-        let root = layout::browser_layout(&browser, &preview, &sidebar, &header, preferences);
-        let footer = layout::FooterBinding::new(window, &root, &browser, preferences);
+        window.add_css_class("querencia-classic");
+        let (root, classic) =
+            layout::browser_layout(window, &browser, &preview, &sidebar, &header, preferences);
+        let footer =
+            layout::FooterBinding::new(window, &root, &browser, preferences, &classic.status_bar);
+        root.append(&classic.status_bar);
+        classic.bind_footer(&footer.shortcuts);
         input::install_mouse_history(&root, &browser);
         crate::ui::scrolling::install_autoscroll_stop(&root);
         let overlay = gtk::Overlay::new();
@@ -57,6 +64,7 @@ impl WindowContent {
             overlay,
             blurred_root,
             footer,
+            classic,
             actions: gio::SimpleActionGroup::new(),
             key_controllers: RefCell::new(Vec::new()),
         }
@@ -104,8 +112,10 @@ impl WindowContent {
         });
         self.overlay.add_controller(click);
         input::install_edit_cancellation(&self.overlay, &self.browser);
+        // Keyboard focus from the top item lands on the classic chrome, not on
+        // the hidden Strata header; the sidebar toggle stays the bound control.
         let top_bar = crate::ui::top_bar_navigation::TopBarNavigation::new(
-            &self.header.content,
+            &self.classic.chrome,
             &self.sidebar.widget,
             self.header.sidebar_toggle.upcast_ref(),
         );
