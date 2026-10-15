@@ -26,6 +26,9 @@ fn resizing_refreshes_fallbacks_without_discarding_decoded_thumbnails() {
             assert_ne!(small, large, "resizing must rerender fallback artwork");
             slot.set_slot(64);
             assert_eq!(slot.imp().fallback.borrow().as_ref(), Some(&small));
+            let large = large
+                .downcast::<gdk::Texture>()
+                .expect("bundled fallback is a texture");
             slot.set_texture(&large);
             slot.set_slot(128);
             assert_eq!(slot.texture(), Some(large));

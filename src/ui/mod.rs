@@ -51,6 +51,7 @@ mod tabs_session;
 mod tenxer_mode;
 mod terminal;
 mod theme;
+pub(crate) mod theme_icons;
 mod thumbnail;
 pub(crate) mod thumbnail_cache;
 mod top_bar_navigation;

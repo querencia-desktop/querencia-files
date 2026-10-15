@@ -3831,7 +3831,7 @@ fn sync_keycap(keycap: &gtk::Label, visible: bool) {
 
 fn sidebar_button(icon: &str, name: &str) -> gtk::Button {
     let content = gtk::Box::new(gtk::Orientation::Horizontal, 8);
-    let image = crate::assets::primary_icon(icon, 17);
+    let image = crate::ui::theme_icons::place_image(icon, 17);
     let label = gtk::Label::new(Some(name));
     label.set_xalign(0.0);
     label.set_hexpand(true);

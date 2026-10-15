@@ -107,7 +107,7 @@ fn peek_label_factory(entries: Rc<RefCell<Vec<FileEntry>>>) -> gtk::SignalListIt
         if let Some(entry) = entries.borrow().get(item.position() as usize) {
             crate::ui::thumbnail::set_thumbnail_or_icon(&icon, entry, entry_icon(entry), 17, 24);
         } else {
-            crate::ui::thumbnail::show_fallback_icon(&icon, icon_for_name(name), 17);
+            crate::ui::thumbnail::show_fallback_icon_for_name(&icon, name, icon_for_name(name), 17);
         }
         icon.set_opacity(if directory { 1.0 } else { 0.82 });
         chevron.set_visible(directory);

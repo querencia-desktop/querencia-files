@@ -1017,7 +1017,12 @@ pub(super) fn column_rows(
                     17,
                 );
             } else {
-                crate::ui::thumbnail::show_fallback_icon(&icon, entry_icon(entry), 17);
+                crate::ui::thumbnail::show_fallback_icon_for_entry(
+                    &icon,
+                    entry,
+                    entry_icon(entry),
+                    17,
+                );
             }
             icon.set_hidden(entry.is_hidden);
             icon.set_base_opacity(if entry.is_directory() { 1.0 } else { 0.72 });

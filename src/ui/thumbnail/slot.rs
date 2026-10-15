@@ -22,8 +22,11 @@ mod imp {
         pub provider_path: RefCell<Option<String>>,
         pub provider_retry: Cell<bool>,
         pub decoration_description: RefCell<Option<String>>,
-        pub fallback: RefCell<Option<gdk::Texture>>,
+        /// A theme icon paintable or one of Strata's bundled icon textures.
+        pub fallback: RefCell<Option<gdk::Paintable>>,
         pub fallback_icon: RefCell<Option<String>>,
+        /// Icon-theme names for the bound entry, most specific first.
+        pub theme_icons: RefCell<Vec<String>>,
         pub(crate) mark: Cell<crate::ui::browser::ClipboardMark>,
         pub hidden: Cell<bool>,
         pub base_opacity: Cell<f64>,
@@ -71,7 +74,7 @@ mod imp {
             };
             let marked = mark_icon.is_some();
 
-            let texture = mark_icon
+            let paintable: Option<gdk::Paintable> = mark_icon
                 .and_then(|name| {
                     crate::assets::sized_icon_paintable(
                         name,
@@ -81,10 +84,11 @@ mod imp {
                         obj.icon_context(),
                     )
                 })
-                .or_else(|| self.texture.borrow().clone())
+                .map(Cast::upcast)
+                .or_else(|| self.texture.borrow().clone().map(Cast::upcast))
                 .or_else(|| self.fallback.borrow().clone());
 
-            let Some(texture) = texture else {
+            let Some(paintable) = paintable else {
                 return;
             };
 
@@ -105,7 +109,7 @@ mod imp {
                 ((width - draw_width) / 2.0) as f32,
                 ((height - draw_height) / 2.0) as f32,
             ));
-            snapshot_texture(snapshot, &texture, draw_width, draw_height);
+            snapshot_paintable(snapshot, &paintable, draw_width, draw_height, obj.color());
             snapshot.restore();
             if let Some(badge) = self.decoration.borrow().as_ref() {
                 let size = (width.min(height) * 0.55).clamp(10.0, 24.0) as f32;
@@ -118,9 +122,17 @@ mod imp {
     }
 }
 
-fn snapshot_texture(snapshot: &gtk::Snapshot, texture: &gdk::Texture, width: f64, height: f64) {
-    let intrinsic_w = f64::from(texture.width().max(0));
-    let intrinsic_h = f64::from(texture.height().max(0));
+/// Draws `paintable` centred and aspect-preserved within `width` × `height`.
+/// Symbolic theme icons take the widget's text color, as GtkImage would.
+fn snapshot_paintable(
+    snapshot: &gtk::Snapshot,
+    paintable: &gdk::Paintable,
+    width: f64,
+    height: f64,
+    color: gdk::RGBA,
+) {
+    let intrinsic_w = f64::from(paintable.intrinsic_width().max(0));
+    let intrinsic_h = f64::from(paintable.intrinsic_height().max(0));
     let (draw_w, draw_h) = if intrinsic_w > 0.0 && intrinsic_h > 0.0 {
         let scale = (width / intrinsic_w).min(height / intrinsic_h);
         (intrinsic_w * scale, intrinsic_h * scale)
@@ -129,10 +141,15 @@ fn snapshot_texture(snapshot: &gtk::Snapshot, texture: &gdk::Texture, width: f64
     };
     let x = ((width - draw_w) / 2.0) as f32;
     let y = ((height - draw_h) / 2.0) as f32;
-    snapshot.append_texture(
-        texture,
-        &graphene::Rect::new(x, y, draw_w as f32, draw_h as f32),
-    );
+    snapshot.save();
+    snapshot.translate(&graphene::Point::new(x, y));
+    match paintable.downcast_ref::<gtk::IconPaintable>() {
+        Some(icon) if icon.is_symbolic() => {
+            icon.snapshot_symbolic(snapshot, draw_w, draw_h, &[color]);
+        }
+        _ => paintable.snapshot(snapshot, draw_w, draw_h),
+    }
+    snapshot.restore();
 }
 
 fn folder_height_scale(texture: &gdk::Texture) -> f64 {
@@ -151,6 +168,10 @@ fn folder_height_scale(texture: &gdk::Texture) -> f64 {
 }
 
 fn same_texture(left: Option<&gdk::Texture>, right: Option<&gdk::Texture>) -> bool {
+    same_object(left, right)
+}
+
+fn same_object<T: ObjectType>(left: Option<&T>, right: Option<&T>) -> bool {
     match (left, right) {
         (None, None) => true,
         (Some(left), Some(right)) => std::ptr::eq(left.as_ptr(), right.as_ptr()),
@@ -268,25 +289,38 @@ impl ThumbnailSlot {
         self.queue_draw();
     }
 
-    pub(crate) fn set_fallback(&self, icon: &str, texture: Option<&gdk::Texture>) {
+    pub(crate) fn set_fallback(&self, icon: &str, paintable: Option<&gdk::Paintable>) {
         if self.imp().texture.borrow().is_none()
             && self.imp().fallback_icon.borrow().as_deref() == Some(icon)
-            && same_texture(self.imp().fallback.borrow().as_ref(), texture)
+            && same_object(self.imp().fallback.borrow().as_ref(), paintable)
         {
             return;
         }
         self.imp().texture.replace(None);
+        // The folder-height fit measures Lucide's folder ink; theme icons are
+        // drawn as they come.
         let scale =
             if self.imp().limit_fallback_height.get() && icon != crate::assets::icons::FOLDER {
-                texture.map_or(1.0, folder_height_scale)
+                paintable
+                    .and_then(|paintable| paintable.downcast_ref::<gdk::Texture>())
+                    .map_or(1.0, folder_height_scale)
             } else {
                 1.0
             };
         self.imp().fallback_scale.set(scale);
         self.imp().fallback_icon.replace(Some(icon.to_owned()));
-        self.imp().fallback.replace(texture.cloned());
+        self.imp().fallback.replace(paintable.cloned());
         self.update_state_opacity();
         self.queue_draw();
+    }
+
+    /// Icon-theme names the slot's entry answers to; empty keeps the bundled icon.
+    pub(crate) fn set_theme_icon_names(&self, names: Vec<String>) {
+        self.imp().theme_icons.replace(names);
+    }
+
+    pub(crate) fn theme_icon_names(&self) -> Vec<String> {
+        self.imp().theme_icons.borrow().clone()
     }
 
     pub(crate) fn texture(&self) -> Option<gdk::Texture> {

@@ -400,6 +400,7 @@ pub(super) fn set_thumbnail_or_icon(
     thumbnail_size: i32,
 ) {
     super::file_providers::bind(image, entry.location.native_path());
+    image.set_theme_icon_names(super::theme_icons::entry_icon_names(entry));
     let Some(path) = entry.local_thumbnail_path() else {
         if entry.location.backend_name() == "gphoto2"
             && !entry.is_directory()
@@ -427,7 +428,7 @@ pub(super) fn set_thumbnail_or_icon(
                 thumbnail_size,
             });
         } else {
-            show_fallback_icon(image, fallback_icon, icon_size);
+            set_fallback_icon(image, None, fallback_icon, icon_size);
         }
         return;
     };
@@ -466,6 +467,10 @@ pub(super) fn set_thumbnail_or_icon_for_path(
     thumbnail_size: i32,
 ) {
     super::file_providers::bind(image, Some(path));
+    image.set_theme_icon_names(super::theme_icons::path_icon_names(
+        path,
+        fallback_icon == crate::assets::icons::FOLDER,
+    ));
     set_thumbnail_for_path(ThumbnailRequest {
         image,
         path,
@@ -1192,7 +1197,35 @@ fn forget_slot(image_id: usize) {
     });
 }
 
+/// A bundled placeholder icon with no entry behind it; theme names from an
+/// earlier binding must not leak into it.
 pub(super) fn show_fallback_icon(image: &ThumbnailSlot, icon: &str, size: i32) {
+    image.set_theme_icon_names(Vec::new());
+    set_fallback_icon(image, None, icon, size);
+}
+
+pub(super) fn show_fallback_icon_for_entry(
+    image: &ThumbnailSlot,
+    entry: &FileEntry,
+    icon: &str,
+    size: i32,
+) {
+    image.set_theme_icon_names(super::theme_icons::entry_icon_names(entry));
+    set_fallback_icon(image, None, icon, size);
+}
+
+/// For rows known only by name: the theme icon follows the name's MIME type.
+pub(super) fn show_fallback_icon_for_name(
+    image: &ThumbnailSlot,
+    name: &str,
+    icon: &str,
+    size: i32,
+) {
+    image.set_theme_icon_names(if icon == crate::assets::icons::FOLDER {
+        super::theme_icons::folder_icon_names()
+    } else {
+        super::theme_icons::file_name_icon_names(name)
+    });
     set_fallback_icon(image, None, icon, size);
 }
 
@@ -1294,7 +1327,7 @@ fn set_fallback_icon(
         image.scale_factor(),
         image.icon_context(),
     );
-    image.set_fallback(icon, texture.as_ref());
+    apply_fallback(image, icon, texture, customized);
     if let Some(p) = path {
         register_tracked_icon(image, p, icon, customized);
     } else {
@@ -1379,8 +1412,30 @@ fn apply_path_customization(image: &ThumbnailSlot, path: &Path, fallback_icon: &
         image.scale_factor(),
         image.icon_context(),
     );
-    image.set_fallback(fallback_icon, texture.as_ref());
+    apply_fallback(image, fallback_icon, texture, customized);
     customized
+}
+
+/// A user customization (folder color, emoji) wins; otherwise the desktop
+/// icon theme is asked for the entry's icon, and Strata's bundled texture is
+/// the last resort.
+fn apply_fallback(
+    image: &ThumbnailSlot,
+    icon: &str,
+    bundled: Option<gdk::Texture>,
+    customized: bool,
+) {
+    let themed = if customized {
+        None
+    } else {
+        super::theme_icons::paintable(
+            &image.theme_icon_names(),
+            image.icon_pixel_size(),
+            image.scale_factor(),
+        )
+    };
+    let paintable = themed.or_else(|| bundled.map(Cast::upcast));
+    image.set_fallback(icon, paintable.as_ref());
 }
 
 fn apply_path_customization_image(
@@ -1438,7 +1493,7 @@ pub(super) fn refresh_slot_icon(image: &ThumbnailSlot) {
             image.scale_factor(),
             image.icon_context(),
         );
-        image.set_fallback(&icon, texture.as_ref());
+        apply_fallback(image, &icon, texture, false);
     }
 }
 

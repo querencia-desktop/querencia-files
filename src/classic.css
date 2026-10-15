@@ -228,30 +228,48 @@ window.querencia-classic .preview-archive-row {
   transition: none;
 }
 
+/* Selection: a translucent accent wash with a solid edge, as Caja draws it.
+   Strata tints its bundled file icons with the same accent color (assets.rs,
+   set_primary_icon_color), so a solid accent background would swallow them;
+   text and icons keep their normal color on the wash. */
+
 window.querencia-classic gridview > child:selected,
 window.querencia-classic gridview > child:selected:hover {
-  background: @strata_accent;
-  color: @strata_bg;
+  background: alpha(@strata_accent, 0.28);
+  border-radius: 2px;
+  color: @strata_text;
+  outline: 1px solid @strata_accent;
+  outline-offset: -1px;
 }
 
 window.querencia-classic gridview > child:selected label,
 window.querencia-classic gridview > child:selected image {
-  color: @strata_bg;
+  color: @strata_text;
+}
+
+window.querencia-classic gridview > child:selected:focus,
+window.querencia-classic gridview > child:selected:focus-visible {
+  background: alpha(@strata_accent, 0.4);
 }
 
 window.querencia-classic .file-list row:selected,
 window.querencia-classic .file-list-mode row:selected,
 window.querencia-classic .file-list row:selected:hover,
 window.querencia-classic .file-list-mode row:selected:hover {
-  background: @strata_accent;
-  color: @strata_bg;
+  background: alpha(@strata_accent, 0.28);
+  color: @strata_text;
 }
 
 window.querencia-classic .file-list row:selected label,
 window.querencia-classic .file-list-mode row:selected label,
 window.querencia-classic .file-list row:selected image,
 window.querencia-classic .file-list-mode row:selected image {
-  color: @strata_bg;
+  color: @strata_text;
+}
+
+/* Theme icons in the sidebar follow the row's text color when symbolic. */
+window.querencia-classic .sidebar-row image.theme-icon {
+  color: @strata_text;
 }
 
 /* Status bar */
