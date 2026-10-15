@@ -28,6 +28,7 @@ mod document_media;
 mod image_conversion;
 mod media;
 mod model;
+mod raster;
 mod raw_metadata;
 
 const PROCESS_POLL_INTERVAL: Duration = Duration::from_millis(20);
@@ -393,19 +394,38 @@ pub(crate) fn browser_render(
             if response.png.is_empty() {
                 let size = dimensions();
                 let oversized = size.is_some_and(|(w, h)| exceeds_decoded_frame_budget(w, h));
+                let mut failure = None;
                 if let Some(size) = size {
                     response.metadata = encode_dimensions(size);
                     if !oversized {
-                        response.png =
-                            render_pixbuf(input, 256.min(size.0.max(size.1))).unwrap_or_default();
+                        let edge = 256.min(size.0.max(size.1));
+                        match render_pixbuf(input, edge)
+                            .or_else(|first| chain_error(first, raster::render(input, edge)))
+                        {
+                            Ok(png) => response.png = png,
+                            Err(error) => failure = Some(error),
+                        }
                     } else if let Some(png) = read_exif_thumbnail(input, 256) {
                         response.png = png;
+                    } else {
+                        failure = Some("Image dimensions exceed the decoded frame budget".into());
                     }
                 }
                 if response.png.is_empty() && !oversized {
-                    response.png = render_imagemagick(input, 256)
-                        .or_else(|_| render_dcraw(input, 256))
-                        .unwrap_or_default();
+                    match render_imagemagick(input, 256).or_else(|_| render_dcraw(input, 256)) {
+                        Ok(png) => response.png = png,
+                        Err(error) => {
+                            failure = Some(match failure {
+                                Some(first) => format!("{first}; {error}"),
+                                None => error,
+                            });
+                        }
+                    }
+                }
+                if response.png.is_empty()
+                    && let Some(error) = failure
+                {
+                    attach_decode_error(&mut response.metadata, &error);
                 }
             }
         }
@@ -431,9 +451,14 @@ pub(crate) fn browser_render(
         Operation::MediaMetadata => {
             response.metadata = read_media_metadata(input).unwrap_or_default()
         }
-        Operation::PreviewImage => {
-            response.png = document_media::image(input, 800).unwrap_or_default();
-        }
+        Operation::PreviewImage => match document_media::image(input, 800) {
+            Ok(png) => response.png = png,
+            Err(error) => {
+                // The parent can only read the cause through the metadata part.
+                response.metadata = dimensions().map(encode_dimensions).unwrap_or_default();
+                attach_decode_error(&mut response.metadata, &error);
+            }
+        },
         Operation::DocumentMermaid => {
             response.png = document_media::mermaid(input).unwrap_or_default();
         }
@@ -578,11 +603,38 @@ fn render_raw(path: &Path, size: i32) -> Result<Vec<u8>, String> {
             }
             return Err("Image dimensions exceed the decoded frame budget".to_owned());
         }
-        return render_pixbuf(path, size.min(width.max(height)))
-            .or_else(|_| render_imagemagick(path, size))
-            .or_else(|_| render_dcraw(path, size));
+        let edge = size.min(width.max(height));
+        return render_pixbuf(path, edge)
+            .or_else(|first| chain_error(first, raster::render(path, edge)))
+            .or_else(|first| chain_error(first, render_imagemagick(path, size)))
+            .or_else(|first| chain_error(first, render_dcraw(path, size)));
     }
-    render_imagemagick(path, size).or_else(|_| render_dcraw(path, size))
+    raster::render(path, size)
+        .or_else(|first| chain_error(first, render_imagemagick(path, size)))
+        .or_else(|first| chain_error(first, render_dcraw(path, size)))
+}
+
+/// Keeps every decoder's reason when the next one is tried.
+fn chain_error(first: String, next: Result<Vec<u8>, String>) -> Result<Vec<u8>, String> {
+    next.map_err(|second| format!("{first}; {second}"))
+}
+
+/// Adds the decoders' reasons to the metadata JSON the parent already reads;
+/// the response frame itself has no error part. Bounded, never file contents.
+fn attach_decode_error(metadata: &mut Vec<u8>, error: &str) {
+    const MAX_ERROR_CHARS: usize = 240;
+    let mut value: serde_json::Value = serde_json::from_slice(metadata)
+        .ok()
+        .filter(serde_json::Value::is_object)
+        .unwrap_or_else(|| serde_json::json!({ "streams": [] }));
+    let mut reason: String = error.chars().take(MAX_ERROR_CHARS).collect();
+    if reason.len() < error.len() {
+        reason.push('…');
+    }
+    value["decode_error"] = serde_json::Value::String(reason);
+    if let Ok(bytes) = serde_json::to_vec(&value) {
+        *metadata = bytes;
+    }
 }
 
 fn render_raw_thumbnail(path: &Path, size: i32) -> Result<Vec<u8>, String> {
@@ -595,8 +647,9 @@ fn render_raw_thumbnail(path: &Path, size: i32) -> Result<Vec<u8>, String> {
     }
     // Prefer the camera JPEG so ImageMagick does not demosaic the list thumbnail.
     render_dcraw(path, size)
-        .or_else(|_| render_pixbuf(path, size))
-        .or_else(|_| render_imagemagick(path, size))
+        .or_else(|first| chain_error(first, render_pixbuf(path, size)))
+        .or_else(|first| chain_error(first, raster::render(path, size)))
+        .or_else(|first| chain_error(first, render_imagemagick(path, size)))
 }
 
 fn read_exif_thumbnail(path: &Path, size: i32) -> Option<Vec<u8>> {
@@ -696,7 +749,9 @@ fn scale_embedded_thumbnail(data: &[u8], size: i32) -> Result<Vec<u8>, String> {
     if dimensions.is_some_and(|(width, height)| exceeds_decoded_frame_budget(width, height)) {
         return Err("Embedded thumbnail exceeds the decoded frame budget".to_owned());
     }
-    scale_embedded_thumbnail_pixbuf(data, size).or_else(|_| render_imagemagick_bytes(data, size))
+    scale_embedded_thumbnail_pixbuf(data, size)
+        .or_else(|first| chain_error(first, raster::render_bytes(data, size)))
+        .or_else(|first| chain_error(first, render_imagemagick_bytes(data, size)))
 }
 
 fn scale_embedded_thumbnail_pixbuf(data: &[u8], size: i32) -> Result<Vec<u8>, String> {

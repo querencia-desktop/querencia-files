@@ -929,7 +929,7 @@ pub(crate) fn numbered_name(name: &std::ffi::OsStr, prefix: &str) -> bool {
         })
 }
 
-fn valid_output(operation: ParseOperation, data: &[u8]) -> bool {
+pub(crate) fn valid_output(operation: ParseOperation, data: &[u8]) -> bool {
     if matches!(operation, ParseOperation::InspectImage) {
         return data.len() <= 32
             && serde_json::from_slice::<crate::services::image_conversion::ImageKind>(data)

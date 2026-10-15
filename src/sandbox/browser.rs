@@ -314,6 +314,12 @@ fn request(
             cached.png = Some(response.png);
         } else if !metadata_only {
             cached.failed_thumbnail = true;
+            tracing::warn!(
+                ?operation,
+                path = %path.display(),
+                reason = decode_error(&response.metadata).as_deref().unwrap_or("no diagnostic"),
+                "browser worker produced no image"
+            );
         }
         if !response.metadata.is_empty() {
             let image = matches!(
@@ -345,6 +351,18 @@ fn request(
         png: (!metadata_only).then(|| cached.png.clone()).flatten(),
         metadata: cached.metadata.clone(),
     })
+}
+
+/// The helper's decoder reasons travel inside the metadata JSON (`decode_error`).
+fn decode_error(metadata: &[u8]) -> Option<String> {
+    if metadata.is_empty() || metadata.len() as u64 > super::metadata::MAX_METADATA_BYTES {
+        return None;
+    }
+    serde_json::from_slice::<serde_json::Value>(metadata)
+        .ok()?
+        .get("decode_error")?
+        .as_str()
+        .map(str::to_owned)
 }
 
 fn open_source(path: &Path) -> io::Result<File> {

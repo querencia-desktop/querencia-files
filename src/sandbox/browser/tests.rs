@@ -629,6 +629,94 @@ fn decoder_cannot_reopen_or_mutate_a_read_only_source_descriptor() {
     );
 }
 
+/// JPEG and PNG thumbnails and previews must come out of the same restricted
+/// decoder the PPM protection test runs in, with no sandbox rule relaxed:
+/// gdk-pixbuf's glycin loaders cannot run there, so the `image` fallback is
+/// what makes these formats render.
+#[test]
+fn jpeg_and_png_render_inside_the_restricted_decoder() {
+    const CHILD: &str = "STRATA_RASTER_FALLBACK_TEST";
+    if let Some(format) = std::env::var_os(CHILD) {
+        let writable = std::env::temp_dir();
+        worker::restrict_mutations().expect("inherited mutation filter");
+        worker::protect_input(&[writable.to_str().expect("scratch path"), "/dev/null"])
+            .expect("input protections");
+        let input = PathBuf::from("/proc")
+            .join(std::fs::read_link("/proc/thread-self").expect("decoder thread"))
+            .join("fd/0");
+        let thumbnail = crate::sandbox_helper::browser_render(&input, Operation::Image);
+        assert!(
+            super::super::valid_output(ParseOperation::ThumbnailImage, &thumbnail.png),
+            "{format:?} thumbnail: {}",
+            String::from_utf8_lossy(&thumbnail.metadata)
+        );
+        assert_eq!(
+            super::super::png_dimensions(&thumbnail.png),
+            Some((256, 85)),
+            "{format:?} thumbnail edge"
+        );
+        let preview = crate::sandbox_helper::browser_render(&input, Operation::PreviewImage);
+        assert!(
+            super::super::valid_output(ParseOperation::PreviewImage, &preview.png),
+            "{format:?} preview: {}",
+            String::from_utf8_lossy(&preview.metadata)
+        );
+        assert_eq!(
+            super::super::png_dimensions(&preview.png),
+            Some((300, 100)),
+            "{format:?} preview keeps the native size"
+        );
+        return;
+    }
+    if !worker::supported() {
+        assert!(matches!(
+            Worker::spawn().expect("legacy worker"),
+            Worker::OneShot
+        ));
+        return;
+    }
+    for (name, format) in [
+        ("jpeg", image::ImageFormat::Jpeg),
+        ("png", image::ImageFormat::Png),
+    ] {
+        let mut bytes = std::io::Cursor::new(Vec::new());
+        image::RgbImage::from_fn(300, 100, |x, y| {
+            image::Rgb([(x % 256) as u8, (y % 256) as u8, 64])
+        })
+        .write_to(&mut bytes, format)
+        .expect("encode fixture");
+        let source = tempfile::NamedTempFile::new().expect("source");
+        let scratch = tempfile::tempdir().expect("decoder scratch");
+        std::fs::write(source.path(), bytes.into_inner()).expect("fixture");
+        let output = std::process::Command::new(std::env::current_exe().expect("test binary"))
+            .args([
+                "--exact",
+                "sandbox::browser::tests::jpeg_and_png_render_inside_the_restricted_decoder",
+                "--nocapture",
+            ])
+            .env(CHILD, name)
+            .env("TMPDIR", scratch.path())
+            .env("PATH", "/usr/bin")
+            .env("HOME", "/nonexistent")
+            .env("XDG_CACHE_HOME", scratch.path().join("cache"))
+            .env_remove("DISPLAY")
+            .env_remove("WAYLAND_DISPLAY")
+            .env_remove("DBUS_SESSION_BUS_ADDRESS")
+            .env_remove("XDG_RUNTIME_DIR")
+            .stdin(Stdio::from(
+                File::open(source.path()).expect("read-only input"),
+            ))
+            .output()
+            .expect("isolated decoder test");
+        assert!(
+            output.status.success(),
+            "{name}: {}{}",
+            String::from_utf8_lossy(&output.stdout),
+            String::from_utf8_lossy(&output.stderr)
+        );
+    }
+}
+
 #[test]
 fn supervisor_fork_refuses_a_multithreaded_caller() {
     let barrier = std::sync::Barrier::new(2);
