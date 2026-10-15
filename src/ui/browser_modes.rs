@@ -510,7 +510,7 @@ impl ModeViews {
             list_pane: None,
             pane_navigation: RefCell::new(navigation::PaneNavigation::default()),
             browser,
-            single_click_previews: Rc::new(Cell::new(true)),
+            single_click_previews: Rc::new(Cell::new(false)),
             multiple_selection,
             icons_click_activation: Rc::new(Cell::new(ClickActivation::default_for(
                 BrowserMode::Icons,

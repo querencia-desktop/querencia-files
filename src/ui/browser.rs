@@ -616,7 +616,7 @@ impl BrowserView {
             peek_anchor: RefCell::new(None),
             peek_behavior,
             peek_enabled: Cell::new(true),
-            single_click_previews: Cell::new(true),
+            single_click_previews: Cell::new(false),
             columns_mirror_selection: Cell::new(true),
             multiple_selection,
             interactive,

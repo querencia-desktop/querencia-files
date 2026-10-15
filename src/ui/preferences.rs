@@ -72,7 +72,7 @@ pub(in crate::ui) struct Preferences {
     omarchy_variant: OmarchyVariant,
     #[serde(default)]
     folder_peeking: bool,
-    #[serde(default = "default_enabled")]
+    #[serde(default)]
     single_click_previews: bool,
     #[serde(default = "default_enabled")]
     columns_mirror_selection: bool,
@@ -244,7 +244,7 @@ impl Default for Preferences {
             theme: "classic-light".to_owned(),
             omarchy_variant: OmarchyVariant::default(),
             folder_peeking: false,
-            single_click_previews: true,
+            single_click_previews: false,
             columns_mirror_selection: true,
             columns_show_sizes: true,
             render_documents_by_default: true,

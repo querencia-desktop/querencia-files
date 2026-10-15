@@ -666,7 +666,7 @@ fn every_saved_preference_loads_before_any_settings_page_exists() {
             assert!(!themes.follows_omarchy());
             assert_eq!(themes.selected_id(), "nord");
             assert!(manager.folder_peeking());
-            assert!(!manager.single_click_previews());
+            assert!(manager.single_click_previews());
             assert!(!manager.columns_mirror_selection());
             assert!(!manager.columns_show_sizes());
             assert!(!manager.hardware_accelerated_video_previews());
