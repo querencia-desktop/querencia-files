@@ -1467,11 +1467,34 @@ fn apply_path_customization_image(
         let rendered_icon = custom_icon.as_deref().unwrap_or(default_icon);
         if let Some(color) = color {
             crate::assets::set_custom_colored_icon(image, rendered_icon, color.hex());
+        } else if let Some(name) =
+            uncustomized_place_theme_icon(path, default_icon, kind, customized)
+        {
+            // QF-0f: places the user never customized show the desktop icon
+            // theme's icon (GNOME Human), like the rest of the sidebar.
+            image.set_icon_name(Some(&name));
         } else {
             crate::assets::set_primary_icon(image, rendered_icon);
         }
     }
     customized
+}
+
+/// The theme icon for an uncustomized sidebar place (`ImageIconKind::Folder`
+/// is only used by the sidebar), or `None` to keep Strata's bundled icon.
+fn uncustomized_place_theme_icon(
+    path: &Path,
+    default_icon: &str,
+    kind: ImageIconKind,
+    customized: bool,
+) -> Option<String> {
+    if customized || !matches!(kind, ImageIconKind::Folder) {
+        return None;
+    }
+    super::theme_icons::resolve(&super::theme_icons::place_path_icon_names(
+        path,
+        default_icon,
+    ))
 }
 
 pub(super) fn refresh_slot_icon(image: &ThumbnailSlot) {

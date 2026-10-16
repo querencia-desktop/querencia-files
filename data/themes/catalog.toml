@@ -1449,6 +1449,30 @@ syntax_type = "#d75f00"
 syntax_preprocessor = "#0087af"
 
 [[themes]]
+# Querencia Desktop (QF-0f): the GNOME 2 / Ubuntu Ambiance palette, not a
+# Base16 import. Values from Ambiance's gtk-color-scheme: base_color
+# #ffffff (background), bg_color #f2f1f0 (surface), text_color #3c3c3c,
+# selected_bg_color #f07746 (accent). Border #c7c2be, hover and pressed
+# tones as measured on the Querencia panel menus (HMP-05). Syntax colours
+# from GNOME 2's Tango palette.
+id = "querencia-classic"
+name = "Querencia Klassisch"
+background = "#ffffff"
+surface = "#f2f1f0"
+text = "#3c3c3c"
+accent = "#f07746"
+danger = "#cc0000"
+muted = "#e7e3df"
+highlight = "#dcd6d0"
+border = "#c7c2be"
+dim_text = "#5f5b57"
+syntax_keyword = "#204a87"
+syntax_string = "#4e9a06"
+syntax_constant = "#ce5c00"
+syntax_type = "#8f5902"
+syntax_preprocessor = "#5c3566"
+
+[[themes]]
 id = "railscasts"
 name = "Railscasts"
 background = "#2b2b2b"

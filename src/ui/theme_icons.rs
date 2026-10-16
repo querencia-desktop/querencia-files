@@ -67,8 +67,48 @@ pub(crate) fn place_icon_names(bundled: &str) -> &'static [&'static str] {
         icons::TRASH => &["user-trash"],
         icons::NETWORK => &["network-workgroup", "network-server"],
         icons::FOLDER => &["folder"],
+        icons::CLOCK => &["document-open-recent"],
+        icons::HARD_DRIVE => &["drive-harddisk"],
         _ => &[],
     }
+}
+
+/// Theme names for a sidebar place at `path`, most specific first: the home
+/// folder and the XDG user directories get their classic GNOME icons
+/// (`user-home`, `user-desktop`, `folder-documents`, …), then the names for
+/// the place's bundled icon, then the plain folder.
+pub(crate) fn place_path_icon_names(path: &Path, bundled: &str) -> Vec<String> {
+    use gtk::glib::UserDirectory;
+    let mut names = Vec::new();
+    if path == gtk::glib::home_dir() {
+        names.push("user-home");
+    }
+    for (directory, name) in [
+        (UserDirectory::Desktop, "user-desktop"),
+        (UserDirectory::Documents, "folder-documents"),
+        (UserDirectory::Downloads, "folder-download"),
+        (UserDirectory::Music, "folder-music"),
+        (UserDirectory::Pictures, "folder-pictures"),
+        (UserDirectory::PublicShare, "folder-publicshare"),
+        (UserDirectory::Templates, "folder-templates"),
+        (UserDirectory::Videos, "folder-videos"),
+    ] {
+        // XDG leaves unset directories at $HOME; that is the home folder.
+        if gtk::glib::user_special_dir(directory).is_some_and(|dir| dir == path)
+            && path != gtk::glib::home_dir()
+        {
+            names.push(name);
+        }
+    }
+    names.extend(place_icon_names(bundled).iter().copied());
+    names.extend(FOLDER_NAMES);
+    let mut unique: Vec<String> = Vec::new();
+    for name in names {
+        if !unique.iter().any(|known| known == name) {
+            unique.push(name.to_owned());
+        }
+    }
+    unique
 }
 
 /// The first of `names` the active theme provides, trying the full-colour
@@ -136,5 +176,48 @@ pub(crate) fn place_image(bundled: &str, pixel_size: i32) -> gtk::Image {
             image
         }
         None => crate::assets::primary_icon(bundled, pixel_size),
+    }
+}
+
+/// GNOME 2's icon theme (GNOME Human: orange folders, inheriting the
+/// classic GNOME icons). Querencia Desktop uses it, as the panel does since
+/// HMP-04.
+pub(crate) const CLASSIC_ICON_THEME: &str = "gnome-human";
+
+/// The icon theme Querencia Files switches to: [`CLASSIC_ICON_THEME`] if the
+/// user kept GTK's built-in default (`current` empty, Adwaita or hicolor)
+/// and the theme is installed; `None` keeps the user's own choice.
+pub(crate) fn classic_icon_theme(
+    current: &str,
+    installed: impl Fn(&str) -> bool,
+) -> Option<&'static str> {
+    let built_in_default = matches!(current, "" | "Adwaita" | "hicolor");
+    (built_in_default && installed(CLASSIC_ICON_THEME)).then_some(CLASSIC_ICON_THEME)
+}
+
+/// Whether one of `data_dirs` has `icons/<name>/index.theme`.
+pub(crate) fn icon_theme_installed(name: &str, data_dirs: &[std::path::PathBuf]) -> bool {
+    data_dirs
+        .iter()
+        .any(|dir| dir.join("icons").join(name).join("index.theme").is_file())
+}
+
+/// Switches this process to the classic icon theme where
+/// [`classic_icon_theme`] says so. Only the Querencia Files windows call it;
+/// the portal file chooser keeps the desktop's theme.
+pub(crate) fn use_classic_icon_theme() {
+    let Some(settings) = gtk::Settings::default() else {
+        return;
+    };
+    let current = settings
+        .gtk_icon_theme_name()
+        .map(|name| name.to_string())
+        .unwrap_or_default();
+    let mut data_dirs = vec![gtk::glib::user_data_dir()];
+    data_dirs.extend(gtk::glib::system_data_dirs());
+    if let Some(theme) = classic_icon_theme(&current, |name| icon_theme_installed(name, &data_dirs))
+    {
+        tracing::info!(from = %current, to = theme, "classic icon theme");
+        settings.set_gtk_icon_theme_name(Some(theme));
     }
 }

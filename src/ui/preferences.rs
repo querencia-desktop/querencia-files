@@ -237,11 +237,16 @@ impl ListColumns {
     }
 }
 
+/// Querencia Desktop's default palette (QF-0f): GNOME 2 / Ambiance colours.
+/// Users who picked another theme keep it; an unknown saved theme falls back
+/// to this one.
+pub(in crate::ui) const DEFAULT_THEME: &str = "querencia-classic";
+
 impl Default for Preferences {
     fn default() -> Self {
         Self {
             mode: "theme".to_owned(),
-            theme: "classic-light".to_owned(),
+            theme: DEFAULT_THEME.to_owned(),
             omarchy_variant: OmarchyVariant::default(),
             folder_peeking: false,
             single_click_previews: false,
@@ -532,7 +537,7 @@ impl PreferenceManager {
     ) {
         let mut preferences = self.preferences.borrow_mut();
         if !theme_is_known(&preferences.theme) {
-            preferences.theme = "classic-light".to_owned();
+            preferences.theme = DEFAULT_THEME.to_owned();
         }
         if preferences.mode == "omarchy" && !omarchy_available {
             preferences.mode = "theme".to_owned();

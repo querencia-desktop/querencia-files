@@ -298,6 +298,8 @@ pub(super) fn present_target(
 ) -> BrowserView {
     let present_started = std::time::Instant::now();
     crate::assets::register_icon_theme();
+    // QF-0f: GNOME Human instead of GTK's Adwaita default (orange folders).
+    super::theme_icons::use_classic_icon_theme();
     let _theme_manager = super::theme::ThemeManager::shared();
     let preference_manager = super::preferences::PreferenceManager::shared();
     load_styles();
@@ -3831,7 +3833,7 @@ fn sync_keycap(keycap: &gtk::Label, visible: bool) {
 
 fn sidebar_button(icon: &str, name: &str) -> gtk::Button {
     let content = gtk::Box::new(gtk::Orientation::Horizontal, 8);
-    let image = crate::ui::theme_icons::place_image(icon, 17);
+    let image = crate::ui::theme_icons::place_image(icon, 16);
     let label = gtk::Label::new(Some(name));
     label.set_xalign(0.0);
     label.set_hexpand(true);

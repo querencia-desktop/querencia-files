@@ -124,10 +124,26 @@ fn sidebar_folder_customization_loads_and_updates_across_windows() {
                         .expect("emoji folder"),
                 );
                 manager.clear_item_customization(path);
-                assert_icons(
-                    location,
-                    assets::primary_icon_paintable(fallback).expect("default folder"),
-                );
+                // QF-0f: an uncustomized place shows the icon theme's icon
+                // (GNOME Human in Querencia); only without a theme icon
+                // Strata's bundled one.
+                let theme_names = crate::ui::theme_icons::place_path_icon_names(path, fallback);
+                match crate::ui::theme_icons::resolve(&theme_names) {
+                    Some(name) => {
+                        for state in &sidebars {
+                            assert_eq!(
+                                sidebar_image(state, location).icon_name().as_deref(),
+                                Some(name.as_str()),
+                                "uncustomized place keeps the theme icon: {}",
+                                location.display_path()
+                            );
+                        }
+                    }
+                    None => assert_icons(
+                        location,
+                        assets::primary_icon_paintable(fallback).expect("default folder"),
+                    ),
+                }
                 manager.set_folder_color(path, Some(FolderColorValue::Custom("#123456".into())));
                 assert_icons(
                     location,

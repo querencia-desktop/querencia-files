@@ -533,8 +533,33 @@ fn menu_model(bookmarks: &gio::Menu) -> gio::Menu {
     model
 }
 
-/// Classic toolbar icon size (GTK's "large toolbar" of old).
-const TOOLBAR_ICON_PX: i32 = 24;
+/// Classic toolbar icon size: GTK 2's "small toolbar" (QF-0f; the former
+/// 24 px "large toolbar" icons dominated the compact bar).
+const TOOLBAR_ICON_PX: i32 = 16;
+
+/// How the toolbar buttons look (QF-0f). GNOME 2 offered both in its
+/// toolbar preferences.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(super) enum ToolbarStyle {
+    /// Variant A, the default: a 16 px icon beside the label.
+    IconsAndText,
+    /// Variant B: labels only, the most compact and calmest bar.
+    TextOnly,
+}
+
+impl ToolbarStyle {
+    /// From `QUERENCIA_FILES_TOOLBAR` (`text` → B, anything else → A).
+    pub(super) fn from_setting(value: Option<&str>) -> Self {
+        match value.map(str::trim) {
+            Some("text") => Self::TextOnly,
+            _ => Self::IconsAndText,
+        }
+    }
+
+    fn current() -> Self {
+        Self::from_setting(std::env::var("QUERENCIA_FILES_TOOLBAR").ok().as_deref())
+    }
+}
 
 /// A toolbar icon from the desktop's icon theme: the full-colour name first,
 /// then its `-symbolic` variant, then Strata's bundled chrome icon.
@@ -560,8 +585,12 @@ fn toolbar_icon(theme_name: &str, fallback: &str) -> gtk::Image {
 }
 
 fn build_toolbar() -> gtk::Box {
+    let style = ToolbarStyle::current();
     let toolbar = gtk::Box::new(gtk::Orientation::Horizontal, 2);
     toolbar.add_css_class("classic-toolbar");
+    if style == ToolbarStyle::TextOnly {
+        toolbar.add_css_class("text-only");
+    }
     for (label, theme_icon, fallback, name) in [
         ("Back", "go-previous", icons::ARROW_LEFT, "back"),
         ("Forward", "go-next", icons::ARROW_RIGHT, "forward"),
@@ -570,7 +599,9 @@ fn build_toolbar() -> gtk::Box {
         ("Reload", "view-refresh", icons::REFRESH, "reload"),
     ] {
         let content = gtk::Box::new(gtk::Orientation::Horizontal, 4);
-        content.append(&toolbar_icon(theme_icon, fallback));
+        if style == ToolbarStyle::IconsAndText {
+            content.append(&toolbar_icon(theme_icon, fallback));
+        }
         content.append(&gtk::Label::new(Some(&crate::i18n::tr(label))));
         let button = gtk::Button::new();
         button.set_child(Some(&content));
@@ -595,4 +626,31 @@ fn build_location_row(view: &BrowserView) -> gtk::Box {
     location.set_hexpand(true);
     row.append(&location);
     row
+}
+
+#[cfg(test)]
+mod toolbar_tests {
+    use super::{TOOLBAR_ICON_PX, ToolbarStyle};
+
+    #[test]
+    fn small_icons_with_text_are_the_default_and_text_only_is_chosen_explicitly() {
+        assert_eq!(TOOLBAR_ICON_PX, 16);
+        assert_eq!(ToolbarStyle::from_setting(None), ToolbarStyle::IconsAndText);
+        assert_eq!(
+            ToolbarStyle::from_setting(Some("")),
+            ToolbarStyle::IconsAndText
+        );
+        assert_eq!(
+            ToolbarStyle::from_setting(Some("symbole")),
+            ToolbarStyle::IconsAndText
+        );
+        assert_eq!(
+            ToolbarStyle::from_setting(Some("text")),
+            ToolbarStyle::TextOnly
+        );
+        assert_eq!(
+            ToolbarStyle::from_setting(Some(" text ")),
+            ToolbarStyle::TextOnly
+        );
+    }
 }
