@@ -40,6 +40,9 @@ impl WindowContent {
         preferences: &Rc<PreferenceManager>,
     ) -> Self {
         let browser = super::browser_for_window();
+        // Querencia (QF-0l): the window (and each tab) opens folders without
+        // selecting an entry; see `NavigationState::quiet_loads`.
+        browser.browser().set_quiet_loads(true);
         let preview = layout::preview(&browser, preferences);
         let header = layout::Header::new(window, &browser, &preview, preferences);
         let sidebar = super::build_sidebar(browser.clone(), preferences.clone(), false);

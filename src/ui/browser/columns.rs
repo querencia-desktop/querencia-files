@@ -2290,6 +2290,9 @@ impl ViewState {
         let measured_shell = shell.downgrade();
         // Wait for the preview slot to resize before measuring the viewport.
         let laid_out = std::cell::Cell::new(false);
+        // Querencia (QF-0l): frames left to wait for the end margin that lets
+        // the strip start on a whole column.
+        let widening = std::cell::Cell::new(None::<u8>);
         let _tick = self.scroller.add_tick_callback(move |_, _| {
             let Some(state) = weak.upgrade() else {
                 return glib::ControlFlow::Break;
@@ -2317,12 +2320,39 @@ impl ViewState {
             let Some(span) = depth.and_then(|depth| state.column_span(depth)) else {
                 return glib::ControlFlow::Break;
             };
-            let target = span.reveal_target(
+            let mut target = span.reveal_target(
                 adjustment.value(),
                 adjustment.page_size(),
                 adjustment.lower(),
                 adjustment.upper(),
             );
+            // Querencia (QF-0l): the visible strip starts on a column, never on
+            // a sliver of one, so no cut-off names show at the sidebar edge.
+            // The room this needs after the last column stays empty.
+            if let Some(start) = state.column_start_at_or_after(target)
+                && start > target + 0.5
+            {
+                let maximum = (adjustment.upper() - adjustment.page_size()).max(adjustment.lower());
+                if start > maximum + 0.5 {
+                    match widening.get() {
+                        None => {
+                            let needed = (start - maximum).ceil() as i32;
+                            state
+                                .columns_widget
+                                .set_margin_end(state.columns_widget.margin_end() + needed);
+                            widening.set(Some(8));
+                            return glib::ControlFlow::Continue;
+                        }
+                        Some(frames) if frames > 0 => {
+                            widening.set(Some(frames - 1));
+                            return glib::ControlFlow::Continue;
+                        }
+                        Some(_) => {}
+                    }
+                } else {
+                    target = start;
+                }
+            }
             animate_horizontal_scroll(
                 &state.scroller,
                 &adjustment,

@@ -1245,6 +1245,40 @@ impl BrowserView {
         }
     }
 
+    /// Querencia (QF-0l): in a quiet-load browser with nothing selected, as after a
+    /// plain directory change, the keyboard cursor only rests on an entry. The first
+    /// arrow then selects that entry (or the first visible one) instead of moving
+    /// past it. Returns whether it selected something.
+    pub fn start_selection_from_nothing(&self) -> bool {
+        let browser = &self.state.browser;
+        if !browser.quiet_loads() {
+            return false;
+        }
+        let Some(depth) = browser.active_depth() else {
+            return false;
+        };
+        if !browser.selected_positions(depth).is_empty() {
+            return false;
+        }
+        let cursor = browser
+            .focused_item()
+            .filter(|(item_depth, _, _)| *item_depth == depth)
+            .map(|(_, position, _)| position)
+            .or_else(|| {
+                self.state
+                    .mode_views
+                    .borrow()
+                    .focused_position()
+                    .filter(|(focused_depth, _)| *focused_depth == depth)
+                    .map(|(_, position)| position)
+            });
+        match cursor {
+            Some(position) => self.select_native_target(depth, position, false),
+            None => browser.move_selection(0),
+        }
+        !browser.selected_positions(depth).is_empty()
+    }
+
     pub fn synchronize_native_selection(&self, extend: bool) {
         let position = self.state.mode_views.borrow().focused_position();
         if let Some((depth, focused)) = position {

@@ -216,6 +216,16 @@ fn an_explicit_close_blocks_automatic_previews_until_reopened() {
                 Rc::new(EmptySource),
                 crate::ui::browser::PeekBehavior::default(),
             );
+            // Querencia (QF-0l): without automatic previews Columns reserves nothing.
+            crate::ui::preferences::PreferenceManager::shared().set_single_click_previews(false);
+            let unreserved = PreviewDrawer::new(provider.clone(), false);
+            let split = gtk::Paned::new(gtk::Orientation::Horizontal);
+            let content = gtk::Paned::new(gtk::Orientation::Horizontal);
+            unreserved.attach_split(&split, &content, &view, None);
+            assert!(!unreserved.is_enabled());
+            assert!(!unreserved.state.reserves_column_space());
+            // With automatic previews Columns reserves the slot from startup.
+            crate::ui::preferences::PreferenceManager::shared().set_single_click_previews(true);
             let released = PreviewDrawer::new(provider.clone(), false);
             let split = gtk::Paned::new(gtk::Orientation::Horizontal);
             let content = gtk::Paned::new(gtk::Orientation::Horizontal);

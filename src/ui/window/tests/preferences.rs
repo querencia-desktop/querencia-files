@@ -766,6 +766,9 @@ fn narrow_window_rails_automatically_and_the_toggle_reaches_every_mode() {
         || {
             let manager = PreferenceManager::shared();
             manager.set_browser_mode(BrowserMode::Columns);
+            // Querencia (QF-0l): Columns reserves the preview slot only with
+            // automatic previews; the slot's shortage is what rails here.
+            manager.set_single_click_previews(true);
             let open = OpenWindow::open_with_width(700);
             let sidebar = &open.content.sidebar.state;
             wait_until_or(|| sidebar.rail.get(), || sidebar_report(&[&open], &manager));

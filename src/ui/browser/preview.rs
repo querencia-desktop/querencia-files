@@ -37,6 +37,16 @@ impl ViewState {
         self.column_span(depth)
     }
 
+    /// Querencia (QF-0l): the shell of the column `focused_column_span` measures.
+    fn focused_column_shell(&self) -> Option<gtk::Box> {
+        let columns = self.columns.borrow();
+        let depth = self
+            .focused_depth()
+            .filter(|depth| *depth < columns.len())
+            .or_else(|| columns.len().checked_sub(1))?;
+        columns.get(depth).map(|column| column.shell.clone())
+    }
+
     fn navigated_len(&self) -> usize {
         let count = self.columns.borrow().len();
         // Columns beyond a folder a click is opening are about to close, so they
@@ -280,16 +290,11 @@ impl BrowserView {
                         let gap = view.state.columns_widget.margin_end().min(maximum_gap);
                         view.state.columns_widget.set_margin_end(gap);
                         view.release_preview_scroll_space(&weak_preview);
-                        if let Some(span) = view.state.focused_column_span() {
-                            let target = span.reveal_target(
-                                adjustment.value(),
-                                adjustment.page_size(),
-                                adjustment.lower(),
-                                adjustment.upper(),
-                            );
-                            if target != adjustment.value() {
-                                adjustment.set_value(target);
-                            }
+                        // Querencia (QF-0l): a resized strip snaps to a whole
+                        // column like any other reveal, so narrowing the window
+                        // leaves no sliver at the sidebar edge.
+                        if let Some(shell) = view.state.focused_column_shell() {
+                            view.state.reveal_column(shell);
                         }
                     }
                 });

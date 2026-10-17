@@ -365,6 +365,22 @@ fn requesting_first_selection_during_navigate_selects_the_first_entry() {
     assert_eq!(browser.selected_positions(0), [0]);
 }
 
+// Querencia (QF-0l): a quiet-load browser selects nothing on a plain navigation,
+// and the first cursor move lands on the first entry.
+#[test]
+fn quiet_loads_select_nothing_until_the_first_cursor_move() {
+    let browser = Browser::new(Rc::new(FakeFileSource));
+    browser.set_quiet_loads(true);
+
+    browser.navigate(Location::local("/fixture"));
+
+    assert!(browser.selected_positions(0).is_empty());
+    assert_eq!(browser.selected_count(), 0);
+    assert!(browser.focused_item().is_none());
+    browser.move_selection(1);
+    assert_eq!(browser.selected_positions(0), [0]);
+}
+
 #[test]
 fn list_activation_replaces_the_directory_instead_of_adding_a_column() {
     let browser = Browser::new(Rc::new(FakeFileSource));

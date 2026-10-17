@@ -677,8 +677,9 @@ pub(super) fn build_appearance_menu(
         .build();
     popover.add_css_class("appearance-popover");
     super::scrolling::popover::dismiss_on_outside_scroll(&popover);
+    // Querencia (QF-0l): the tooltip names the active view next to the icon.
     let button = gtk::MenuButton::builder()
-        .tooltip_text(crate::i18n::tr("Appearance"))
+        .tooltip_text(appearance_tooltip(view.view_mode()))
         .popover(&popover)
         .build();
     // Without an explicit name GTK builds one from the whole open popover, so
@@ -794,7 +795,11 @@ pub(super) fn build_appearance_menu(
         let group_by_type = group_by_type.clone();
         let column_sizes = column_sizes.clone();
         let button_icon = button_icon.clone();
+        let tooltip_button = button.downgrade();
         view.connect_view_mode_changed(move |mode| {
+            if let Some(button) = tooltip_button.upgrade() {
+                button.set_tooltip_text(Some(&appearance_tooltip(mode)));
+            }
             columns_check.set_visible(mode == BrowserMode::Columns);
             icons_check.set_visible(mode == BrowserMode::Icons);
             list_check.set_visible(mode == BrowserMode::List);
@@ -1021,6 +1026,20 @@ pub(super) fn build_appearance_menu(
     button.add_css_class("header-action");
     button.set_cursor_from_name(Some("pointer"));
     button
+}
+
+/// Querencia (QF-0l): "Appearance (Columns)" and so on, from existing strings.
+fn appearance_tooltip(mode: BrowserMode) -> String {
+    let view = match mode {
+        BrowserMode::Columns => "Columns",
+        BrowserMode::Icons => "Icons",
+        BrowserMode::List => "List",
+    };
+    format!(
+        "{} ({})",
+        crate::i18n::tr("Appearance"),
+        crate::i18n::tr(view)
+    )
 }
 
 fn browser_mode_icon(mode: BrowserMode) -> &'static str {

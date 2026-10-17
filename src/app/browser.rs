@@ -1291,6 +1291,15 @@ impl Browser {
         self.state.borrow_mut().select_first_on_load(depth);
     }
 
+    /// Querencia (QF-0l): plain directory changes select nothing on their own.
+    pub fn set_quiet_loads(&self, quiet: bool) {
+        self.state.borrow_mut().set_quiet_loads(quiet);
+    }
+
+    pub fn quiet_loads(&self) -> bool {
+        self.state.borrow().quiet_loads()
+    }
+
     pub fn selection_anchor_position(&self, depth: usize) -> Option<usize> {
         self.state.borrow().selection_anchor_position(depth)
     }

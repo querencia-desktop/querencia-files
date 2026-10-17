@@ -536,6 +536,24 @@ impl PreviewDrawer {
                 preferences.set_preview_text_wrap(button.is_active());
             }
         });
+        // Querencia (QF-0l): Columns reserves the right pane so that automatic
+        // previews never move the columns. With automatic previews off (the
+        // Querencia default since QF-0e) the reserved pane only stays empty and
+        // pushes the parent columns under the sidebar edge, so the reservation
+        // follows that setting. An explicit preview still reserves it.
+        let weak = Rc::downgrade(&state);
+        super::preferences::PreferenceManager::shared().bind_preference(
+            &state.pane,
+            super::preferences::PreferenceManager::single_click_previews,
+            move |_, automatic| {
+                if let Some(state) = weak.upgrade()
+                    && !state.is_enabled()
+                {
+                    state.reserve_columns.set(automatic);
+                    state.refresh_panel_action();
+                }
+            },
+        );
         let weak = Rc::downgrade(&state);
         super::theme::ThemeManager::shared().bind_theme_preference(
             &state.pane,

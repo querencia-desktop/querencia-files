@@ -255,6 +255,11 @@ impl Dispatcher {
             return Propagation::Stop;
         }
         self.view.commit_selection();
+        // Querencia (QF-0l): with nothing selected the first arrow selects the
+        // entry under the keyboard cursor instead of skipping past it.
+        if event.without(Modifiers::CONTROL_MASK) && self.view.start_selection_from_nothing() {
+            return Propagation::Stop;
+        }
         let started_from_empty =
             event.without(Modifiers::CONTROL_MASK) && self.view.resume_native_selection();
         if event.shift() && started_from_empty {

@@ -277,6 +277,11 @@ pub struct NavigationState {
     selectionless_removals: HashSet<Location>,
     preserve_fill_on_removal: bool,
     visual: Option<VisualRange>,
+    /// Querencia (QF-0l): plain directory changes (start, new tab, sidebar, location,
+    /// history) select nothing on their own, so the status bar and file commands never
+    /// see an entry the user did not pick. Off by default, as in Strata; the Querencia
+    /// window turns it on, the file chooser keeps Strata's load cursor.
+    quiet_loads: bool,
 }
 
 /// A walked range over one pane in displayed order. The fill is recomputed from
@@ -481,9 +486,21 @@ impl NavigationState {
         });
     }
 
+    /// Querencia (QF-0l): see `quiet_loads`.
+    pub fn set_quiet_loads(&mut self, quiet: bool) {
+        self.quiet_loads = quiet;
+    }
+
+    pub fn quiet_loads(&self) -> bool {
+        self.quiet_loads
+    }
+
+    /// Querencia (QF-0l): with `quiet_loads` the load selects nothing; focusing a
+    /// child column keeps its own request.
     pub fn select_first_on_load(&mut self, depth: usize) {
+        let quiet = self.quiet_loads;
         if let Some(column) = self.columns.get_mut(depth) {
-            column.select_first_on_load = true;
+            column.select_first_on_load = !quiet;
         }
     }
 
@@ -643,6 +660,7 @@ impl NavigationState {
         request_id: RequestId,
         entries: Vec<FileEntry>,
     ) -> Option<usize> {
+        let quiet = self.quiet_loads;
         let (depth, column) = self.column_for_request_mut(request_id)?;
         column.entries = entries;
         column.invalidate_entry_indexes();
@@ -662,7 +680,7 @@ impl NavigationState {
             column.select_first_visible_entry();
         }
         // The listing is complete, and its selection is published before `finish`.
-        column.complete_load_selection();
+        column.complete_load_selection(quiet);
         Some(depth)
     }
 
@@ -1304,8 +1322,9 @@ impl NavigationState {
         can_trash: Option<bool>,
         can_delete: Option<bool>,
     ) -> Option<(usize, bool)> {
+        let quiet = self.quiet_loads;
         let (depth, column) = self.column_for_request_mut(request_id)?;
-        let cursor_moved = column.complete_load_selection();
+        let cursor_moved = column.complete_load_selection(quiet);
         column.select_first_on_load = false;
         column.retain_selected_locations(false);
         column.pending_selection.clear();
@@ -2438,9 +2457,12 @@ impl ColumnState {
     /// Fallbacks that need the complete listing: the first visible entry for a preferred
     /// entry that never arrived, and a cursor-only neighbour for a reloaded cursor whose
     /// entry is gone. Returns whether the cursor moved.
-    fn complete_load_selection(&mut self) -> bool {
+    /// Querencia (QF-0l): with `quiet` a preferred entry that never arrived selects
+    /// nothing instead of the first visible entry.
+    fn complete_load_selection(&mut self, quiet: bool) -> bool {
         let before = self.selected;
         if self.preferred_on_load.take().is_some()
+            && !quiet
             && self.selected.is_none()
             && self.pending_reveal.is_empty()
             && !self.entries.is_empty()

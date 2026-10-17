@@ -32,6 +32,16 @@ impl ColumnSpan {
 }
 
 impl ViewState {
+    /// Querencia (QF-0l): the left edge of the first column that starts at or
+    /// after `offset` in the strip.
+    pub(super) fn column_start_at_or_after(&self, offset: f64) -> Option<f64> {
+        let count = self.columns.borrow().len();
+        (0..count)
+            .filter_map(|depth| self.column_span(depth))
+            .map(|span| span.left)
+            .find(|left| *left >= offset - 0.5)
+    }
+
     pub(super) fn reveal_column_only(self: &Rc<Self>, depth: usize, location: &Location) {
         if self.browser.location_at(depth).as_ref() != Some(location) {
             return;
