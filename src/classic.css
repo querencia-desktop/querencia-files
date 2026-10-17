@@ -310,15 +310,19 @@ window.querencia-classic .list-heading-button:hover {
 /* Selection: a translucent accent wash with a solid edge, as Caja draws it.
    Strata tints its bundled file icons with the same accent color (assets.rs,
    set_primary_icon_color), so a solid accent background would swallow them;
-   text and icons keep their normal color on the wash. */
+   text and icons keep their normal color on the wash.
+
+   QF-0j: in the icon view the selected item is already marked by Strata's own
+   frame around the icon and the accent label (style.css, .icons-card-*), as
+   Nautilus 2 marks it. The tile behind it stays only a faint wash, without an
+   edge, so there is one clear mark instead of two nested boxes. */
 
 window.querencia-classic gridview > child:selected,
 window.querencia-classic gridview > child:selected:hover {
-  background: alpha(@strata_accent, 0.28);
+  background: alpha(@strata_accent, 0.06);
   border-radius: 2px;
   color: @strata_text;
-  outline: 1px solid alpha(@strata_accent, 0.85);
-  outline-offset: -1px;
+  outline: none;
 }
 
 window.querencia-classic gridview > child:selected label,
@@ -328,7 +332,7 @@ window.querencia-classic gridview > child:selected image {
 
 window.querencia-classic gridview > child:selected:focus,
 window.querencia-classic gridview > child:selected:focus-visible {
-  background: alpha(@strata_accent, 0.36);
+  background: alpha(@strata_accent, 0.06);
 }
 
 window.querencia-classic .file-list row:selected,
