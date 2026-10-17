@@ -4921,7 +4921,14 @@ fn reconnect_pane_model(pane: &Pane) {
 
 fn show_count(pane: &Pane) {
     show_count_controls(pane);
-    if pane.model.n_items() == 0 {
+    if pane.model.n_items() == 0
+        && pane
+            .location
+            .as_ref()
+            .is_some_and(super::browser::network::is_network_root)
+    {
+        super::browser::network::show_network_empty(&pane.stack, &pane.loading);
+    } else if pane.model.n_items() == 0 {
         pane.status.remove_css_class("error");
         pane.status
             .set_label(&crate::i18n::tr("This directory is empty"));

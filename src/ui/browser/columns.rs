@@ -1828,11 +1828,9 @@ impl ViewState {
                 browser.retry_column(depth);
             }
         });
-        let presentation = LoadPresentation::new(&scroll, Some(retry)).with_focus_fallback(
-            &location.display_name(),
-            &list,
-            &self.browser,
-        );
+        let presentation = LoadPresentation::new(&scroll, Some(retry))
+            .for_location(location)
+            .with_focus_fallback(&location.display_name(), &list, &self.browser);
         let rows_for_marquee = bound_rows.clone();
         let weak_for_clear = Rc::downgrade(self);
         let returning_to_column = Rc::new(Cell::new(false));

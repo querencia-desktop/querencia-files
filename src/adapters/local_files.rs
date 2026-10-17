@@ -284,9 +284,17 @@ fn uri_validation_result(
 }
 
 fn remote_directory_failure(request_id: RequestId, error: &glib::Error) -> DirectoryEvent {
+    // QF-0m: a dropped GVfs connection reports only GIO's English text.
+    let message = if error.matches(gio::IOErrorEnum::NotMounted) {
+        crate::i18n::tr(
+            "The connection to the server was lost. Choose Reload or open the location again to reconnect.",
+        )
+    } else {
+        sanitize_failure_message(&error.to_string())
+    };
     DirectoryEvent::Failed {
         request_id,
-        message: sanitize_failure_message(&error.to_string()),
+        message,
     }
 }
 

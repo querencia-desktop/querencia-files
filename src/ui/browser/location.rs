@@ -197,7 +197,10 @@ fn show_trust_question_dialog(
         &crate::i18n::tr("Continue anyway"),
         ModalTone::Danger,
     );
-    let backend_message = message_dialog_description(&sanitize_failure_message(message));
+    let backend_message = message_dialog_description(
+        &super::network::gvfs_question_text(message)
+            .unwrap_or_else(|| sanitize_failure_message(message)),
+    );
     layout.body.append(&backend_message);
     let warning = message_dialog_description(&crate::i18n::tr(
         "If the server did not provide a fingerprint, verify it outside Strata before continuing.",
@@ -229,7 +232,7 @@ fn show_trust_question_dialog(
     let mut ordered_choices: Vec<_> = choices.iter().enumerate().collect();
     ordered_choices.sort_by_key(|(_, choice)| !is_rejection_choice(choice));
     for (index, choice) in ordered_choices {
-        let button = gtk::Button::with_label(choice);
+        let button = gtk::Button::with_label(&super::network::gvfs_choice_label(choice));
         if is_rejection_choice(choice) {
             button.add_css_class("action-dialog-cancel");
             rejection.get_or_insert_with(|| button.clone());
@@ -304,7 +307,9 @@ fn show_authentication_dialog(
     );
     layout.content.add_css_class("wide");
     layout.body.add_css_class("authentication-body");
-    let explanation = gtk::Label::new(Some(&dialog_text(message)));
+    let explanation = gtk::Label::new(Some(&dialog_text(
+        &super::network::gvfs_prompt_text(message).unwrap_or_else(|| message.to_owned()),
+    )));
     explanation.add_css_class("authentication-explanation");
     explanation.set_max_width_chars(AUTHENTICATION_TEXT_WIDTH_CHARS);
     explanation.set_wrap(true);
@@ -699,6 +704,9 @@ fn mount_failure_message(location: &Location, error: &glib::Error) -> Option<Str
         ));
     }
     if let Some(message) = transport_failure_message(error) {
+        return Some(message);
+    }
+    if let Some(message) = super::network::gvfs_failure_message(error) {
         return Some(message);
     }
     Some(sanitize_failure_message(&error.to_string()))

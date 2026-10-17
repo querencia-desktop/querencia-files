@@ -371,3 +371,8 @@ window.querencia-classic .classic-status-bar {
 window.querencia-classic .classic-footer-host .shortcut-footer {
   border-top: 1px solid @strata_border;
 }
+
+/* QF-0m: empty network view */
+window.querencia-classic .network-empty-title {
+  font-weight: bold;
+}

@@ -14,6 +14,7 @@ pub(super) struct LoadPresentation {
     loading: crate::ui::loading_skeleton::DelayedLoading,
     message: gtk::Label,
     retry: Option<gtk::Button>,
+    network_root: bool,
 }
 
 impl LoadPresentation {
@@ -51,7 +52,14 @@ impl LoadPresentation {
             loading,
             message,
             retry,
+            network_root: false,
         }
+    }
+
+    /// An empty `network:///` explains discovery and offers "Connect to Server".
+    pub(super) fn for_location(mut self, location: &crate::model::Location) -> Self {
+        self.network_root = super::network::is_network_root(location);
+        self
     }
 
     /// Lets the stack take keyboard focus in place of `view` while it shows the empty,
@@ -98,6 +106,13 @@ impl LoadPresentation {
     }
 
     pub(super) fn show_empty(&self) {
+        if self.network_root {
+            if let Some(retry) = self.retry.as_ref() {
+                retry.set_visible(false);
+            }
+            super::network::show_network_empty(&self.stack, &self.loading);
+            return;
+        }
         self.message
             .set_text(&crate::i18n::tr("This directory is empty"));
         self.message.remove_css_class("error");
