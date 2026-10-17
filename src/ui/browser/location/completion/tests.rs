@@ -372,3 +372,86 @@ fn longest_common_prefix_computes_shared_start() {
         Some("~/é".to_owned())
     );
 }
+
+#[test]
+fn suggestions_stay_inside_the_window_anchored_below_the_entry() {
+    crate::test_support::gtk_test(
+        "ui::browser::location::completion::tests::suggestions_stay_inside_the_window_anchored_below_the_entry",
+        || {
+            let fixture = tempdir().expect("fixture");
+            for name in ["bin", "faelle", "vorschlag"] {
+                fs::create_dir(fixture.path().join(name)).expect("completion folder");
+            }
+            let browser = Browser::new(Rc::new(LocalFileSource));
+            browser.navigate(Location::local(fixture.path()));
+
+            let entry = gtk::Entry::builder().hexpand(true).build();
+            entry.set_text(&format!("{}/", fixture.path().to_string_lossy()));
+            let content = gtk::Box::new(gtk::Orientation::Vertical, 0);
+            let header = gtk::Label::new(Some("header"));
+            header.set_size_request(-1, 40);
+            content.append(&header);
+            content.append(&entry);
+            let body = gtk::Button::with_label("body");
+            body.set_vexpand(true);
+            content.append(&body);
+            let overlay = gtk::Overlay::new();
+            overlay.set_child(Some(&content));
+            let completion = PathCompletion::attach(&entry, browser.clone(), || true, || {});
+            let window = gtk::Window::builder()
+                .child(&overlay)
+                .default_width(640)
+                .default_height(480)
+                .build();
+            window.present();
+            wait_until(|| entry.width() > 0);
+            entry.grab_focus();
+            completion.refresh(&entry, &browser);
+
+            // The window hosts the suggestions; no separate popup surface.
+            wait_for("panel shown", || {
+                completion.is_shown() && completion.panel.is_mapped()
+            });
+            assert!(!completion.popover.is_visible());
+            assert_eq!(
+                completion.panel.parent().as_ref(),
+                Some(overlay.upcast_ref::<gtk::Widget>())
+            );
+            let below_entry = || {
+                let entry_bounds = entry.compute_bounds(&overlay).expect("entry bounds");
+                let panel_bounds = completion
+                    .panel
+                    .compute_bounds(&overlay)
+                    .expect("panel bounds");
+                let gap = panel_bounds.y() - (entry_bounds.y() + entry_bounds.height());
+                if (gap - 6.0).abs() >= 1.0 || (panel_bounds.x() - entry_bounds.x()).abs() >= 1.0 {
+                    eprintln!("entry {entry_bounds:?} panel {panel_bounds:?}");
+                    return false;
+                }
+                true
+            };
+            wait_for("panel below the entry", below_entry);
+
+            // Moving the entry inside the window takes the suggestions along.
+            header.set_size_request(-1, 120);
+            wait_for("panel follows the entry", below_entry);
+
+            // Losing focus closes them.
+            body.grab_focus();
+            wait_for("focus loss closes the panel", || !completion.is_shown());
+            window.destroy();
+        },
+    );
+}
+
+fn wait_for(what: &str, condition: impl Fn() -> bool) {
+    let deadline = Instant::now() + std::time::Duration::from_secs(5);
+    while !condition() {
+        assert!(
+            Instant::now() < deadline,
+            "completion UI did not settle: {what}"
+        );
+        glib::MainContext::default().iteration(false);
+        std::thread::sleep(std::time::Duration::from_millis(2));
+    }
+}

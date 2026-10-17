@@ -3945,12 +3945,20 @@ dropdown.form-control popover row:selected check {
   opacity: 0.4;
 }
 
-.path-completion-popover contents {
+.path-completion-popover contents,
+.path-completion-panel {
   background: @strata_surface;
   border: 1px solid alpha(@strata_border, 0.55);
   border-radius: 9px;
   box-shadow: 0 0 14px alpha(@strata_glow, 0.16), 0 8px 24px alpha(@strata_bg, 0.32);
   padding: 4px;
+}
+
+/* In the window overlay the panel has no popover node; keep the label sizing
+   that `popover.background label` gave the suggestions there. */
+.path-completion-panel label {
+  font-size: inherit;
+  letter-spacing: 0;
 }
 
 .path-completion-scroll,

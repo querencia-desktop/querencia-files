@@ -20,6 +20,10 @@ use crate::ui::keys::{
 };
 
 const MAX_COMPLETION_CANDIDATES: usize = 50;
+/// Space between the location field and the suggestion panel.
+const PANEL_GAP: i32 = 6;
+/// Space the panel keeps from the window's edges.
+const PANEL_EDGE_MARGIN: i32 = 8;
 const MAX_SCANNED_ENTRIES: usize = 10_000;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -30,8 +34,18 @@ pub(crate) struct CompletionCandidate {
     pub(crate) match_len: usize,
 }
 
+/// The suggestions sit in the window's own overlay, anchored to the entry by
+/// the widget tree, instead of in a separate Wayland popup. A suggestion popup
+/// must not take the keyboard grab (typing continues in the entry), and a
+/// compositor such as labwc places such grab-less popups at absolute screen
+/// coordinates: moving or maximizing the window left them behind, and over
+/// other windows. Inside the window they follow every move by construction.
+/// Only an entry without an overlay ancestor falls back to a popover.
 pub(crate) struct PathCompletion {
     popover: gtk::Popover,
+    panel: gtk::Box,
+    host: RefCell<Option<glib::WeakRef<gtk::Overlay>>>,
+    anchor: Rc<Cell<gdk::Rectangle>>,
     scroll: gtk::ScrolledWindow,
     list: gtk::ListBox,
     candidates: Rc<RefCell<Vec<CompletionCandidate>>>,
@@ -43,10 +57,54 @@ pub(crate) struct PathCompletion {
 
 impl Drop for PathCompletion {
     fn drop(&mut self) {
+        if let Some(overlay) = self.panel.parent().and_downcast::<gtk::Overlay>() {
+            overlay.remove_overlay(&self.panel);
+        }
         if self.popover.parent().is_some() {
             self.popover.unparent();
         }
     }
+}
+
+/// The outermost overlay around `widget`: the window's own layer, wide
+/// enough for the panel and drawn above the browser.
+fn host_overlay(widget: &impl IsA<gtk::Widget>) -> Option<gtk::Overlay> {
+    let mut found = None;
+    let mut current = widget.as_ref().parent();
+    while let Some(ancestor) = current {
+        if let Some(overlay) = ancestor.downcast_ref::<gtk::Overlay>() {
+            found = Some(overlay.clone());
+        }
+        current = ancestor.parent();
+    }
+    found
+}
+
+/// Where the panel goes in `overlay`: as wide as the entry, below it, or above
+/// it when the window has more room there; never past the window's edges.
+fn panel_rectangle(
+    overlay: &gtk::Overlay,
+    entry: &gtk::Entry,
+    panel: &gtk::Box,
+) -> Option<gdk::Rectangle> {
+    let bounds = entry.compute_bounds(overlay)?;
+    let entry_top = bounds.y().floor() as i32;
+    let entry_bottom = (bounds.y() + bounds.height()).ceil() as i32;
+    let (min_width, _, _, _) = panel.measure(gtk::Orientation::Horizontal, -1);
+    let width = (bounds.width().ceil() as i32).max(min_width).max(1);
+    let x = (bounds.x().floor() as i32)
+        .min(overlay.width() - width - PANEL_EDGE_MARGIN)
+        .max(0);
+    let (min_height, natural_height, _, _) = panel.measure(gtk::Orientation::Vertical, width);
+    let below = overlay.height() - entry_bottom - PANEL_GAP - PANEL_EDGE_MARGIN;
+    let above = entry_top - PANEL_GAP - PANEL_EDGE_MARGIN;
+    let fit = |room: i32| natural_height.min(room).max(min_height).max(1);
+    Some(if natural_height <= below || below >= above {
+        gdk::Rectangle::new(x, entry_bottom + PANEL_GAP, width, fit(below))
+    } else {
+        let height = fit(above);
+        gdk::Rectangle::new(x, entry_top - PANEL_GAP - height, width, height)
+    })
 }
 
 fn format_highlighted_markup(display_name: &str, match_len: usize) -> String {
@@ -142,7 +200,11 @@ impl PathCompletion {
         popover.set_parent(entry);
 
         let popover_for_destroy = popover.clone();
+        let panel_for_destroy = content_box.clone();
         entry.connect_destroy(move |_| {
+            if let Some(overlay) = panel_for_destroy.parent().and_downcast::<gtk::Overlay>() {
+                overlay.remove_overlay(&panel_for_destroy);
+            }
             if popover_for_destroy.parent().is_some() {
                 popover_for_destroy.unparent();
             }
@@ -154,6 +216,9 @@ impl PathCompletion {
 
         let completion = Rc::new(Self {
             popover: popover.clone(),
+            panel: content_box.clone(),
+            host: RefCell::new(None),
+            anchor: Rc::new(Cell::new(gdk::Rectangle::new(0, 0, 1, 1))),
             scroll: scroll.clone(),
             list: list.clone(),
             candidates: candidates.clone(),
@@ -194,7 +259,7 @@ impl PathCompletion {
             let Some(entry) = key_entry.upgrade() else {
                 return glib::Propagation::Proceed;
             };
-            let visible = completion.popover.is_visible();
+            let visible = completion.is_shown();
             let step = |delta| {
                 if visible {
                     completion.move_selection(delta);
@@ -247,6 +312,17 @@ impl PathCompletion {
             }
         });
         entry.add_controller(keys);
+
+        // Suggestions belong to the field being edited: they close when it
+        // loses focus, including when another window is activated.
+        let focus = gtk::EventControllerFocus::new();
+        let weak_completion = Rc::downgrade(&completion);
+        focus.connect_leave(move |_| {
+            if let Some(completion) = weak_completion.upgrade() {
+                completion.dismiss();
+            }
+        });
+        entry.add_controller(focus);
 
         let weak_completion = Rc::downgrade(&completion);
         let change_browser = browser;
@@ -331,6 +407,10 @@ impl PathCompletion {
         if width <= 0 {
             return;
         }
+        if let Some(overlay) = host_overlay(entry) {
+            self.show_in_overlay(&overlay, entry);
+            return;
+        }
         self.popover.set_size_request(width, -1);
         self.popover.set_pointing_to(Some(&gdk::Rectangle::new(
             bounds.x().floor() as i32,
@@ -338,16 +418,80 @@ impl PathCompletion {
             width,
             (bounds.height().ceil() as i32).max(32),
         )));
-        self.popover.set_offset(0, 6);
+        self.popover.set_offset(0, PANEL_GAP);
         self.pending_reveal.set(false);
         if !self.popover.is_visible() {
             self.popover.popup();
         }
     }
 
+    /// Shows the panel in `overlay`. The overlay asks for its position on
+    /// every allocation, so a moved, resized or maximized window, or a
+    /// rearranged header, takes it along with the entry.
+    fn show_in_overlay(&self, overlay: &gtk::Overlay, entry: &gtk::Entry) {
+        let hosted = self
+            .host
+            .borrow()
+            .as_ref()
+            .and_then(glib::WeakRef::upgrade)
+            .is_some_and(|host| &host == overlay);
+        if !hosted {
+            if let Some(previous) = self.panel.parent().and_downcast::<gtk::Overlay>() {
+                previous.remove_overlay(&self.panel);
+            }
+            if self.popover.child().as_ref() == Some(self.panel.upcast_ref()) {
+                self.popover.popdown();
+                self.popover.set_child(None::<&gtk::Widget>);
+            }
+            self.panel.set_visible(false);
+            // Inside the popover its `contents` node draws the frame.
+            self.panel.add_css_class("path-completion-panel");
+            overlay.add_overlay(&self.panel);
+            let panel = self.panel.downgrade();
+            let entry = entry.downgrade();
+            let anchor = self.anchor.clone();
+            overlay.connect_get_child_position(move |overlay, child| {
+                let (Some(panel), Some(entry)) = (panel.upgrade(), entry.upgrade()) else {
+                    return None;
+                };
+                if child != panel.upcast_ref::<gtk::Widget>() {
+                    return None;
+                }
+                // Our panel always gets an explicit place, never the default
+                // full-window allocation.
+                if let Some(rectangle) = panel_rectangle(overlay, &entry, &panel) {
+                    anchor.set(rectangle);
+                }
+                Some(anchor.get())
+            });
+            self.host.replace(Some(overlay.downgrade()));
+        }
+        self.pending_reveal.set(false);
+        self.panel.set_visible(true);
+        overlay.queue_allocate();
+    }
+
+    fn in_overlay(&self) -> bool {
+        self.panel
+            .parent()
+            .is_some_and(|parent| parent.is::<gtk::Overlay>())
+    }
+
+    /// Whether the suggestions are on screen, in the overlay or the popover.
+    pub(crate) fn is_shown(&self) -> bool {
+        if self.in_overlay() {
+            self.panel.is_visible()
+        } else {
+            self.popover.is_visible()
+        }
+    }
+
     pub(crate) fn dismiss(&self) {
         self.pending_reveal.set(false);
         self.popover.popdown();
+        if self.in_overlay() {
+            self.panel.set_visible(false);
+        }
     }
 
     fn activate_candidate(
@@ -457,7 +601,7 @@ impl PathCompletion {
     }
 
     fn handle_tab(self: &Rc<Self>, entry: &gtk::Entry, browser: &Browser) {
-        if !self.popover.is_visible() {
+        if !self.is_shown() {
             self.refresh(entry, browser);
         }
         let candidates = self.candidates.borrow().clone();
