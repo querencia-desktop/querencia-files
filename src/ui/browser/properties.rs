@@ -432,6 +432,20 @@ impl ViewState {
         );
         if let Some(path) = location.native_path() {
             crate::ui::thumbnail::show_customized_icon_image(&layout.icon, path, icon_name, 21);
+            // Querencia: like the file grid, an uncustomized item shows the
+            // icon theme's type icon (GNOME Human) instead of Strata's outline.
+            let preferences = crate::ui::preferences::PreferenceManager::shared();
+            let names = entry.as_ref().map_or_else(
+                crate::ui::theme_icons::folder_icon_names,
+                crate::ui::theme_icons::entry_icon_names,
+            );
+            if preferences.custom_icon(path).is_none()
+                && preferences.folder_color(path).is_none()
+                && let Some(icon) =
+                    crate::ui::theme_icons::paintable(&names, 21, layout.icon.scale_factor())
+            {
+                layout.icon.set_paintable(Some(&icon));
+            }
         }
         layout.content.add_css_class("properties-content");
         layout.title.set_max_width_chars(44);

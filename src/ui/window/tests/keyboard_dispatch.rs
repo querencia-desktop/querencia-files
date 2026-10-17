@@ -1034,7 +1034,8 @@ fn tenxer_file_list_skips_conflicting_defaults_and_keeps_bound_shortcuts() {
         || {
             let fixture = KeyboardFixture::new();
             let preferences = PreferenceManager::shared();
-            assert!(fixture.press(Key::r, ModifierType::CONTROL_MASK));
+            // Querencia: F2 renames; Ctrl+R reloads as in Nautilus 2.
+            assert!(fixture.press(Key::F2, ModifierType::empty()));
             assert!(fixture.view.rename_is_active());
             assert!(fixture.press(Key::Escape, ModifierType::empty()));
             focus_files(&fixture);
@@ -1337,11 +1338,9 @@ fn default_commands_ignore_near_miss_chords() {
                 assert!(fixture.view.rename_is_active());
                 assert!(fixture.press(Key::Escape, none));
             }
-            browser.select(0, 0);
-            focus_files(&fixture);
-            assert!(fixture.press(Key::r, control));
-            assert!(fixture.view.rename_is_active(), "Ctrl+R renames");
-            assert!(fixture.press(Key::Escape, none));
+            // Querencia: Ctrl+R reloads as in Nautilus 2 and never renames.
+            near_miss(Key::r, control);
+            assert!(!fixture.view.rename_is_active(), "Ctrl+R must not rename");
 
             let first = Location::local(fixture._directory.path().join("a.txt"));
             browser.select(0, 0);

@@ -173,6 +173,18 @@ impl TabWindow {
         self.add(location.or_else(|| Some(super::super::startup_location(&self.preferences))));
     }
 
+    fn new_window(self: &Rc<Self>) {
+        if self.blocked() {
+            return;
+        }
+        let location = self
+            .active_browser()
+            .browser()
+            .active_location()
+            .unwrap_or_else(|| super::super::startup_location(&self.preferences));
+        self.open_in_new_window(location);
+    }
+
     fn open_in_new_tab(self: &Rc<Self>, location: Location) {
         if self.blocked() || self.window.upgrade().is_none() {
             return;
@@ -360,6 +372,17 @@ impl TabWindow {
             }
         });
         window.add_action(&create);
+
+        // Querencia: Ctrl+N and File → New Window, as in Nautilus 2: a second
+        // window at the active location.
+        let new_window = gio::SimpleAction::new("new-window", None);
+        let weak = Rc::downgrade(self);
+        new_window.connect_activate(move |_, _| {
+            if let Some(state) = weak.upgrade() {
+                state.new_window();
+            }
+        });
+        window.add_action(&new_window);
 
         let close = gio::SimpleAction::new("close-tab", None);
         let weak = Rc::downgrade(self);

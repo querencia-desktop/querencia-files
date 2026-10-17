@@ -2450,7 +2450,7 @@ fn install_shortcuts(
             state.cancel();
             return glib::Propagation::Stop;
         }
-        if press.is_any(&[RENAME, RENAME_R])
+        if press.is(RENAME)
             && browser.selected_entries().len() == 1
             && !focused.as_ref().is_some_and(|widget| {
                 super::focus_navigation::editable(widget)

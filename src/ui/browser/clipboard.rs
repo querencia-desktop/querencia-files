@@ -868,9 +868,10 @@ pub(crate) fn mark_in(marks: &ClipboardMarks, location: &Location) -> ClipboardM
     marks.get(location).copied().unwrap_or_default()
 }
 
-// Process-wide copy/cut intent shared by every window. The GDK clipboard only
-// carries a `FileList` with no cut marker, so this thread-local (GTK stays on
-// the main thread) is the source of truth for both paste behavior and styling.
+// Process-wide copy/cut intent shared by every window. While Strata owns the
+// clipboard this thread-local (GTK stays on the main thread) is the source of
+// truth for both paste behavior and styling; the clipboard additionally
+// carries the GNOME/KDE cut markers for other file managers.
 thread_local! {
     static SHARED_CUT_LOCATIONS: RefCell<Vec<Location>> = const { RefCell::new(Vec::new()) };
     static SHARED_COPY_LOCATIONS: RefCell<Vec<Location>> = const { RefCell::new(Vec::new()) };
@@ -997,15 +998,14 @@ pub(super) fn unyank() {
     }
 }
 
-pub(super) fn clipboard_may_paste() -> bool {
+pub(crate) fn clipboard_may_paste() -> bool {
     gtk::gdk::Display::default().is_some_and(|display| {
         let formats = display.clipboard().formats();
         formats.contains_type(gtk::gdk::FileList::static_type())
             || formats.contains_type(gtk::gdk::Texture::static_type())
-            || formats
-                .mime_types()
-                .iter()
-                .any(|mime| mime == "text/uri-list" || mime.starts_with("image/"))
+            || formats.mime_types().iter().any(|mime| {
+                mime == "text/uri-list" || mime == GNOME_COPIED_FILES || mime.starts_with("image/")
+            })
     })
 }
 
@@ -1018,16 +1018,80 @@ fn is_cut_match(sources: &[Location]) -> bool {
     same_locations(sources, &shared_cut_locations())
 }
 
-fn set_files_clipboard(entries: &[FileEntry]) -> bool {
+/// The clipboard target Nautilus, Caja, Nemo, Thunar and PCManFM exchange
+/// files with: `copy` or `cut` on the first line, then one URI per line.
+pub(super) const GNOME_COPIED_FILES: &str = "x-special/gnome-copied-files";
+/// KDE's cut marker beside `text/uri-list`; `1` means the files were cut.
+const KDE_CUT_SELECTION: &str = "application/x-kde-cutselection";
+
+pub(super) fn gnome_copied_files(cut: bool, uris: &[String]) -> String {
+    let mut text = String::from(if cut { "cut" } else { "copy" });
+    for uri in uris {
+        text.push('\n');
+        text.push_str(uri);
+    }
+    text
+}
+
+/// Reads a `x-special/gnome-copied-files` payload: whether the files were cut,
+/// and their URIs. Anything without a `copy`/`cut` first line is rejected.
+pub(super) fn parse_gnome_copied_files(data: &[u8]) -> Option<(bool, Vec<String>)> {
+    let text = std::str::from_utf8(data).ok()?;
+    let mut lines = text.split('\n').map(|line| line.trim_end_matches('\r'));
+    let cut = match lines.next()?.trim() {
+        "cut" => true,
+        "copy" => false,
+        _ => return None,
+    };
+    let uris = lines
+        .map(str::trim)
+        .filter(|line| !line.is_empty() && !line.starts_with('#'))
+        .map(String::from)
+        .collect::<Vec<_>>();
+    (!uris.is_empty()).then_some((cut, uris))
+}
+
+/// Reads another application's GNOME file clipboard, if it offers one.
+async fn read_gnome_copied_files(
+    clipboard: &gtk::gdk::Clipboard,
+) -> Option<(bool, Vec<gtk::gio::File>)> {
+    if !clipboard.formats().contain_mime_type(GNOME_COPIED_FILES) {
+        return None;
+    }
+    let (stream, _) = clipboard
+        .read_future(&[GNOME_COPIED_FILES], glib::Priority::DEFAULT)
+        .await
+        .ok()?;
+    let output = gtk::gio::MemoryOutputStream::new_resizable();
+    output
+        .splice_future(
+            &stream,
+            gtk::gio::OutputStreamSpliceFlags::CLOSE_SOURCE
+                | gtk::gio::OutputStreamSpliceFlags::CLOSE_TARGET,
+            glib::Priority::DEFAULT,
+        )
+        .await
+        .ok()?;
+    let (cut, uris) = parse_gnome_copied_files(&output.steal_as_bytes())?;
+    Some((
+        cut,
+        uris.iter()
+            .map(|uri| gtk::gio::File::for_uri(uri))
+            .collect(),
+    ))
+}
+
+fn set_files_clipboard(entries: &[FileEntry], cut: bool) -> bool {
     set_location_files_clipboard(
         &entries
             .iter()
             .map(|entry| entry.location.clone())
             .collect::<Vec<_>>(),
+        cut,
     )
 }
 
-fn set_location_files_clipboard(locations: &[Location]) -> bool {
+fn set_location_files_clipboard(locations: &[Location], cut: bool) -> bool {
     let files = locations
         .iter()
         .map(gio_file_for_location)
@@ -1036,9 +1100,26 @@ fn set_location_files_clipboard(locations: &[Location]) -> bool {
         return false;
     }
     gtk::gdk::Display::default().is_some_and(|display| {
-        let provider = gtk::gdk::ContentProvider::for_value(
-            &gtk::gdk::FileList::from_array(&files).to_value(),
-        );
+        let uris = files
+            .iter()
+            .map(|file| file.uri().to_string())
+            .collect::<Vec<_>>();
+        let mut providers = vec![
+            gtk::gdk::ContentProvider::for_value(
+                &gtk::gdk::FileList::from_array(&files).to_value(),
+            ),
+            gtk::gdk::ContentProvider::for_bytes(
+                GNOME_COPIED_FILES,
+                &glib::Bytes::from_owned(gnome_copied_files(cut, &uris).into_bytes()),
+            ),
+        ];
+        if cut {
+            providers.push(gtk::gdk::ContentProvider::for_bytes(
+                KDE_CUT_SELECTION,
+                &glib::Bytes::from_static(b"1"),
+            ));
+        }
+        let provider = gtk::gdk::ContentProvider::new_union(&providers);
         // Owned before claiming, so the ownership watcher sees this claim as ours.
         let previous = OWNED_FILE_PROVIDER.with(|owned| owned.replace(Some(provider.clone())));
         if display.clipboard().set_content(Some(&provider)).is_err() {
@@ -1091,7 +1172,7 @@ fn retain_untransferred(cut: &mut Vec<Location>, transferred: &[Location]) {
 
 impl ViewState {
     pub(super) fn copy_entries(&self, entries: &[FileEntry]) {
-        if set_files_clipboard(entries) {
+        if set_files_clipboard(entries, false) {
             let locations: Vec<Location> =
                 entries.iter().map(|entry| entry.location.clone()).collect();
             set_shared_marks(&locations, &[]);
@@ -1105,7 +1186,7 @@ impl ViewState {
         {
             return false;
         }
-        if set_files_clipboard(entries) {
+        if set_files_clipboard(entries, true) {
             let locations: Vec<Location> =
                 entries.iter().map(|entry| entry.location.clone()).collect();
             set_shared_marks(&[], &locations);
@@ -1149,7 +1230,7 @@ impl ViewState {
                 OWNED_FILE_PROVIDER.with(|owned| owned.replace(None));
             }
         } else {
-            let _set = set_location_files_clipboard(&remaining);
+            let _set = set_location_files_clipboard(&remaining, true);
         }
     }
 
@@ -1201,6 +1282,23 @@ impl ViewState {
         let clipboard = display.clipboard();
         let weak = Rc::downgrade(self);
         glib::MainContext::default().spawn_local(async move {
+            // Another file manager's clipboard says whether its files were cut;
+            // the move then happens only now, when they are pasted.
+            if !owns_clipboard(&clipboard)
+                && let Some((cut, files)) = read_gnome_copied_files(&clipboard).await
+            {
+                let sources = files
+                    .iter()
+                    .filter_map(location_for_file)
+                    .collect::<Vec<_>>();
+                if sources.is_empty() {
+                    return nothing();
+                }
+                if let Some(state) = weak.upgrade() {
+                    state.paste_transfer(destination, sources, cut, focus);
+                }
+                return;
+            }
             let result = clipboard
                 .read_value_future(gtk::gdk::FileList::static_type(), glib::Priority::DEFAULT)
                 .await;

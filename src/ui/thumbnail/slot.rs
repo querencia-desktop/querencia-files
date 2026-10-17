@@ -67,7 +67,14 @@ mod imp {
             if width <= 0.0 || height <= 0.0 {
                 return;
             }
+            // Querencia: Nautilus 2 keeps a marked file's icon; a cut file
+            // is only drawn faded, a copied one unchanged.
+            let classic = obj
+                .root()
+                .is_some_and(|root| root.has_css_class("querencia-classic"));
+            let faded = classic && self.mark.get() == crate::ui::browser::ClipboardMark::Cut;
             let mark_icon = match self.mark.get() {
+                _ if classic => None,
                 crate::ui::browser::ClipboardMark::None => None,
                 crate::ui::browser::ClipboardMark::Copy => Some(crate::assets::icons::COPY),
                 crate::ui::browser::ClipboardMark::Cut => Some(crate::assets::icons::SCISSORS),
@@ -102,6 +109,9 @@ mod imp {
                 .min((width - 1.0) / 2.0)
                 .min((height - 1.0) / 2.0);
 
+            if faded {
+                snapshot.push_opacity(0.5);
+            }
             snapshot.save();
             let draw_width = (width - 2.0 * inset) * scale;
             let draw_height = (height - 2.0 * inset) * scale;
@@ -111,6 +121,9 @@ mod imp {
             ));
             snapshot_paintable(snapshot, &paintable, draw_width, draw_height, obj.color());
             snapshot.restore();
+            if faded {
+                snapshot.pop();
+            }
             if let Some(badge) = self.decoration.borrow().as_ref() {
                 let size = (width.min(height) * 0.55).clamp(10.0, 24.0) as f32;
                 snapshot.append_texture(

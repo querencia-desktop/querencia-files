@@ -304,7 +304,7 @@ fn context_hints_follow_the_active_map() {
                     .map(String::as_str)
             };
             for (label, hint) in [
-                ("Rename", "r"),
+                ("Rename…", "r"),
                 ("Cut", "x"),
                 ("Copy", "y"),
                 ("Move to Trash", "d"),

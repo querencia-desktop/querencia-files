@@ -651,7 +651,7 @@ const DEFAULT_FILES: &[Shortcut] = &[
     row(One(DELETE_PERMANENTLY), "Permanently delete selected items"),
     row(One(UNDO), "Undo the last file operation"),
     row(Any(&[REDO, REDO_Y]), "Redo the last file operation"),
-    row(Any(&[RENAME, RENAME_R]), "Rename"),
+    row(One(RENAME), "Rename"),
     row(One(NEW_FOLDER), "Create a folder"),
     row(
         One(NEW_FOLDER_WITH_SELECTION),
@@ -925,7 +925,8 @@ const DEFAULT_TOOLS: &[Shortcut] = &[
     ),
     SELECT_TAB,
     row(One(TERMINAL), "Open a terminal"),
-    row(One(REFRESH), "Refresh"),
+    row(Any(&[REFRESH, REFRESH_R]), "Refresh"),
+    row(One(NEW_WINDOW), "New Window"),
     row(
         Any(&[HIDDEN_FILES, HIDDEN_FILES_PERIOD]),
         "Show or hide hidden files",
@@ -1131,7 +1132,7 @@ fn default_hint(hint: ContextHint, type_to_search: bool) -> Option<Keys> {
         ContextHint::Preview | ContextHint::ChooserPreview => SPACE,
         ContextHint::CopyPath | ContextHint::CopyPaths => COPY_PATH,
         ContextHint::Pin => PIN,
-        ContextHint::Rename => return Some(Any(&[RENAME, RENAME_R])),
+        ContextHint::Rename => RENAME,
         ContextHint::Cut => CUT,
         ContextHint::Copy => COPY,
         ContextHint::Duplicate => DUPLICATE,

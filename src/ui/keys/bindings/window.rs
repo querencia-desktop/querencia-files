@@ -58,7 +58,10 @@ catalog! {
         DUPLICATE: Binding = Binding::ctrl(Key::d);
         COPY_PATH: Binding = Binding::plain(Key::y);
         PIN: Binding = Binding::plain(Key::p);
-        RENAME_R: Binding = Binding::ctrl(Key::r);
+        // Querencia: Nautilus 2 reloads with Ctrl+R (F2 stays Rename) and
+        // opens a new window with Ctrl+N.
+        REFRESH_R: Binding = Binding::ctrl(Key::r);
+        NEW_WINDOW: Binding = Binding::ctrl(Key::n);
         JUMP_TO_FOLDER: Binding = Binding::ctrl_shift(Key::k);
         FILTER: Binding = Binding::ctrl(Key::f);
         TERMINAL: Binding = Binding::ctrl_alt(Key::t);

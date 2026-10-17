@@ -198,11 +198,14 @@ fn control_digits_select_each_browser_presentation() {
     assert_eq!(browser_mode_for_digit(&press(Key::_1, NONE)), None);
 }
 
-const WINDOW_SHORTCUTS: [(Key, ModifierType, &str); 5] = [
+const WINDOW_SHORTCUTS: [(Key, ModifierType, &str); 7] = [
     (Key::k, CONTROL, "search"),
     (Key::K, CONTROL.union(SHIFT), "jump-folder"),
     (Key::t, CONTROL.union(ALT), "open-terminal"),
     (Key::F5, NONE, "refresh"),
+    // Querencia: Nautilus 2's reload and new-window keys.
+    (Key::r, CONTROL, "refresh"),
+    (Key::n, CONTROL, "new-window"),
     (Key::backslash, CONTROL, "toggle-arrow-scope"),
 ];
 
@@ -219,11 +222,12 @@ fn window_actions_run_once_the_dispatcher_yields_and_claim_no_other_key() {
                 assert!(dispatch(&window, key, modifiers), "{action}");
                 assert_eq!(runs.take(), [action]);
             }
-            // F2 and Ctrl+R rename; the window's F5 is exact, as GTK's accelerator was.
+            // F2 renames; the window's F5 is exact, as GTK's accelerator was.
             for (key, modifiers) in [
                 (Key::F2, NONE),
-                (Key::r, CONTROL),
                 (Key::r, NONE),
+                (Key::r, CONTROL | SHIFT),
+                (Key::n, CONTROL | ALT),
                 (Key::F5, SHIFT),
                 (Key::k, CONTROL | ALT),
                 (Key::t, NONE),

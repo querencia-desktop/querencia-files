@@ -33,14 +33,14 @@ const CONTEXT_MENU_EDGE_MARGIN: i32 = 16;
 pub(super) const SUBMENU_ROW_CLASS: &str = "item-context-submenu";
 pub(super) const SUBMENU_ENTRIES_CLASS: &str = "item-context-submenu-entries";
 
-fn submenu_row(header: &gtk::Button, entries: [&gtk::Button; 2]) -> gtk::Box {
+fn submenu_row(header: &gtk::Button, entries: &[&gtk::Button]) -> gtk::Box {
     let wrapper = gtk::Box::new(gtk::Orientation::Vertical, 0);
     wrapper.add_css_class(SUBMENU_ROW_CLASS);
     wrapper.append(header);
     let entries_box = gtk::Box::new(gtk::Orientation::Vertical, 0);
     entries_box.add_css_class(SUBMENU_ENTRIES_CLASS);
     for entry in entries {
-        entries_box.append(entry);
+        entries_box.append(*entry);
     }
     wrapper.append(&entries_box);
     wrapper
@@ -428,6 +428,36 @@ pub(in crate::ui) fn install_folder_context_menu(
     );
     let properties =
         context_menu_option(crate::assets::icons::INFO, "Properties", ContextHint::None);
+    // Querencia: GNOME 2's "Arrange Items" submenu, backed by the same sort the
+    // pane header's sort menu sets.
+    let arrange = context_menu_option(
+        crate::assets::icons::ARROW_UP_NARROW_WIDE,
+        "Arrange Items",
+        ContextHint::None,
+    );
+    let arrange_keys = [
+        ("Name", crate::model::SortKey::Name),
+        ("Size", crate::model::SortKey::Size),
+        ("Type", crate::model::SortKey::Type),
+        ("Modified", crate::model::SortKey::Modified),
+    ]
+    .map(|(label, key)| {
+        (
+            context_menu_option(crate::assets::icons::LIST, label, ContextHint::None),
+            key,
+        )
+    });
+    let arrange_reverse = context_menu_option(
+        crate::assets::icons::ARROW_DOWN_WIDE_NARROW,
+        "Reverse",
+        ContextHint::None,
+    );
+    let mut arrange_entries = arrange_keys
+        .iter()
+        .map(|(button, _)| button)
+        .collect::<Vec<_>>();
+    arrange_entries.push(&arrange_reverse);
+    let arrange_submenu = submenu_row(&arrange, &arrange_entries);
     let in_trash = is_trash_location(&location);
     let in_recent = location.is_recent_location();
     let directory_actions = !in_trash && !in_recent;
@@ -438,14 +468,17 @@ pub(in crate::ui) fn install_folder_context_menu(
     open_terminal.set_visible(directory_actions);
     paste.set_visible(directory_actions);
     properties.set_visible(!in_recent);
+    arrange_submenu.set_visible(!in_recent);
     content.append(&new_folder);
     content.append(&new_file);
-    content.append(&paste);
     content.append(&gtk::Separator::new(gtk::Orientation::Horizontal));
     content.append(&open_with);
     content.append(&open_terminal);
+    content.append(&gtk::Separator::new(gtk::Orientation::Horizontal));
+    content.append(&paste);
     content.set_visible(directory_actions);
     remaining.append(&select_all);
+    remaining.append(&arrange_submenu);
     remaining.append(&refresh);
     remaining.append(&toggle_hidden);
     if customize.get_visible() || properties.get_visible() {
@@ -510,6 +543,42 @@ pub(in crate::ui) fn install_folder_context_menu(
         }
         if let Some(state) = weak.upgrade() {
             state.browser.retry_column(depth);
+        }
+    });
+    for (button, key) in &arrange_keys {
+        let key = *key;
+        let weak = Rc::downgrade(state);
+        let arrange_popover = popover.downgrade();
+        button.connect_clicked(move |_| {
+            if let Some(popover) = arrange_popover.upgrade() {
+                popover.popdown();
+            }
+            if let Some(state) = weak.upgrade() {
+                state.browser.set_sort_key(depth, key);
+            }
+        });
+    }
+    let weak = Rc::downgrade(state);
+    let arrange_popover = popover.downgrade();
+    arrange_reverse.connect_clicked(move |_| {
+        if let Some(popover) = arrange_popover.upgrade() {
+            popover.popdown();
+        }
+        let Some(state) = weak.upgrade() else {
+            return;
+        };
+        if let Some(preferences) = state.browser.column_preferences(depth) {
+            state.browser.set_sort_direction(
+                depth,
+                match preferences.sort_direction {
+                    crate::model::SortDirection::Ascending => {
+                        crate::model::SortDirection::Descending
+                    }
+                    crate::model::SortDirection::Descending => {
+                        crate::model::SortDirection::Ascending
+                    }
+                },
+            );
         }
     });
     let weak = Rc::downgrade(state);
@@ -603,11 +672,9 @@ pub(in crate::ui) fn install_folder_context_menu(
     let parent_for_trigger = parent.downgrade();
     let location_for_trigger = location.clone();
     let open_at: Rc<dyn Fn(f64, f64)> = Rc::new(move |x: f64, y: f64| {
-        paste.set_sensitive(gtk::gdk::Display::default().is_some_and(|display| {
-            let formats = display.clipboard().formats();
-            formats.contains_type(gtk::gdk::FileList::static_type())
-                || formats.contain_mime_type("image/png")
-        }));
+        // Files copied in another file manager arrive as URI lists or GNOME
+        // clipboard entries, not only as a GDK file list.
+        paste.set_sensitive(super::clipboard::clipboard_may_paste());
         select_all.set_sensitive(has_entries());
         open_terminal.set_sensitive(can_open_terminal(&location_for_trigger));
         let hidden_files_shown = browser_for_trigger.preferences().show_hidden;
@@ -845,7 +912,7 @@ pub(in crate::ui) fn install_resolved_item_context_menu(
         "New Window",
         ContextHint::OpenInNewWindow,
     );
-    let open_in_submenu = submenu_row(&open_in, [&open_in_tab, &open_in_window]);
+    let open_in_submenu = submenu_row(&open_in, &[&open_in_tab, &open_in_window]);
     let open_with = item_context_option(
         crate::assets::icons::APP_WINDOW,
         "Open With…",
@@ -916,7 +983,8 @@ pub(in crate::ui) fn install_resolved_item_context_menu(
         "New Folder with Selection",
         ContextHint::None,
     );
-    let rename = item_context_option(crate::assets::icons::PENCIL, "Rename", ContextHint::Rename);
+    // GNOME 2 labels commands that ask for more input with an ellipsis.
+    let rename = item_context_option(crate::assets::icons::PENCIL, "Rename…", ContextHint::Rename);
     let cut = item_context_option(crate::assets::icons::SCISSORS, "Cut", ContextHint::Cut);
     let delete_label = if in_trash {
         "Permanently delete"
@@ -969,9 +1037,8 @@ pub(in crate::ui) fn install_resolved_item_context_menu(
         "Extract to…",
         ContextHint::None,
     );
-    let group_separator = gtk::Separator::new(gtk::Orientation::Horizontal);
-    single_open.append(&group);
-    single_open.append(&group_separator);
+    // Querencia: GNOME 2 order. Open first; New Folder with Selection joins
+    // the edit commands, Properties closes the menu.
     single_open.append(&open);
     single_open.append(&open_with);
     single_open.append(&preview);
@@ -988,6 +1055,7 @@ pub(in crate::ui) fn install_resolved_item_context_menu(
     single.append(&cut);
     single.append(&copy);
     single.append(&duplicate);
+    single.append(&group);
     single.append(&rename);
     single.append(&gtk::Separator::new(gtk::Orientation::Horizontal));
     single.append(&move_to);
@@ -999,10 +1067,11 @@ pub(in crate::ui) fn install_resolved_item_context_menu(
     single.append(&customize);
     single.append(&copy_path);
     single.append(&copy_name);
-    single.append(&properties);
     single.append(&gtk::Separator::new(gtk::Orientation::Horizontal));
     single.append(&move_to_trash);
     single.append(&permanent_delete);
+    single.append(&gtk::Separator::new(gtk::Orientation::Horizontal));
+    single.append(&properties);
     remaining.append(&single);
 
     let multiple = gtk::Box::new(gtk::Orientation::Vertical, 0);
@@ -1033,7 +1102,7 @@ pub(in crate::ui) fn install_resolved_item_context_menu(
     );
     let open_in_multiple_submenu = submenu_row(
         &open_in_multiple,
-        [&open_in_tab_multiple, &open_in_window_multiple],
+        &[&open_in_tab_multiple, &open_in_window_multiple],
     );
     let open_with_multiple = item_context_option(
         crate::assets::icons::APP_WINDOW,
@@ -1115,9 +1184,6 @@ pub(in crate::ui) fn install_resolved_item_context_menu(
         "Properties",
         ContextHint::Properties,
     );
-    let group_multiple_separator = gtk::Separator::new(gtk::Orientation::Horizontal);
-    multiple_open.append(&group_multiple);
-    multiple_open.append(&group_multiple_separator);
     multiple_open.append(&open_multiple);
     multiple_open.append(&open_with_multiple);
     multiple_open.append(&open_in_multiple_submenu);
@@ -1127,6 +1193,7 @@ pub(in crate::ui) fn install_resolved_item_context_menu(
     multiple.append(&cut_multiple);
     multiple.append(&copy_multiple);
     multiple.append(&duplicate_multiple);
+    multiple.append(&group_multiple);
     multiple.append(&gtk::Separator::new(gtk::Orientation::Horizontal));
     multiple.append(&move_multiple);
     multiple.append(&copy_to_multiple);
@@ -1135,10 +1202,11 @@ pub(in crate::ui) fn install_resolved_item_context_menu(
     multiple.append(&gtk::Separator::new(gtk::Orientation::Horizontal));
     multiple.append(&copy_paths);
     multiple.append(&copy_names_button);
-    multiple.append(&properties_multiple);
     multiple.append(&gtk::Separator::new(gtk::Orientation::Horizontal));
     multiple.append(&trash_multiple);
     multiple.append(&permanent_delete_multiple);
+    multiple.append(&gtk::Separator::new(gtk::Orientation::Horizontal));
+    multiple.append(&properties_multiple);
     multiple.set_visible(false);
     remaining.append(&multiple);
 
@@ -1657,8 +1725,6 @@ pub(in crate::ui) fn install_resolved_item_context_menu(
                 });
             group.set_visible(groupable);
             group_multiple.set_visible(groupable);
-            group_separator.set_visible(groupable);
-            group_multiple_separator.set_visible(groupable);
             let rename_visible = !is_trash_location(&entry.location);
             rename.set_visible(rename_visible);
             let can_compress = entries

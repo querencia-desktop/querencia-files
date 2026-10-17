@@ -40,11 +40,13 @@ type KeyResult = Option<Propagation>;
 
 /// Window actions that run once every other stage yields the key. The flag
 /// marks those 10xer mode leaves unbound.
-const WINDOW_ACTIONS: [(Binding, &str, bool); 5] = [
+const WINDOW_ACTIONS: [(Binding, &str, bool); 7] = [
     (SEARCH, "search", false),
     (JUMP_TO_FOLDER, "jump-folder", true),
     (TERMINAL, "open-terminal", true),
     (REFRESH, "refresh", false),
+    (REFRESH_R, "refresh", true),
+    (NEW_WINDOW, "new-window", true),
     (ARROW_SCOPE, "toggle-arrow-scope", true),
 ];
 
@@ -496,7 +498,7 @@ fn claims_unbound_command(press: &KeyPress) -> bool {
         DUPLICATE,
         FILTER,
         SIDEBAR,
-        RENAME_R,
+        REFRESH_R,
         TAB_NEW,
         ARROW_SCOPE,
         JUMP_TO_FOLDER,

@@ -57,7 +57,7 @@ impl Dispatcher {
     }
 
     pub(super) fn inline_editing(&self, event: &KeyEvent) -> KeyResult {
-        if event.press.is_any(&[RENAME, RENAME_R])
+        if event.press.is(RENAME)
             && (self.view.filter_has_focus()
                 || !event
                     .focused

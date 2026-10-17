@@ -275,13 +275,16 @@ and `xkeysym` duplicate types GDK already provides.
 ### Window actions
 
 Search (**Ctrl+K**), jump to folder (**Ctrl+Shift+K**), open terminal
-(**Ctrl+Alt+T**), refresh (**F5**), and arrow scope (**Ctrl+\\**) are bindings in
+(**Ctrl+Alt+T**), refresh (**F5**, and in Querencia Files also **Ctrl+R** as in
+Nautilus 2), new window (**Ctrl+N**, Querencia Files), and arrow scope
+(**Ctrl+\\**) are bindings in
 the window dispatcher, not GTK application accelerators. The dispatcher checks
 them after its own stages yield the key and activates the same guarded `win.*`
 actions; the key is consumed whenever the action is enabled.
 `add_guarded_window_action` still decides whether they run while a modal or an
-inline edit owns input. 10xer mode leaves jump to folder, open terminal, and
-arrow scope unbound, which the dispatcher checks when the key arrives.
+inline edit owns input. 10xer mode leaves jump to folder, open terminal,
+**Ctrl+R**, **Ctrl+N**, and arrow scope unbound, which the dispatcher checks
+when the key arrives. Rename is **F2** only; **Ctrl+R** no longer renames.
 
 ### Text fields
 

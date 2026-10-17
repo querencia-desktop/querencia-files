@@ -4,17 +4,21 @@
 //! navigation toolbar, a location row and a status bar. Every control routes
 //! to an existing browser command; nothing here owns navigation state.
 
-use std::{cell::RefCell, rc::Rc};
+use std::{
+    cell::RefCell,
+    rc::{Rc, Weak},
+};
 
 use gtk::{gio, glib, prelude::*};
 
 use crate::{
     app::Browser,
     assets::{self, icons},
-    model::Location,
+    model::{Location, SortDirection, SortKey},
     ui::{
-        browser::{BrowserView, PinStatus},
+        browser::{BrowserView, PinStatus, clipboard_may_paste, paths::is_trash_location},
         browser_modes::BrowserMode,
+        keys::{Binding, Keys, bindings::*},
         preferences::PreferenceManager,
         shortcut_footer::ShortcutFooter,
     },
@@ -38,6 +42,17 @@ pub(super) struct ClassicChrome {
     bookmarks: gio::Menu,
     rendered_bookmarks: RefCell<Vec<(Location, String)>>,
     pinned_places: Rc<RefCell<Vec<(Location, String)>>>,
+    /// For the clipboard watcher, which outlives no window.
+    browser: Weak<Browser>,
+    clipboard_watch: RefCell<Option<(gtk::gdk::Clipboard, glib::SignalHandlerId)>>,
+}
+
+impl Drop for ClassicChrome {
+    fn drop(&mut self) {
+        if let Some((clipboard, handler)) = self.clipboard_watch.take() {
+            clipboard.disconnect(handler);
+        }
+    }
 }
 
 impl ClassicChrome {
@@ -54,6 +69,7 @@ impl ClassicChrome {
         let bookmarks = gio::Menu::new();
         let menu_bar = gtk::PopoverMenuBar::from_model(Some(&menu_model(&bookmarks)));
         menu_bar.add_css_class("classic-menu-bar");
+        localize_accelerators(menu_bar.upcast_ref());
         let toolbar = build_toolbar();
         // Density, type grouping and the preview panel are only offered by
         // Strata's appearance menu, so it moves from the hidden header here.
@@ -88,9 +104,12 @@ impl ClassicChrome {
             bookmarks,
             rendered_bookmarks: RefCell::new(Vec::new()),
             pinned_places: sidebar.state.pinned_places.clone(),
+            browser: Rc::downgrade(&view.browser()),
+            clipboard_watch: RefCell::new(None),
         });
         chrome.install_actions(window, view, sidebar, header, preferences);
         chrome.observe(view);
+        chrome.watch_clipboard();
         chrome
     }
 
@@ -180,6 +199,9 @@ impl ClassicChrome {
         });
         self.add_view_action(window, view, "trash-selection", |view| {
             view.confirm_delete(false);
+        });
+        self.add_view_action(window, view, "delete-selection", |view| {
+            view.confirm_delete(true);
         });
         self.add_view_action(window, view, "settings", {
             let settings = header.settings.clone();
@@ -293,6 +315,59 @@ impl ClassicChrome {
         }
         self.actions.add_action(&view_mode);
 
+        // View ▸ Arrange Items: the active folder's sort, as the pane
+        // header's sort menu sets it.
+        let arrange = gio::SimpleAction::new_stateful(
+            "arrange",
+            Some(glib::VariantTy::STRING),
+            &"name".to_variant(),
+        );
+        {
+            let view = view.clone();
+            let window = window.downgrade();
+            arrange.connect_activate(move |_, parameter| {
+                let Some(key) = parameter
+                    .and_then(|value| value.str())
+                    .and_then(SortKey::from_stored)
+                else {
+                    return;
+                };
+                let browser = view.browser();
+                if action_allowed(&window, &view)
+                    && let Some(depth) = browser.active_depth()
+                {
+                    browser.set_sort_key(depth, key);
+                }
+            });
+        }
+        self.actions.add_action(&arrange);
+        let reversed =
+            gio::SimpleAction::new_stateful("arrange-reversed", None, &false.to_variant());
+        {
+            let view = view.clone();
+            let window = window.downgrade();
+            reversed.connect_activate(move |_, _| {
+                let browser = view.browser();
+                if !action_allowed(&window, &view) {
+                    return;
+                }
+                let Some(depth) = browser.active_depth() else {
+                    return;
+                };
+                let Some(preferences) = browser.column_preferences(depth) else {
+                    return;
+                };
+                browser.set_sort_direction(
+                    depth,
+                    match preferences.sort_direction {
+                        SortDirection::Ascending => SortDirection::Descending,
+                        SortDirection::Descending => SortDirection::Ascending,
+                    },
+                );
+            });
+        }
+        self.actions.add_action(&reversed);
+
         let side_pane = gio::SimpleAction::new_stateful(
             "side-pane",
             None,
@@ -362,10 +437,70 @@ impl ClassicChrome {
             pin_status(&self.pinned_places.borrow(), location) == PinStatus::Available
         });
         self.set_enabled("add-bookmark", pinnable);
+        // Nautilus 2 greys out what has nothing to act on.
+        let selected = browser.selected_count() > 0;
+        for name in [
+            "cut",
+            "copy",
+            "duplicate",
+            "rename",
+            "trash-selection",
+            "delete-selection",
+        ] {
+            self.set_enabled(name, selected);
+        }
+        self.refresh_paste(browser);
+        if let Some(depth) = browser.active_depth()
+            && let Some(preferences) = browser.column_preferences(depth)
+        {
+            let key = preferences.sort_key.stored_name();
+            self.set_enabled("arrange", key.is_some());
+            self.set_enabled("arrange-reversed", key.is_some());
+            self.set_state("arrange", &key.unwrap_or("name").to_variant());
+            self.set_state(
+                "arrange-reversed",
+                &(preferences.sort_direction == SortDirection::Descending).to_variant(),
+            );
+        }
         self.refresh_bookmarks();
         let text = status_text(browser).unwrap_or_default();
         if self.status.text() != text {
             self.status.set_text(&text);
+        }
+    }
+
+    fn refresh_paste(&self, browser: &Browser) {
+        let into_folder = browser.active_location().is_some_and(|location| {
+            !is_trash_location(&location) && !location.is_recent_location()
+        });
+        self.set_enabled("paste", into_folder && clipboard_may_paste());
+    }
+
+    /// Paste follows the clipboard, which changes without a browser event.
+    fn watch_clipboard(self: &Rc<Self>) {
+        let Some(display) = gtk::gdk::Display::default() else {
+            return;
+        };
+        let clipboard = display.clipboard();
+        let chrome = Rc::downgrade(self);
+        let handler = clipboard.connect_changed(move |_| {
+            if let Some(chrome) = chrome.upgrade()
+                && let Some(browser) = chrome.browser.upgrade()
+            {
+                chrome.refresh_paste(&browser);
+            }
+        });
+        self.clipboard_watch.replace(Some((clipboard, handler)));
+    }
+
+    fn set_state(&self, name: &str, state: &glib::Variant) {
+        if let Some(action) = self
+            .actions
+            .lookup_action(name)
+            .and_downcast::<gio::SimpleAction>()
+            && action.state().as_ref() != Some(state)
+        {
+            action.set_state(state);
         }
     }
 
@@ -436,65 +571,168 @@ fn status_text(browser: &Browser) -> Option<String> {
     ))
 }
 
+/// GTK spells accelerators with its own translations, which this system
+/// lacks ("Ctrl+X" in a German menu). Each time a menu opens, its rows show
+/// Strata's label for the same key instead ("Strg+X", "Entf").
+fn localize_accelerators(widget: &gtk::Widget) {
+    if let Some(popover) = widget.downcast_ref::<gtk::Popover>() {
+        popover.connect_map(|popover| relabel_accelerators(popover.upcast_ref()));
+    }
+    let mut child = widget.first_child();
+    while let Some(current) = child {
+        child = current.next_sibling();
+        localize_accelerators(&current);
+    }
+}
+
+fn relabel_accelerators(widget: &gtk::Widget) {
+    if widget.find_property("accel").is_some()
+        && let Some(accel) = widget.property::<Option<String>>("accel")
+        && let Some((key, modifiers)) = gtk::accelerator_parse(&accel)
+    {
+        let text = crate::ui::keys::label(&Keys::One(Binding::new(key, modifiers)));
+        let mut child = widget.first_child();
+        while let Some(current) = child {
+            child = current.next_sibling();
+            if current.css_name() == "accelerator"
+                && let Some(label) = current.downcast_ref::<gtk::Label>()
+                && label.label() != text
+            {
+                label.set_label(&text);
+            }
+        }
+    }
+    let mut child = widget.first_child();
+    while let Some(current) = child {
+        child = current.next_sibling();
+        relabel_accelerators(&current);
+    }
+}
+
 fn menu_model(bookmarks: &gio::Menu) -> gio::Menu {
     let tr = crate::i18n::tr;
     let action = |name: &str| format!("{ACTIONS}.{name}");
+    // GNOME 2 shows each command's shortcut beside it. The `accel` attribute
+    // is display-only: the window's key dispatcher keeps handling the keys,
+    // so no shortcut is bound twice. The bindings are the dispatcher's own.
+    let item = |section: &gio::Menu, label: &str, action: &str, accel: Option<Binding>| {
+        let item = gio::MenuItem::new(Some(&tr(label)), Some(action));
+        if let Some(accel) = accel {
+            item.set_attribute_value("accel", Some(&accel.accelerator().to_variant()));
+        }
+        section.append_item(&item);
+    };
     let model = gio::Menu::new();
 
     let file = gio::Menu::new();
     let section = gio::Menu::new();
-    section.append(Some(&tr("New tab")), Some("win.new-tab"));
-    section.append(Some(&tr("New Folder")), Some(&action("new-folder")));
+    item(&section, "New Window", "win.new-window", Some(NEW_WINDOW));
+    item(&section, "New tab", "win.new-tab", Some(TAB_NEW));
+    item(
+        &section,
+        "New Folder",
+        &action("new-folder"),
+        Some(NEW_FOLDER),
+    );
     file.append_section(None, &section);
     let section = gio::Menu::new();
-    section.append(Some(&tr("Properties")), Some(&action("properties")));
+    item(
+        &section,
+        "Properties",
+        &action("properties"),
+        Some(PROPERTIES),
+    );
     file.append_section(None, &section);
     let section = gio::Menu::new();
-    section.append(Some(&tr("Close tab")), Some("win.close-tab"));
-    section.append(Some(&tr("Close window")), Some(&action("close-window")));
+    item(&section, "Close tab", "win.close-tab", Some(TAB_CLOSE));
+    item(&section, "Close window", &action("close-window"), None);
     file.append_section(None, &section);
     model.append_submenu(Some(&tr("File")), &file);
 
     let edit = gio::Menu::new();
     let section = gio::Menu::new();
-    section.append(Some(&tr("Undo")), Some(&action("undo")));
-    section.append(Some(&tr("Redo")), Some(&action("redo")));
+    item(&section, "Undo", &action("undo"), Some(UNDO));
+    item(&section, "Redo", &action("redo"), Some(REDO));
     edit.append_section(None, &section);
     let section = gio::Menu::new();
-    section.append(Some(&tr("Cut")), Some(&action("cut")));
-    section.append(Some(&tr("Copy")), Some(&action("copy")));
-    section.append(Some(&tr("Paste")), Some(&action("paste")));
-    section.append(Some(&tr("Duplicate")), Some(&action("duplicate")));
+    item(&section, "Cut", &action("cut"), Some(CUT));
+    item(&section, "Copy", &action("copy"), Some(COPY));
+    item(&section, "Paste", &action("paste"), Some(PASTE));
+    item(&section, "Duplicate", &action("duplicate"), Some(DUPLICATE));
     edit.append_section(None, &section);
     let section = gio::Menu::new();
-    section.append(Some(&tr("Select all")), Some(&action("select-all")));
+    item(
+        &section,
+        "Select all",
+        &action("select-all"),
+        Some(SELECT_ALL),
+    );
     edit.append_section(None, &section);
     let section = gio::Menu::new();
-    section.append(Some(&tr("Rename")), Some(&action("rename")));
-    section.append(Some(&tr("Move to Trash")), Some(&action("trash-selection")));
+    item(&section, "Rename…", &action("rename"), Some(RENAME));
+    item(
+        &section,
+        "Move to Trash",
+        &action("trash-selection"),
+        Some(DELETE),
+    );
+    item(
+        &section,
+        "Permanently delete",
+        &action("delete-selection"),
+        Some(DELETE_PERMANENTLY),
+    );
     edit.append_section(None, &section);
     let section = gio::Menu::new();
-    section.append(Some(&tr("Settings")), Some(&action("settings")));
+    item(&section, "Settings", &action("settings"), Some(SETTINGS));
     edit.append_section(None, &section);
     model.append_submenu(Some(&tr("Edit")), &edit);
 
     let view = gio::Menu::new();
     let section = gio::Menu::new();
-    section.append(Some(&tr("Reload")), Some(&action("reload")));
+    item(&section, "Reload", &action("reload"), Some(REFRESH_R));
     view.append_section(None, &section);
     let section = gio::Menu::new();
-    section.append(Some(&tr("Show hidden files")), Some(&action("show-hidden")));
-    section.append(Some(&tr("Side pane")), Some(&action("side-pane")));
+    item(
+        &section,
+        "Show hidden files",
+        &action("show-hidden"),
+        Some(HIDDEN_FILES),
+    );
+    item(&section, "Side pane", &action("side-pane"), Some(SIDEBAR));
     view.append_section(None, &section);
-    let section = gio::Menu::new();
-    for (label, mode) in [
-        ("Icons", BrowserMode::Icons),
-        ("List", BrowserMode::List),
-        ("Columns", BrowserMode::Columns),
+    let arrange = gio::Menu::new();
+    let keys = gio::Menu::new();
+    for (label, key) in [
+        ("Name", SortKey::Name),
+        ("Size", SortKey::Size),
+        ("Type", SortKey::Type),
+        ("Modified", SortKey::Modified),
     ] {
-        section.append(
+        let name = key.stored_name().unwrap_or("name");
+        keys.append(
             Some(&tr(label)),
-            Some(&format!("{}::{}", action("view-mode"), mode_name(mode))),
+            Some(&format!("{}::{name}", action("arrange"))),
+        );
+    }
+    arrange.append_section(None, &keys);
+    let order = gio::Menu::new();
+    order.append(Some(&tr("Reverse")), Some(&action("arrange-reversed")));
+    arrange.append_section(None, &order);
+    let section = gio::Menu::new();
+    section.append_submenu(Some(&tr("Arrange Items")), &arrange);
+    view.append_section(None, &section);
+    let section = gio::Menu::new();
+    for (label, mode, digit) in [
+        ("Icons", BrowserMode::Icons, gtk::gdk::Key::_2),
+        ("List", BrowserMode::List, gtk::gdk::Key::_3),
+        ("Columns", BrowserMode::Columns, gtk::gdk::Key::_1),
+    ] {
+        item(
+            &section,
+            label,
+            &format!("{}::{}", action("view-mode"), mode_name(mode)),
+            Some(Binding::ctrl(digit)),
         );
     }
     view.append_section(None, &section);
@@ -502,17 +740,27 @@ fn menu_model(bookmarks: &gio::Menu) -> gio::Menu {
 
     let go = gio::Menu::new();
     let section = gio::Menu::new();
-    section.append(Some(&tr("Back")), Some(&action("back")));
-    section.append(Some(&tr("Forward")), Some(&action("forward")));
-    section.append(Some(&tr("Up")), Some(&action("up")));
-    section.append(Some(&tr("Home")), Some(&action("home")));
+    item(&section, "Back", &action("back"), Some(HISTORY_BACK));
+    item(
+        &section,
+        "Forward",
+        &action("forward"),
+        Some(HISTORY_FORWARD),
+    );
+    item(&section, "Up", &action("up"), Some(PARENT_FOLDER));
+    item(&section, "Home", &action("home"), Some(HOME_FOLDER));
     go.append_section(None, &section);
     let section = gio::Menu::new();
     section.append(Some(&tr("Trash")), Some(&action("trash")));
     go.append_section(None, &section);
     let section = gio::Menu::new();
-    section.append(Some(&tr("Location")), Some(&action("edit-location")));
-    section.append(Some(&tr("Search")), Some("win.search"));
+    item(
+        &section,
+        "Location",
+        &action("edit-location"),
+        Some(LOCATION),
+    );
+    item(&section, "Search", "win.search", Some(SEARCH));
     go.append_section(None, &section);
     model.append_submenu(Some(&tr("Go")), &go);
 
@@ -524,9 +772,11 @@ fn menu_model(bookmarks: &gio::Menu) -> gio::Menu {
     model.append_submenu(Some(&tr("Bookmarks")), &bookmarks_menu);
 
     let help = gio::Menu::new();
-    help.append(
-        Some(&tr("Keyboard shortcuts")),
-        Some(&action("keyboard-shortcuts")),
+    item(
+        &help,
+        "Keyboard shortcuts",
+        &action("keyboard-shortcuts"),
+        Some(REFERENCE),
     );
     help.append(Some(&tr("About")), Some(&action("about")));
     model.append_submenu(Some(&tr("Help")), &help);

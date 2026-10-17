@@ -429,7 +429,10 @@ fn completing_a_cut_paste_consumes_the_clipboard_file_list() {
             let cut = Location::local("/fixture/cut.txt");
             set_shared_cut(std::slice::from_ref(&cut));
             let clipboard = gtk::gdk::Display::default().expect("display").clipboard();
-            assert!(set_location_files_clipboard(std::slice::from_ref(&cut)));
+            assert!(set_location_files_clipboard(
+                std::slice::from_ref(&cut),
+                true
+            ));
 
             view.state.complete_cut_transfer(std::slice::from_ref(&cut));
 
@@ -455,7 +458,10 @@ fn completing_a_cut_keeps_a_newer_file_list() {
             );
             let cut = Location::local("/fixture/cut.txt");
             set_shared_cut(std::slice::from_ref(&cut));
-            assert!(set_location_files_clipboard(std::slice::from_ref(&cut)));
+            assert!(set_location_files_clipboard(
+                std::slice::from_ref(&cut),
+                true
+            ));
             let clipboard = gtk::gdk::Display::default().expect("display").clipboard();
             let newer = gtk::gdk::ContentProvider::for_value(
                 &gtk::gdk::FileList::from_array(&[gio::File::for_path("/fixture/new.txt")])
@@ -485,7 +491,10 @@ fn completing_a_cut_keeps_text_copied_afterward() {
             let cut = Location::local("/fixture/cut.txt");
             set_shared_cut(std::slice::from_ref(&cut));
             let clipboard = gtk::gdk::Display::default().expect("display").clipboard();
-            assert!(set_location_files_clipboard(std::slice::from_ref(&cut)));
+            assert!(set_location_files_clipboard(
+                std::slice::from_ref(&cut),
+                true
+            ));
             clipboard.set_text("copied-name.txt");
 
             view.state.complete_cut_transfer(std::slice::from_ref(&cut));
@@ -998,6 +1007,78 @@ fn a_cached_internal_drag_never_replaces_another_drops_sources() {
             let prepared = prepare_file_drop_target(|| Some(Location::local("/fixture/dest")));
 
             assert!(prepared.state.sources(&prepared.target).is_empty());
+        },
+    );
+}
+
+#[test]
+fn gnome_copied_files_round_trip_copy_and_cut() {
+    let uris = vec![
+        "file:///home/user/Dokumente/notiz.txt".to_owned(),
+        "file:///home/user/Gr%C3%B6%C3%9Fe%20%C3%A4%C3%B6%C3%BC.txt".to_owned(),
+    ];
+    let copy = gnome_copied_files(false, &uris);
+    assert_eq!(
+        copy,
+        "copy\nfile:///home/user/Dokumente/notiz.txt\nfile:///home/user/Gr%C3%B6%C3%9Fe%20%C3%A4%C3%B6%C3%BC.txt"
+    );
+    assert_eq!(
+        parse_gnome_copied_files(copy.as_bytes()),
+        Some((false, uris.clone()))
+    );
+    let cut = gnome_copied_files(true, &uris);
+    assert!(cut.starts_with("cut\n"));
+    assert_eq!(parse_gnome_copied_files(cut.as_bytes()), Some((true, uris)));
+}
+
+#[test]
+fn gnome_copied_files_from_other_file_managers_are_read_leniently() {
+    // Caja and Thunar end with a newline, some writers use CRLF.
+    assert_eq!(
+        parse_gnome_copied_files(b"cut\r\nfile:///a\r\nfile:///b\r\n"),
+        Some((true, vec!["file:///a".to_owned(), "file:///b".to_owned()]))
+    );
+    assert_eq!(
+        parse_gnome_copied_files(b"copy\nfile:///a\n\n"),
+        Some((false, vec!["file:///a".to_owned()]))
+    );
+    // No action, no files, or not text: nothing to paste.
+    for invalid in [
+        &b"file:///a\nfile:///b"[..],
+        b"cut\n",
+        b"move\nfile:///a",
+        b"",
+        b"\xff\xfe",
+    ] {
+        assert_eq!(parse_gnome_copied_files(invalid), None, "{invalid:?}");
+    }
+}
+
+#[test]
+fn file_clipboard_tells_other_file_managers_whether_files_were_cut() {
+    crate::test_support::gtk_test(
+        "ui::browser::clipboard::tests::file_clipboard_tells_other_file_managers_whether_files_were_cut",
+        || {
+            let clipboard = gtk::gdk::Display::default().expect("display").clipboard();
+            let file = Location::local("/fixture/notiz.txt");
+            assert!(set_location_files_clipboard(
+                std::slice::from_ref(&file),
+                false
+            ));
+            let formats = clipboard.formats();
+            assert!(formats.contains_type(gtk::gdk::FileList::static_type()));
+            assert!(formats.contain_mime_type(GNOME_COPIED_FILES));
+            assert!(!formats.contain_mime_type(KDE_CUT_SELECTION));
+            assert!(clipboard_may_paste());
+
+            assert!(set_location_files_clipboard(
+                std::slice::from_ref(&file),
+                true
+            ));
+            let formats = clipboard.formats();
+            assert!(formats.contain_mime_type(GNOME_COPIED_FILES));
+            assert!(formats.contain_mime_type(KDE_CUT_SELECTION));
+            unyank();
         },
     );
 }
