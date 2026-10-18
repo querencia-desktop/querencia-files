@@ -2423,7 +2423,20 @@ impl SidebarState {
 
     fn append_smb_mount(self: &Rc<Self>, name: &str, location: Location, mount: gio::Mount) {
         let properties_location = location.clone();
-        let row = self.append_place(crate::assets::icons::DEVICE_NETWORK, name, location);
+        let row = sidebar_button(crate::assets::icons::DEVICE_NETWORK, name);
+        crate::ui::accessibility::set_description(&row, Some(&location.display_path()));
+        self.bind_place_row(&row, location, PlaceNavigation::Validate);
+        let disconnect_mount: Rc<dyn Fn()> = {
+            let mount = mount.clone();
+            let parent = self.view.widget();
+            Rc::new(move || disconnect_network_mount(&mount, &parent))
+        };
+        let disconnect_button = sidebar_disconnect_button({
+            let disconnect_mount = disconnect_mount.clone();
+            move || disconnect_mount()
+        });
+        self.widget
+            .append(&sidebar_device_row(&row, None, Some(&disconnect_button)));
         let menu = super::accessibility::menu_box();
         menu.add_css_class("folder-context-menu");
         let properties = sidebar_context_option(crate::assets::icons::INFO, "Properties", false);
@@ -2452,37 +2465,11 @@ impl SidebarState {
         });
 
         let disconnect_popover = popover.downgrade();
-        let parent = self.view.widget();
         disconnect.connect_clicked(move |_| {
             if let Some(popover) = disconnect_popover.upgrade() {
                 popover.popdown();
             }
-            let window = parent.root().and_downcast::<gtk::Window>();
-            let operation = gtk::MountOperation::new(window.as_ref());
-            let mount = mount.clone();
-            let error_parent = parent.clone();
-            glib::MainContext::default().spawn_local(async move {
-                if let Err(error) = mount
-                    .unmount_with_operation_future(gio::MountUnmountFlags::NONE, Some(&operation))
-                    .await
-                    && !error.matches(gio::IOErrorEnum::Cancelled)
-                {
-                    let message = if device_release::release_error_is_busy(&error) {
-                        format!(
-                            "{}\n{}",
-                            crate::i18n::tr(device_release::DEVICE_BUSY_MESSAGE),
-                            error.message()
-                        )
-                    } else {
-                        error.to_string()
-                    };
-                    show_error_dialog(
-                        &error_parent,
-                        &crate::i18n::tr("Unable to disconnect"),
-                        &message,
-                    );
-                }
-            });
+            disconnect_mount();
         });
 
         let context = gtk::GestureClick::new();
@@ -3932,6 +3919,56 @@ fn sidebar_button(icon: &str, name: &str) -> gtk::Button {
     row.set_cursor_from_name(Some("pointer"));
     row.set_has_frame(false);
     row
+}
+
+fn disconnect_network_mount(mount: &gio::Mount, parent: &gtk::Widget) {
+    let window = parent.root().and_downcast::<gtk::Window>();
+    let operation = gtk::MountOperation::new(window.as_ref());
+    let mount = mount.clone();
+    let error_parent = parent.clone();
+    glib::MainContext::default().spawn_local(async move {
+        if let Err(error) = mount
+            .unmount_with_operation_future(gio::MountUnmountFlags::NONE, Some(&operation))
+            .await
+            && !error.matches(gio::IOErrorEnum::Cancelled)
+            && !error.matches(gio::IOErrorEnum::FailedHandled)
+        {
+            let message = if device_release::release_error_is_busy(&error) {
+                format!(
+                    "{}\n{}",
+                    crate::i18n::tr(device_release::DEVICE_BUSY_MESSAGE),
+                    error.message()
+                )
+            } else {
+                error.to_string()
+            };
+            show_error_dialog(
+                &error_parent,
+                &crate::i18n::tr("Unable to disconnect"),
+                &message,
+            );
+        }
+    });
+}
+
+/// Querencia: network drives get the same row button as ejectable media.
+fn sidebar_disconnect_button(on_disconnect: impl Fn() + 'static) -> gtk::Button {
+    let button = gtk::Button::builder()
+        .tooltip_text(crate::i18n::tr("Disconnect"))
+        .build();
+    button.set_child(Some(&crate::assets::primary_icon(
+        crate::assets::icons::EJECT,
+        14,
+    )));
+    button.add_css_class("sidebar-eject");
+    button.add_css_class("sidebar-device-action");
+    button.set_cursor_from_name(Some("pointer"));
+    button.set_has_frame(false);
+    button.set_hexpand(false);
+    button.set_valign(gtk::Align::Center);
+    button.set_width_request(24);
+    button.connect_clicked(move |_| on_disconnect());
+    button
 }
 
 fn sidebar_eject_button(action: MediaRelease, on_release: impl Fn() + 'static) -> gtk::Button {
