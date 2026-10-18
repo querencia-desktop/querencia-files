@@ -152,22 +152,6 @@ fn authentication_retry_message(flags: gio::AskPasswordFlags, message: &str) -> 
 
 const AUTHENTICATION_TEXT_WIDTH_CHARS: i32 = 64;
 
-fn is_rejection_choice(choice: &str) -> bool {
-    let choice = choice.to_ascii_lowercase();
-    [
-        "cancel",
-        "reject",
-        "deny",
-        "disconnect",
-        "abort",
-        "do not",
-        "don't",
-        "no",
-    ]
-    .iter()
-    .any(|word| choice == *word || choice.starts_with(&format!("{word} ")))
-}
-
 fn show_trust_question_dialog(
     browser_overlay: &gtk::Overlay,
     operation: &gio::MountOperation,
@@ -229,11 +213,14 @@ fn show_trust_question_dialog(
     });
 
     let mut rejection = None;
-    let mut ordered_choices: Vec<_> = choices.iter().enumerate().collect();
-    ordered_choices.sort_by_key(|(_, choice)| !is_rejection_choice(choice));
-    for (index, choice) in ordered_choices {
-        let button = gtk::Button::with_label(&super::network::gvfs_choice_label(choice));
-        if is_rejection_choice(choice) {
+    for super::network::GvfsChoice {
+        index,
+        label,
+        rejects,
+    } in super::network::gvfs_choices(choices)
+    {
+        let button = gtk::Button::with_label(&label);
+        if rejects {
             button.add_css_class("action-dialog-cancel");
             rejection.get_or_insert_with(|| button.clone());
         } else {
@@ -245,9 +232,8 @@ fn show_trust_question_dialog(
         let answer_root = blurred_root.clone();
         let answer_operation = operation.clone();
         let answer_declined = declined.clone();
-        let rejects_trust = is_rejection_choice(choice);
         button.connect_clicked(move |_| {
-            if rejects_trust {
+            if rejects {
                 answer_declined.set(true);
             }
             dismiss_modal_layer(&answer_layer, &answer_overlay, answer_root.as_ref());

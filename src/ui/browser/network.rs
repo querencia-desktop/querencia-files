@@ -268,20 +268,32 @@ pub(in crate::ui) fn network_sources_tooltip(location: &Location) -> Option<Stri
     Some(lines.join("\n"))
 }
 
-/// German-readable text for GVfs failures that only carry an English message
-/// (the system has no GVfs translation and many backends use G_IO_ERROR_FAILED).
+/// Readable text for GVfs failures that only carry the backend's English or
+/// German message (many backends use G_IO_ERROR_FAILED).
 pub(in crate::ui) fn gvfs_failure_message(error: &glib::Error) -> Option<String> {
     let original = error.message();
     let message = original.to_ascii_lowercase();
     let has = |needles: &[&str]| needles.iter().any(|needle| message.contains(needle));
-    let explanation = if has(&["connection refused"]) {
+    let explanation = if has(&[
+        "connection refused",
+        "verbindungsaufbau abgelehnt",
+        "vom server verweigert",
+    ]) {
         "The host refused the connection. Check the service and port."
-    } else if has(&["timed out", "timeout"]) {
+    } else if has(&[
+        "timed out",
+        "timeout",
+        "wartezeit für die verbindung ist abgelaufen",
+        "zeitüberschreitung",
+    ]) {
         "The connection timed out. Check the host and firewall."
     } else if has(&[
         "no route to host",
         "network is unreachable",
         "host is unreachable",
+        "keine route zum zielrechner",
+        "netzwerk ist nicht erreichbar",
+        "rechner ist nicht erreichbar",
     ]) {
         "That host is unreachable. Check your network connection."
     } else if has(&[
@@ -290,15 +302,34 @@ pub(in crate::ui) fn gvfs_failure_message(error: &glib::Error) -> Option<String>
         "could not resolve",
         "unknown host",
         "no address associated",
+        "name oder der dienst ist nicht bekannt",
+        "fehler bei der namensauflösung",
+        "fehler beim auflösen",
+        "gehört keine adresse",
     ]) {
         "That host couldn’t be found. Check the address and DNS settings."
-    } else if has(&["failed to retrieve share list"]) {
+    } else if has(&[
+        "failed to retrieve share list",
+        "empfangen der freigabenliste vom server ist gescheitert",
+    ]) {
         "The server did not provide a list of shared folders. Enter the share name in the address, for example smb://server/share."
-    } else if has(&["no such file or directory", "bad network name", "not found"]) {
+    } else if has(&[
+        "no such file or directory",
+        "bad network name",
+        "not found",
+        "nicht gefunden",
+    ]) {
         "The shared folder or path does not exist on this server. Check the address."
-    } else if message.trim() == "connection failed"
-        || has(&["connection reset", "connection closed"])
-    {
+    } else if matches!(
+        message.trim(),
+        "connection failed" | "verbindung fehlgeschlagen"
+    ) || has(&[
+        "connection reset",
+        "connection closed",
+        "vom kommunikationspartner zurückgesetzt",
+        "von gegenstelle getrennt",
+        "unerwartet getrennt",
+    ]) {
         "The connection to the server failed. Check the address, the port and whether the service is running."
     } else {
         return None;
@@ -313,24 +344,52 @@ pub(in crate::ui) fn gvfs_failure_message(error: &glib::Error) -> Option<String>
     ))
 }
 
-/// GVfs' SFTP host-key question, rebuilt in the UI language. GVfs words it
-/// in English here because the system has no GVfs translation.
+/// Where GVfs' SFTP host-key question quotes the host and the fingerprint, in
+/// each GVfs translation whose wording is known.
+const GVFS_HOST_KEY_QUESTIONS: &[[(&str, &str); 2]] = &[
+    [
+        ("Verifying the identity of “", "” failed"),
+        ("The identity sent by the remote computer is “", "”"),
+    ],
+    [
+        ("Die Identität von »", "« konnte nicht überprüft werden"),
+        (
+            "Die vom entfernten Rechner übermittelte Identität lautet »",
+            "«",
+        ),
+    ],
+];
+
+/// GVfs' placeholder when it could not read the server's key fingerprint.
+const GVFS_UNKNOWN_FINGERPRINT: &str = "???";
+
+/// GVfs' SFTP host-key question, rebuilt in the UI language from the English
+/// or German GVfs wording. Other wordings stay as GVfs sent them, with the
+/// note about a missing fingerprint added when GVfs could not read it.
 pub(in crate::ui) fn gvfs_question_text(message: &str) -> Option<String> {
-    let between = |start: &str, end: &str| {
+    let between = |(start, end): (&str, &str)| {
         let (_, rest) = message.split_once(start)?;
         rest.split_once(end)
             .map(|(value, _)| value.trim().to_owned())
     };
-    let host = between("Verifying the identity of “", "” failed")?;
-    let identity = between("The identity sent by the remote computer is “", "”")?;
+    let Some((host, identity)) = GVFS_HOST_KEY_QUESTIONS
+        .iter()
+        .find_map(|[host, identity]| Some((between(*host)?, between(*identity)?)))
+    else {
+        return message.contains(GVFS_UNKNOWN_FINGERPRINT).then(|| {
+            format!(
+                "{}\n\n{}",
+                sanitize_failure_message(message),
+                unreadable_fingerprint_note()
+            )
+        });
+    };
     let first = rust_i18n::t!(
         "The identity of “%{host}” could not be verified. This is normal when you log in to a computer for the first time.",
         host = host
     );
     let second = if identity.trim_matches('?').is_empty() {
-        crate::i18n::tr(
-            "The system could not read the server’s key fingerprint, so it cannot be compared here.",
-        )
+        unreadable_fingerprint_note()
     } else {
         rust_i18n::t!(
             "The computer sent the key fingerprint “%{fingerprint}”. Compare it with the fingerprint you know from the administrator.",
@@ -339,6 +398,12 @@ pub(in crate::ui) fn gvfs_question_text(message: &str) -> Option<String> {
         .into_owned()
     };
     Some(format!("{first}\n\n{second}"))
+}
+
+fn unreadable_fingerprint_note() -> String {
+    crate::i18n::tr(
+        "The system could not read the server’s key fingerprint, so it cannot be compared here.",
+    )
 }
 
 /// GVfs' SFTP and SMB password prompts in the UI language.
@@ -381,12 +446,77 @@ pub(in crate::ui) fn gvfs_prompt_text(message: &str) -> Option<String> {
     Some(rust_i18n::t!("The server “%{host}” requires a password.", host = host).into_owned())
 }
 
-/// Labels GVfs gives the host-key question's choices; the reply stays the index.
+/// Labels GVfs gives the host-key question's choices in English and German,
+/// with the English message they show in the UI language.
+const GVFS_CHOICE_LABELS: &[(&str, &str)] = &[
+    ("Log In Anyway", "Log In Anyway"),
+    ("Cancel Login", "Cancel Login"),
+    ("Dennoch anmelden", "Log In Anyway"),
+    ("Anmelden abbrechen", "Cancel Login"),
+];
+
 pub(in crate::ui) fn gvfs_choice_label(choice: &str) -> String {
-    match choice {
-        "Log In Anyway" | "Cancel Login" => crate::i18n::tr(choice),
-        _ => choice.to_owned(),
-    }
+    GVFS_CHOICE_LABELS
+        .iter()
+        .find(|(gvfs, _)| *gvfs == choice)
+        .map_or_else(
+            || choice.to_owned(),
+            |(_, message)| crate::i18n::tr(message),
+        )
+}
+
+fn is_rejection_choice(choice: &str) -> bool {
+    let choice = choice.to_lowercase();
+    let english = [
+        "cancel",
+        "reject",
+        "deny",
+        "disconnect",
+        "abort",
+        "do not",
+        "don't",
+        "no",
+    ]
+    .iter()
+    .any(|word| choice == *word || choice.starts_with(&format!("{word} ")));
+    let german = choice.split_whitespace().any(|word| {
+        matches!(
+            word,
+            "abbrechen" | "nein" | "ablehnen" | "trennen" | "nicht"
+        )
+    });
+    english || german
+}
+
+/// A GVfs question's choice as the dialog shows it; `index` is the reply.
+#[derive(Debug, PartialEq, Eq)]
+pub(in crate::ui) struct GvfsChoice {
+    pub(in crate::ui) index: usize,
+    pub(in crate::ui) label: String,
+    pub(in crate::ui) rejects: bool,
+}
+
+/// The choices in display order, safe choices first. GVfs lists the safe
+/// choice last (“Cancel Login”, “No”, “Cancel”), so when no label is
+/// recognized, as in other languages, that position marks it.
+pub(in crate::ui) fn gvfs_choices(choices: &[String]) -> Vec<GvfsChoice> {
+    let recognized: Vec<bool> = choices
+        .iter()
+        .map(|choice| is_rejection_choice(choice))
+        .collect();
+    let by_position = choices.len() > 1 && !recognized.contains(&true);
+    let mut ordered: Vec<GvfsChoice> = choices
+        .iter()
+        .zip(recognized)
+        .enumerate()
+        .map(|(index, (choice, recognized))| GvfsChoice {
+            index,
+            label: gvfs_choice_label(choice),
+            rejects: recognized || (by_position && index + 1 == choices.len()),
+        })
+        .collect();
+    ordered.sort_by_key(|choice| !choice.rejects);
+    ordered
 }
 
 /// Shows the page for an empty `network:///`: what was searched, why

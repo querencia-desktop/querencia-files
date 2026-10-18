@@ -119,7 +119,7 @@ fn discovery_reasons_name_each_missing_service() {
 }
 
 #[test]
-fn english_gvfs_failures_get_an_explanation_and_keep_the_original() {
+fn english_and_german_gvfs_failures_get_an_explanation_and_keep_the_original() {
     let failed = |message: &str| glib::Error::new(gio::IOErrorEnum::Failed, message);
     for message in [
         "Failed to mount Windows share: Connection refused",
@@ -127,6 +127,12 @@ fn english_gvfs_failures_get_an_explanation_and_keep_the_original() {
         "Connection failed",
         "Failed to retrieve share list from server: No such file or directory",
         "Failed to mount Windows share: No such file or directory",
+        "Failed to mount Windows share: Verbindungsaufbau abgelehnt",
+        "Failed to mount Windows share: Die Wartezeit für die Verbindung ist abgelaufen",
+        "Verbindung fehlgeschlagen",
+        "Empfangen der Freigabenliste vom Server ist gescheitert: Datei oder Verzeichnis nicht gefunden",
+        "Failed to mount Windows share: Keine Route zum Zielrechner",
+        "Fehler beim Auflösen von »nas.local«: Der Name oder der Dienst ist nicht bekannt",
     ] {
         let explained = gvfs_failure_message(&failed(message)).expect(message);
         assert!(explained.contains(message), "{explained}");
@@ -150,6 +156,67 @@ fn gvfs_host_key_question_is_rebuilt_only_when_recognized() {
     );
     assert_eq!(gvfs_question_text("Continue?"), None);
     assert_eq!(gvfs_choice_label("Something else"), "Something else");
+}
+
+#[test]
+fn german_gvfs_host_key_question_is_rebuilt_like_the_english_one() {
+    let english = "Identity Verification Failed\nVerifying the identity of “127.0.0.1” failed, this happens when you log in to a computer the first time.\n\nThe identity sent by the remote computer is “%s”. If you want to be absolutely sure it is safe to continue, contact the system administrator.";
+    let german = "Überprüfung der Identität fehlgeschlagen\nDie Identität von »127.0.0.1« konnte nicht überprüft werden. Dies ist immer der Fall, wenn Sie sich das erste Mal an einem Rechner anmelden.\n\nDie vom entfernten Rechner übermittelte Identität lautet »%s«. Wenn Sie vor dem Fortfahren absolut sicher gehen wollen, dann kontaktieren Sie Ihren Systemverwalter.";
+    for fingerprint in ["SHA256:abc", "???"] {
+        assert_eq!(
+            gvfs_question_text(&german.replace("%s", fingerprint)),
+            gvfs_question_text(&english.replace("%s", fingerprint)),
+            "{fingerprint}"
+        );
+    }
+}
+
+#[test]
+fn unrecognized_gvfs_host_key_question_keeps_its_text_and_notes_a_missing_fingerprint() {
+    let french = "Échec de vérification d’identité\nL’identité envoyée par l’ordinateur distant est « ??? ».";
+    let shown = gvfs_question_text(french).expect("missing fingerprint");
+    assert!(shown.starts_with(french), "{shown}");
+    assert!(shown.len() > french.len() + 20, "{shown}");
+}
+
+#[test]
+fn gvfs_choices_put_the_safe_choice_first_and_keep_the_reply_index() {
+    let choices = |labels: &[&str]| -> Vec<(usize, String, bool)> {
+        gvfs_choices(&schemes(labels))
+            .into_iter()
+            .map(|choice| (choice.index, choice.label, choice.rejects))
+            .collect()
+    };
+    let log_in = crate::i18n::tr("Log In Anyway");
+    let cancel = crate::i18n::tr("Cancel Login");
+    let host_key = vec![(1, cancel.clone(), true), (0, log_in.clone(), false)];
+    assert_eq!(choices(&["Log In Anyway", "Cancel Login"]), host_key);
+    assert_eq!(
+        choices(&["Dennoch anmelden", "Anmelden abbrechen"]),
+        host_key
+    );
+    assert_eq!(
+        choices(&["Se connecter quand même", "Annuler la connexion"]),
+        vec![
+            (1, "Annuler la connexion".to_owned(), true),
+            (0, "Se connecter quand même".to_owned(), false),
+        ]
+    );
+    assert_eq!(
+        choices(&["Ja", "Nein"]),
+        vec![(1, "Nein".to_owned(), true), (0, "Ja".to_owned(), false)]
+    );
+    assert_eq!(
+        choices(&["Abbrechen", "Trotzdem aushängen"]),
+        vec![
+            (0, "Abbrechen".to_owned(), true),
+            (1, "Trotzdem aushängen".to_owned(), false),
+        ]
+    );
+    assert_eq!(
+        choices(&["Continue"]),
+        vec![(0, "Continue".to_owned(), false)]
+    );
 }
 
 #[test]

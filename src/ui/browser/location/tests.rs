@@ -717,8 +717,16 @@ fn sftp_trust_prompt_requires_a_choice_and_preserves_backend_choice_indexes() {
             overlay.set_child(Some(&gtk::Box::new(gtk::Orientation::Vertical, 0)));
             let window = gtk::Window::builder().child(&overlay).build();
             window.present();
-            let choices = ["Log In Anyway".to_owned(), "Cancel Login".to_owned()];
-            for (label, expected_choice) in [("Cancel Login", 1), ("Log In Anyway", 0)] {
+            let english = ["Log In Anyway".to_owned(), "Cancel Login".to_owned()];
+            let german = [
+                "Dennoch anmelden".to_owned(),
+                "Anmelden abbrechen".to_owned(),
+            ];
+            for (choices, (label, expected_choice)) in
+                [&english, &german].into_iter().flat_map(|choices| {
+                    [("Cancel Login", 1), ("Log In Anyway", 0)].map(|answer| (choices, answer))
+                })
+            {
                 let operation = gio::MountOperation::new();
                 let replies = Rc::new(RefCell::new(Vec::new()));
                 let observed = replies.clone();
@@ -730,7 +738,7 @@ fn sftp_trust_prompt_requires_a_choice_and_preserves_backend_choice_indexes() {
                     &overlay,
                     &operation,
                     "Identity Verification Failed\nThe identity of sftp://user:secret@host/path is ???",
-                    &choices,
+                    choices,
                     declined.clone(),
                 )
                 .expect("themed trust question");
@@ -746,9 +754,23 @@ fn sftp_trust_prompt_requires_a_choice_and_preserves_backend_choice_indexes() {
                     .collect();
                 assert!(text.contains("Identity Verification Failed"));
                 assert!(!text.contains("user:secret"));
-                let button = widgets
+                let choice_buttons: Vec<_> = widgets
                     .iter()
                     .filter_map(|widget| widget.downcast_ref::<gtk::Button>())
+                    .filter(|button| {
+                        button.has_css_class("action-dialog-confirm")
+                            || button.has_css_class("action-dialog-cancel")
+                    })
+                    .collect();
+                assert!(
+                    choice_buttons[0].has_css_class("action-dialog-cancel")
+                        && !choice_buttons[1..]
+                            .iter()
+                            .any(|button| button.has_css_class("action-dialog-cancel")),
+                    "{choices:?}: the safe choice comes first and is the only cancel-styled one"
+                );
+                let button = choice_buttons
+                    .iter()
                     .find(|button| button.label().as_deref() == Some(label))
                     .expect("backend choice");
                 button.emit_clicked();
@@ -769,7 +791,7 @@ fn sftp_trust_prompt_requires_a_choice_and_preserves_backend_choice_indexes() {
                 &overlay,
                 &operation,
                 "Identity Verification Failed",
-                &choices,
+                &english,
                 declined.clone(),
             )
             .expect("themed trust question");
