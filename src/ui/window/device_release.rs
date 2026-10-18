@@ -1053,6 +1053,8 @@ pub(super) fn mount_operation(parent: &gtk::Widget, key: &ReleaseKey) -> gtk::Mo
             dialog.list.set_text(&busy_process_lines(&processes));
             return None;
         }
+        // The question replaces the progress overlay, which would otherwise cover it.
+        hide_release(&busy_key);
         let dialog = show_busy_dialog(
             &busy_parent,
             &operation,
