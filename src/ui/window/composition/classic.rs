@@ -7,6 +7,7 @@
 use std::{
     cell::RefCell,
     rc::{Rc, Weak},
+    time::{Duration, Instant},
 };
 
 use gtk::{gio, glib, prelude::*};
@@ -16,7 +17,7 @@ use crate::{
     assets::{self, icons},
     model::{Location, SortDirection, SortKey},
     ui::{
-        browser::{BrowserView, PinStatus, clipboard_may_paste, paths::is_trash_location},
+        browser::{BrowserView, PinStatus, clipboard_may_paste, network, paths::is_trash_location},
         browser_modes::BrowserMode,
         keys::{Binding, Keys, bindings::*},
         preferences::PreferenceManager,
@@ -32,6 +33,18 @@ use super::{
 /// Prefix of the per-window action group the menus and toolbar activate.
 const ACTIONS: &str = "classic";
 
+/// How long "Connect to Server ▸ Add bookmark" waits for the connection.
+const PENDING_BOOKMARK_TIMEOUT: Duration = Duration::from_secs(300);
+
+/// A bookmark requested in the Connect to Server dialog; it is only written
+/// once the browser shows the connected location, never for a failed attempt.
+struct PendingBookmark {
+    location: Location,
+    name: String,
+    until: Instant,
+    pin: Rc<dyn Fn(Location, String)>,
+}
+
 pub(super) struct ClassicChrome {
     /// Menu bar, toolbar and location row; also the keyboard's "top bar".
     pub(super) chrome: gtk::Box,
@@ -42,6 +55,7 @@ pub(super) struct ClassicChrome {
     bookmarks: gio::Menu,
     rendered_bookmarks: RefCell<Vec<(Location, String)>>,
     pinned_places: Rc<RefCell<Vec<(Location, String)>>>,
+    pending_bookmark: RefCell<Option<PendingBookmark>>,
     /// For the clipboard watcher, which outlives no window.
     browser: Weak<Browser>,
     clipboard_watch: RefCell<Option<(gtk::gdk::Clipboard, glib::SignalHandlerId)>>,
@@ -104,6 +118,7 @@ impl ClassicChrome {
             bookmarks,
             rendered_bookmarks: RefCell::new(Vec::new()),
             pinned_places: sidebar.state.pinned_places.clone(),
+            pending_bookmark: RefCell::new(None),
             browser: Rc::downgrade(&view.browser()),
             clipboard_watch: RefCell::new(None),
         });
@@ -165,7 +180,51 @@ impl ClassicChrome {
         self.add_view_action(window, view, "trash", |view| {
             view.navigate_location(Location::uri("trash:///"));
         });
-        self.add_view_action(window, view, "reload", |view| view.refresh());
+        self.add_view_action(window, view, "network", |view| {
+            view.navigate_location(Location::uri(network::NETWORK_URI));
+        });
+        self.add_view_action(window, view, "connect-to-server", {
+            let state = Rc::downgrade(&sidebar.state);
+            let chrome = Rc::downgrade(self);
+            move |view| {
+                let connect_view = view.clone();
+                let state = state.clone();
+                let chrome = chrome.clone();
+                network::show_connect_dialog(&view.widget(), move |address, bookmark| {
+                    let Some(location) = connect_view.connect_to_server(&address) else {
+                        return;
+                    };
+                    let Some(chrome) = chrome.upgrade() else {
+                        return;
+                    };
+                    let state = state.clone();
+                    chrome
+                        .pending_bookmark
+                        .replace(bookmark.map(|name| PendingBookmark {
+                            name: if name.is_empty() {
+                                location.display_name()
+                            } else {
+                                name
+                            },
+                            location,
+                            until: Instant::now() + PENDING_BOOKMARK_TIMEOUT,
+                            pin: Rc::new(move |location, name| {
+                                if let Some(state) = state.upgrade() {
+                                    state.pin_location(location, name);
+                                }
+                            }),
+                        }));
+                    if let Some(browser) = chrome.browser.upgrade() {
+                        chrome.refresh(&browser);
+                    }
+                });
+            }
+        });
+        self.add_view_action(window, view, "reload", |view| {
+            if !view.reconnect_if_disconnected() {
+                view.refresh();
+            }
+        });
         self.add_view_action(window, view, "edit-location", |view| {
             view.begin_location_edit();
         });
@@ -462,10 +521,32 @@ impl ClassicChrome {
                 &(preferences.sort_direction == SortDirection::Descending).to_variant(),
             );
         }
+        self.complete_pending_bookmark(browser);
         self.refresh_bookmarks();
         let text = status_text(browser).unwrap_or_default();
         if self.status.text() != text {
             self.status.set_text(&text);
+        }
+    }
+
+    fn complete_pending_bookmark(&self, browser: &Browser) {
+        let due = {
+            let mut pending = self.pending_bookmark.borrow_mut();
+            let expired = pending
+                .as_ref()
+                .is_some_and(|bookmark| Instant::now() > bookmark.until);
+            let reached = pending.as_ref().is_some_and(|bookmark| {
+                browser
+                    .active_location()
+                    .is_some_and(|active| network::same_location(&active, &bookmark.location))
+            });
+            if expired {
+                pending.take();
+            }
+            if reached { pending.take() } else { None }
+        };
+        if let Some(bookmark) = due {
+            (bookmark.pin)(bookmark.location, bookmark.name);
         }
     }
 
@@ -636,6 +717,12 @@ fn menu_model(bookmarks: &gio::Menu) -> gio::Menu {
     );
     file.append_section(None, &section);
     let section = gio::Menu::new();
+    section.append(
+        Some(&tr("Connect to Server…")),
+        Some(&action("connect-to-server")),
+    );
+    file.append_section(None, &section);
+    let section = gio::Menu::new();
     item(
         &section,
         "Properties",
@@ -752,6 +839,11 @@ fn menu_model(bookmarks: &gio::Menu) -> gio::Menu {
     go.append_section(None, &section);
     let section = gio::Menu::new();
     section.append(Some(&tr("Trash")), Some(&action("trash")));
+    section.append(Some(&tr("Network")), Some(&action("network")));
+    section.append(
+        Some(&tr("Connect to Server…")),
+        Some(&action("connect-to-server")),
+    );
     go.append_section(None, &section);
     let section = gio::Menu::new();
     item(

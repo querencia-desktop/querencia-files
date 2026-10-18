@@ -26,7 +26,14 @@ pub(crate) fn entry_icon_names(entry: &FileEntry) -> Vec<String> {
         return Vec::new();
     }
     if entry.is_directory() {
-        return folder_icon_names();
+        let mut names: Vec<String> =
+            crate::ui::browser::network::network_icon_names(&entry.location)
+                .unwrap_or_default()
+                .iter()
+                .map(|name| (*name).to_owned())
+                .collect();
+        names.extend(folder_icon_names());
+        return names;
     }
     file_name_icon_names(&entry.display_name)
 }

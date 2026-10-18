@@ -54,6 +54,7 @@ mod inline_edit;
 mod listing_filter;
 mod listing_search;
 mod location;
+pub(in crate::ui) mod network;
 mod pane_header;
 pub(in crate::ui) mod paths;
 mod peek;
