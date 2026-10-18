@@ -179,6 +179,16 @@ impl Location {
             .is_some_and(|uri| uri_scheme_eq(uri, "recent"))
     }
 
+    /// Querencia: GVfs' `network:///` browse root.
+    pub fn is_network_browse_root(&self) -> bool {
+        self.uri_value().is_some_and(|uri| {
+            uri_scheme_eq(uri, "network")
+                && uri
+                    .split_once(':')
+                    .is_some_and(|(_, rest)| rest.trim_start_matches('/').is_empty())
+        })
+    }
+
     pub fn is_recent_root(&self) -> bool {
         // Avoid GFile here: GVfs backends can SIGSEGV when tests call File APIs concurrently.
         self.uri_value().is_some_and(|uri| {

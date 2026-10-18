@@ -75,14 +75,19 @@ fn network_root_is_recognized_in_all_gio_spellings() {
 #[test]
 fn network_entries_get_workgroup_server_and_share_icons() {
     let icon = |uri: &str| network_icon_names(&Location::uri(uri)).map(|names| names[0]);
-    assert_eq!(icon("smb:///"), Some("network-workgroup"));
-    assert_eq!(icon("smb://nas/"), Some("network-server"));
-    assert_eq!(icon("sftp://benutzer@server"), Some("network-server"));
+    assert_eq!(icon("smb:///"), Some(icons::NETWORK_WORKGROUP));
+    assert_eq!(icon("smb://nas/"), Some(icons::NETWORK_SERVER));
+    assert_eq!(icon("sftp://benutzer@server"), Some(icons::NETWORK_SERVER));
     assert_eq!(
         icon("dns-sd://local/drucker._ipp._tcp"),
-        Some("network-server")
+        Some(icons::NETWORK_SERVER)
     );
-    assert_eq!(icon("smb://nas/freigabe"), Some("folder-remote"));
+    assert_eq!(icon("smb://nas/freigabe"), Some(icons::NETWORK_SHARE));
+    assert_eq!(
+        network_icon_names(&Location::uri("smb://nas/freigabe")).map(|names| names[1]),
+        Some("folder-remote"),
+        "the classic theme name stays as fallback"
+    );
     assert_eq!(icon("smb://nas/freigabe/ordner"), None);
     assert_eq!(icon("sftp://server/home"), None);
     assert_eq!(icon("trash:///"), None);
@@ -179,4 +184,15 @@ fn equal_gio_files_are_the_same_location() {
         &Location::uri("sftp://server/home"),
         &Location::uri("sftp://server/srv")
     ));
+}
+
+#[test]
+fn the_udisks_passphrase_prompt_is_rewritten() {
+    assert_eq!(
+        gvfs_prompt_text(
+            "Authentication Required\nA passphrase is needed to access encrypted data on “/dev/sdb1”."
+        )
+        .as_deref(),
+        Some("Enter the passphrase to unlock the encrypted data on “/dev/sdb1”.")
+    );
 }

@@ -155,6 +155,10 @@ impl TabWindow {
             .clone()
     }
 
+    pub(in crate::ui::window) fn window(&self) -> Option<gtk::ApplicationWindow> {
+        self.window.upgrade()
+    }
+
     pub(in crate::ui::window) fn active_browser(&self) -> BrowserView {
         self.active_tab().content.browser.clone()
     }
@@ -630,7 +634,7 @@ pub(in crate::ui::window) fn tab_index(digit: u8) -> usize {
 
 fn tab_label(location: Option<&Location>) -> String {
     let Some(location) = location else {
-        return "Home".into();
+        return crate::i18n::tr("Home");
     };
     if let Some(path) = location.native_path() {
         if Some(path)
@@ -646,11 +650,11 @@ fn tab_label(location: Option<&Location>) -> String {
     }
     let uri = location.uri_value().unwrap_or_default();
     match uri {
-        "trash:///" => "Trash".into(),
-        "recent:///" => "Recent".into(),
-        "network:///" => "Network".into(),
+        "trash:///" => crate::i18n::tr("Trash"),
+        "recent:///" => crate::i18n::tr("Recent"),
+        "network:///" => crate::i18n::tr("Network"),
         _ => gio::File::for_uri(uri).basename().map_or_else(
-            || "Location".into(),
+            || crate::i18n::tr("Location"),
             |name| name.to_string_lossy().into_owned(),
         ),
     }

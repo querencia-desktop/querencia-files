@@ -1295,5 +1295,14 @@
   "Cancel Login": "Annuler la connexion",
   "The system could not read the server’s key fingerprint, so it cannot be compared here.": "Le système n’a pas pu lire l’empreinte de la clé du serveur ; elle ne peut donc pas être comparée ici.",
   "The connection to the server was lost. Choose Reload or open the location again to reconnect.": "La connexion au serveur a été perdue. Choisissez Actualiser ou rouvrez l’emplacement pour vous reconnecter.",
-  "Windows Network": "Réseau Windows"
+  "Windows Network": "Réseau Windows",
+  "REMOVABLE MEDIA": "SUPPORTS AMOVIBLES",
+  "Mount removable media automatically": "Monter automatiquement les supports amovibles",
+  "Mount USB sticks, discs and other media as soon as they are connected. This only happens while Querencia Files is running.": "Monter les clés USB, disques et autres supports dès leur connexion. Cela ne se produit que lorsque Querencia Files est ouvert.",
+  "The device is still in use. Close the files and programs that use it, then try again.": "Le périphérique est encore utilisé. Fermez les fichiers et programmes qui l’utilisent, puis réessayez.",
+  "settings_keywords.automount-media": "montage automatique clé usb disque cd dvd lecteur volume brancher connecter support amovible",
+  "The device is still in use": "Le périphérique est encore utilisé",
+  "Unmount Anyway": "Démonter quand même",
+  "The programs could not be determined.": "Les programmes n’ont pas pu être déterminés.",
+  "Close the files and programs that use it, then try again. Unmounting anyway can lose data these programs have not saved.": "Fermez les fichiers et programmes qui l’utilisent, puis réessayez. Démonter quand même peut faire perdre les données non enregistrées de ces programmes."
 }

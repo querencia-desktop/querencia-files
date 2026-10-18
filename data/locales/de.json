@@ -1295,5 +1295,14 @@
   "Cancel Login": "Anmeldung abbrechen",
   "The system could not read the server’s key fingerprint, so it cannot be compared here.": "Das System konnte den Fingerabdruck des Serverschlüssels nicht auslesen; er kann hier daher nicht verglichen werden.",
   "The connection to the server was lost. Choose Reload or open the location again to reconnect.": "Die Verbindung zum Server wurde getrennt. Wählen Sie „Neu laden“ oder öffnen Sie den Ort erneut, um neu zu verbinden.",
-  "Windows Network": "Windows-Netzwerk"
+  "Windows Network": "Windows-Netzwerk",
+  "REMOVABLE MEDIA": "WECHSELMEDIEN",
+  "Mount removable media automatically": "Wechselmedien automatisch einhängen",
+  "Mount USB sticks, discs and other media as soon as they are connected. This only happens while Querencia Files is running.": "USB-Sticks, CDs/DVDs und andere Medien beim Anschließen sofort einhängen. Das geschieht nur, solange Querencia Files läuft.",
+  "The device is still in use. Close the files and programs that use it, then try again.": "Der Datenträger wird noch benutzt. Schließen Sie Dateien und Programme, die darauf zugreifen, und versuchen Sie es erneut.",
+  "settings_keywords.automount-media": "automatisch einhängen USB Stick CD DVD Laufwerk Datenträger anstecken anschließen Wechselmedien",
+  "The device is still in use": "Der Datenträger wird noch benutzt",
+  "Unmount Anyway": "Trotzdem aushängen",
+  "The programs could not be determined.": "Die Programme konnten nicht ermittelt werden.",
+  "Close the files and programs that use it, then try again. Unmounting anyway can lose data these programs have not saved.": "Schließen Sie Dateien und Programme, die darauf zugreifen, und versuchen Sie es erneut. Beim Trotzdem-Aushängen können ungespeicherte Daten dieser Programme verloren gehen."
 }

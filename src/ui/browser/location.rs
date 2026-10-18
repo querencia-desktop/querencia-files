@@ -1196,14 +1196,22 @@ async fn wait_for_foreign_drive_start(
 
 impl BrowserView {
     pub(crate) fn mount_volume(&self, volume: gio::Volume) {
+        crate::ui::window::note_user_mount_volume(&volume);
         self.state.mount_device_volume(volume, None, false, true);
     }
 
     pub(crate) fn unlock_volume(&self, volume: gio::Volume) {
+        crate::ui::window::note_user_mount_volume(&volume);
         self.state.mount_device_volume(volume, None, false, true);
     }
 
+    /// Querencia: mounts a newly connected volume without opening it.
+    pub(crate) fn automount_volume(&self, volume: gio::Volume) {
+        self.state.mount_device_volume(volume, None, false, false);
+    }
+
     pub(crate) fn start_password_drive(&self, drive: gio::Drive, user_asked_to_open: bool) {
+        crate::ui::window::note_user_mount_drive(&drive);
         self.state
             .start_password_drive(drive, None, false, user_asked_to_open);
     }

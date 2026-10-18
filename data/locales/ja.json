@@ -1295,5 +1295,14 @@
   "Cancel Login": "ログインをキャンセル",
   "The system could not read the server’s key fingerprint, so it cannot be compared here.": "システムはサーバーの鍵フィンガープリントを読み取れなかったため、ここでは比較できません。",
   "The connection to the server was lost. Choose Reload or open the location again to reconnect.": "サーバーとの接続が切れました。再接続するには「再読み込み」を選ぶか、場所をもう一度開いてください。",
-  "Windows Network": "Windows ネットワーク"
+  "Windows Network": "Windows ネットワーク",
+  "REMOVABLE MEDIA": "リムーバブルメディア",
+  "Mount removable media automatically": "リムーバブルメディアを自動的にマウント",
+  "Mount USB sticks, discs and other media as soon as they are connected. This only happens while Querencia Files is running.": "USB メモリーやディスクなどのメディアを接続するとすぐにマウントします。Querencia Files の実行中のみ行われます。",
+  "The device is still in use. Close the files and programs that use it, then try again.": "デバイスはまだ使用中です。使用しているファイルやプログラムを閉じてから、もう一度お試しください。",
+  "settings_keywords.automount-media": "自動マウント USB メモリー ディスク CD DVD ドライブ ボリューム 接続 リムーバブル",
+  "The device is still in use": "デバイスはまだ使用中です",
+  "Unmount Anyway": "強制的にマウント解除",
+  "The programs could not be determined.": "プログラムを特定できませんでした。",
+  "Close the files and programs that use it, then try again. Unmounting anyway can lose data these programs have not saved.": "使用しているファイルやプログラムを閉じてから、もう一度お試しください。強制的にマウント解除すると、これらのプログラムの未保存のデータが失われることがあります。"
 }

@@ -50,6 +50,12 @@ const TARGETS: &[Target] = &[
         aliases: "startup launch home folder reset",
     },
     Target {
+        id: "automount-media",
+        page: "general",
+        title: "Mount removable media automatically",
+        aliases: "automount usb stick disc cd dvd drive volume plug connect removable media",
+    },
+    Target {
         id: "restore-tabs",
         page: "general",
         title: "Restore open tabs",

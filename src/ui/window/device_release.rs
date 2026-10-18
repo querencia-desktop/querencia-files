@@ -541,7 +541,15 @@ pub(super) fn decide_gio(
             safe_to_remove: false,
         },
         Err(error) => {
-            let mut message = crate::services::gio_error_message(&error);
+            let mut message = if release_error_is_busy(&error) {
+                format!(
+                    "{}\n{}",
+                    crate::i18n::tr(DEVICE_BUSY_MESSAGE),
+                    error.message()
+                )
+            } else {
+                crate::services::gio_error_message(&error)
+            };
             if let Some(progress) = progress.map(str::trim).filter(|line| !line.is_empty()) {
                 message.push('\n');
                 message.push_str(progress);
@@ -555,6 +563,14 @@ pub(super) fn decide_gio(
             }
         }
     }
+}
+
+pub(super) const DEVICE_BUSY_MESSAGE: &str =
+    "The device is still in use. Close the files and programs that use it, then try again.";
+
+// udisks reports a busy target as G_IO_ERROR_BUSY or only in the message text.
+pub(super) fn release_error_is_busy(error: &glib::Error) -> bool {
+    error.matches(gio::IOErrorEnum::Busy) || error.message().to_ascii_lowercase().contains("busy")
 }
 
 fn release_error_is_quiet(error: &glib::Error) -> bool {
@@ -1010,12 +1026,191 @@ pub(super) fn set_mounted_roots_for_test(roots: Option<Vec<PathBuf>>) {
 pub(super) fn mount_operation(parent: &gtk::Widget, key: &ReleaseKey) -> gtk::MountOperation {
     let window = parent.root().and_downcast::<gtk::Window>();
     let operation = gtk::MountOperation::new(window.as_ref());
-    let key = key.clone();
+    let progress_key = key.clone();
     operation.connect_show_unmount_progress(move |operation, message, time_left, bytes_left| {
         operation.stop_signal_emission_by_name("show-unmount-progress");
-        note_unmount_progress(&key, message, time_left, bytes_left);
+        note_unmount_progress(&progress_key, message, time_left, bytes_left);
+    });
+    // Querencia: GTK's own busy dialog is an untranslated separate window that
+    // names every program "Unknown Application"; Files asks in its own style.
+    let busy_parent = parent.clone();
+    let busy_key = key.clone();
+    let busy_dialog = Rc::new(RefCell::new(None::<BusyDialog>));
+    let withdrawn = busy_dialog.clone();
+    operation.connect_local("show-processes", false, move |values| {
+        let operation = values.first()?.get::<gtk::MountOperation>().ok()?;
+        let choices = values.get(3)?.get::<glib::StrV>().ok()?;
+        if choices.is_empty() {
+            return None;
+        }
+        operation.stop_signal_emission_by_name("show-processes");
+        let processes = busy_key
+            .mount_root
+            .as_deref()
+            .map(|root| processes_using(Path::new("/proc"), root))
+            .unwrap_or_default();
+        if let Some(dialog) = busy_dialog.borrow().as_ref() {
+            dialog.list.set_text(&busy_process_lines(&processes));
+            return None;
+        }
+        let dialog = show_busy_dialog(
+            &busy_parent,
+            &operation,
+            &busy_key,
+            &processes,
+            &busy_dialog,
+        );
+        busy_dialog.replace(dialog);
+        None
+    });
+    // GVfs withdraws the question once the programs are gone.
+    operation.connect_aborted(move |_| {
+        let dialog = withdrawn.borrow_mut().take();
+        if let Some(dialog) = dialog {
+            (dialog.withdraw)();
+        }
     });
     operation
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub(super) struct BusyProcess {
+    pub pid: u32,
+    pub name: String,
+}
+
+/// Programs of this user whose working directory, root or an open file lies
+/// under `mount_root`, read from a `/proc`-style tree.
+pub(super) fn processes_using(proc_root: &Path, mount_root: &Path) -> Vec<BusyProcess> {
+    const LIMIT: usize = 32;
+    let own = std::process::id();
+    let Ok(entries) = std::fs::read_dir(proc_root) else {
+        return Vec::new();
+    };
+    let mut found: Vec<BusyProcess> = entries
+        .flatten()
+        .filter_map(|entry| {
+            let pid: u32 = entry.file_name().to_str()?.parse().ok()?;
+            if pid == own {
+                return None;
+            }
+            let dir = entry.path();
+            let under = |link: PathBuf| {
+                std::fs::read_link(link).is_ok_and(|target| target.starts_with(mount_root))
+            };
+            let uses = under(dir.join("cwd"))
+                || under(dir.join("root"))
+                || std::fs::read_dir(dir.join("fd"))
+                    .is_ok_and(|fds| fds.flatten().any(|fd| under(fd.path())));
+            uses.then(|| BusyProcess {
+                pid,
+                name: std::fs::read_to_string(dir.join("comm"))
+                    .map(|name| name.trim().to_owned())
+                    .unwrap_or_default(),
+            })
+        })
+        .collect();
+    found.sort_by_key(|process| process.pid);
+    found.truncate(LIMIT);
+    found
+}
+
+fn busy_process_lines(processes: &[BusyProcess]) -> String {
+    if processes.is_empty() {
+        return crate::i18n::tr("The programs could not be determined.");
+    }
+    processes
+        .iter()
+        .map(|process| {
+            rust_i18n::t!(
+                "%{name} (process %{pid})",
+                name = process.name,
+                pid = process.pid
+            )
+            .into_owned()
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
+struct BusyDialog {
+    list: gtk::Label,
+    withdraw: Rc<dyn Fn()>,
+}
+
+fn show_busy_dialog(
+    parent: &gtk::Widget,
+    operation: &gtk::MountOperation,
+    key: &ReleaseKey,
+    processes: &[BusyProcess],
+    slot: &Rc<RefCell<Option<BusyDialog>>>,
+) -> Option<BusyDialog> {
+    use crate::ui::controls::{ModalTone, focus_button, message_dialog_layout};
+    let Some(ModalHost {
+        overlay,
+        blurred_root,
+    }) = ModalHost::blurred_for(parent)
+    else {
+        operation.reply(gio::MountOperationResult::Aborted);
+        return None;
+    };
+    let layout = message_dialog_layout(
+        crate::assets::icons::EJECT,
+        &crate::i18n::tr("The device is still in use"),
+        &key.display_name,
+        &crate::i18n::tr("Unmount Anyway"),
+        ModalTone::Danger,
+    );
+    layout.cancel.set_label(&crate::i18n::tr("Cancel"));
+    layout.body.append(&message_dialog_description(&crate::i18n::tr(
+        "Close the files and programs that use it, then try again. Unmounting anyway can lose data these programs have not saved.",
+    )));
+    let list = message_dialog_description(&busy_process_lines(processes));
+    list.set_selectable(true);
+    layout.body.append(&list);
+    let layer = modal_layer(&layout.content, &overlay, blurred_root.clone(), None);
+    remember_modal_focus(&layer, &overlay);
+    overlay.add_overlay(&layer);
+    let answered = Rc::new(Cell::new(false));
+    let withdraw: Rc<dyn Fn()> = {
+        let answered = answered.clone();
+        let layer = layer.clone();
+        let overlay = overlay.clone();
+        let blurred_root = blurred_root.clone();
+        Rc::new(move || {
+            if !answered.replace(true) {
+                dismiss_modal_layer(&layer, &overlay, blurred_root.as_ref());
+            }
+        })
+    };
+    let answer = {
+        let operation = operation.clone();
+        let layer = layer.clone();
+        let slot = slot.clone();
+        Rc::new(move |force: bool| {
+            if answered.replace(true) {
+                return;
+            }
+            dismiss_modal_layer(&layer, &overlay, blurred_root.as_ref());
+            slot.borrow_mut().take();
+            if force {
+                // GVfs offers "Unmount Anyway" first and "Cancel" second.
+                operation.set_choice(0);
+                operation.reply(gio::MountOperationResult::Handled);
+            } else {
+                operation.reply(gio::MountOperationResult::Aborted);
+            }
+        })
+    };
+    let on_confirm = answer.clone();
+    layout.confirm.connect_clicked(move |_| on_confirm(true));
+    let on_cancel = answer.clone();
+    layout.cancel.connect_clicked(move |_| on_cancel(false));
+    let on_close = answer.clone();
+    layout.close.connect_clicked(move |_| on_close(false));
+    close_on_escape(&layer, move || answer(false));
+    focus_button(&layout.cancel);
+    Some(BusyDialog { list, withdraw })
 }
 
 #[cfg(test)]

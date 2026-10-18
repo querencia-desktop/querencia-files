@@ -32,6 +32,9 @@ use crate::{
 };
 
 mod camera_photos;
+mod network_devices;
+
+pub(crate) use network_devices::{DiscoveryService, merged_network_sources};
 
 const LIST_ATTRIBUTES: &str = "standard::display-name,standard::name,standard::type,standard::is-hidden,standard::is-symlink,standard::target-uri,access::can-trash,access::can-delete";
 const FULL_ATTRIBUTES: &str = "standard::display-name,standard::name,standard::type,standard::is-hidden,standard::is-symlink,standard::size,standard::target-uri,time::modified,unix::mode,access::can-trash,access::can-delete";
@@ -1137,6 +1140,19 @@ impl FileSource for LocalFileSource {
         let task = glib::MainContext::default().spawn_local(async move {
             let directory = gio_file_for_location(&location);
             let deadline = started + request.time_budget;
+            // Querencia: network:/// is merged per device, so it is emitted in one batch.
+            let network_listing = RefCell::new(location.is_network_browse_root().then(Vec::new));
+            let flush_network_listing = || {
+                if let Some(entries) = network_listing.borrow_mut().take() {
+                    let entries = network_devices::merge_network_listing(entries);
+                    if !entries.is_empty() {
+                        emit(DirectoryEvent::Batch {
+                            request_id,
+                            entries,
+                        });
+                    }
+                }
+            };
             let finish_truncated = |entries: usize,
                                     reason: &'static str,
                                     can_trash: Option<bool>,
@@ -1148,6 +1164,7 @@ impl FileSource for LocalFileSource {
                     reason,
                     "directory load truncated"
                 );
+                flush_network_listing();
                 emit(DirectoryEvent::Finished {
                     request_id,
                     truncated: true,
@@ -1216,6 +1233,7 @@ impl FileSource for LocalFileSource {
                             elapsed_ms = started.elapsed().as_millis() as u64,
                             "directory load finished"
                         );
+                        flush_network_listing();
                         emit(DirectoryEvent::Finished {
                             request_id,
                             truncated: false,
@@ -1250,10 +1268,14 @@ impl FileSource for LocalFileSource {
                             );
                             first_batch = false;
                         }
-                        emit(DirectoryEvent::Batch {
-                            request_id,
-                            entries,
-                        });
+                        if let Some(buffered) = network_listing.borrow_mut().as_mut() {
+                            buffered.extend(entries);
+                        } else {
+                            emit(DirectoryEvent::Batch {
+                                request_id,
+                                entries,
+                            });
+                        }
                         if entry_budget_exhausted {
                             finish_truncated(total_entries, "entry budget", can_trash, can_delete);
                             break;
@@ -1266,6 +1288,7 @@ impl FileSource for LocalFileSource {
                             error_code = error.code(),
                             "directory load interrupted"
                         );
+                        flush_network_listing();
                         emit(remote_directory_failure(request_id, &error));
                         break;
                     }
@@ -2035,7 +2058,7 @@ fn pending_monitor_change(
     other: Option<Location>,
     event: gio::FileMonitorEvent,
 ) -> Option<PendingMonitorChange> {
-    if watched.is_recent_root() {
+    if watched.is_recent_root() || watched.is_network_browse_root() {
         return Some(PendingMonitorChange::Rescan);
     }
 

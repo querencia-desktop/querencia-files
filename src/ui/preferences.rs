@@ -201,6 +201,8 @@ pub(in crate::ui) struct Preferences {
     #[serde(default = "default_enabled")]
     restore_tabs: bool,
     #[serde(default = "default_enabled")]
+    automount_media: bool,
+    #[serde(default = "default_enabled")]
     remember_folder_views: bool,
     #[serde(default, skip_serializing_if = "HashMap::is_empty")]
     folder_colors: HashMap<String, String>,
@@ -313,6 +315,7 @@ impl Default for Preferences {
             release_channel: default_release_channel(),
             default_directory: None,
             restore_tabs: true,
+            automount_media: true,
             remember_folder_views: true,
             folder_colors: HashMap::new(),
             custom_icons: HashMap::new(),
@@ -1055,6 +1058,15 @@ impl PreferenceManager {
         if !enabled {
             super::tabs_session::remove();
         }
+        self.save_preferences();
+    }
+
+    pub fn automount_media(&self) -> bool {
+        self.preferences.borrow().automount_media
+    }
+
+    pub fn set_automount_media(&self, enabled: bool) {
+        self.preferences.borrow_mut().automount_media = enabled;
         self.save_preferences();
     }
 

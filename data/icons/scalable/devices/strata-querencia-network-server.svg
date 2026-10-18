@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <title>Server</title>
+  <rect x="14" y="3" width="36" height="58" rx="5" fill="#8c8c8c" stroke="#3c3c3c" stroke-width="3"/>
+  <rect x="19" y="9" width="26" height="9" rx="2" fill="#c8c8c8"/>
+  <rect x="19" y="22" width="26" height="9" rx="2" fill="#c8c8c8"/>
+  <rect x="19" y="35" width="26" height="9" rx="2" fill="#c8c8c8"/>
+  <rect x="22" y="12" width="12" height="3" fill="#f07746"/>
+  <rect x="22" y="25" width="12" height="3" fill="#f07746"/>
+  <rect x="22" y="38" width="12" height="3" fill="#f07746"/>
+  <circle cx="32" cy="52" r="4" fill="#f07746" stroke="#b8532b" stroke-width="1.5"/>
+</svg>

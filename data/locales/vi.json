@@ -1295,5 +1295,14 @@
   "Cancel Login": "Hủy đăng nhập",
   "The system could not read the server’s key fingerprint, so it cannot be compared here.": "Hệ thống không đọc được dấu vân tay khóa của máy chủ nên không thể so sánh ở đây.",
   "The connection to the server was lost. Choose Reload or open the location again to reconnect.": "Đã mất kết nối tới máy chủ. Chọn Tải lại hoặc mở lại vị trí để kết nối lại.",
-  "Windows Network": "Mạng Windows"
+  "Windows Network": "Mạng Windows",
+  "REMOVABLE MEDIA": "PHƯƠNG TIỆN DI ĐỘNG",
+  "Mount removable media automatically": "Tự động gắn phương tiện di động",
+  "Mount USB sticks, discs and other media as soon as they are connected. This only happens while Querencia Files is running.": "Gắn USB, đĩa và các phương tiện khác ngay khi được kết nối. Việc này chỉ diễn ra khi Querencia Files đang chạy.",
+  "The device is still in use. Close the files and programs that use it, then try again.": "Thiết bị vẫn đang được sử dụng. Hãy đóng các tệp và chương trình đang dùng nó rồi thử lại.",
+  "settings_keywords.automount-media": "tự động gắn usb đĩa cd dvd ổ đĩa phân vùng cắm kết nối phương tiện di động",
+  "The device is still in use": "Thiết bị vẫn đang được sử dụng",
+  "Unmount Anyway": "Vẫn tháo gắn",
+  "The programs could not be determined.": "Không xác định được các chương trình.",
+  "Close the files and programs that use it, then try again. Unmounting anyway can lose data these programs have not saved.": "Hãy đóng các tệp và chương trình đang dùng nó rồi thử lại. Nếu vẫn tháo gắn, dữ liệu chưa lưu của các chương trình này có thể bị mất."
 }

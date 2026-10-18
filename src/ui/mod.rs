@@ -65,7 +65,9 @@ pub(crate) use window::default_save_folder;
 pub(in crate::ui) use window::{
     RemovableDestination, removable_destinations, resolve_removable_destination,
 };
-pub use window::{UnlockTarget, present, present_open, present_reveal, present_unlock};
+pub use window::{
+    UnlockTarget, present, present_open, present_reveal, present_unlock, start_device_watch,
+};
 
 pub(crate) fn prepare_portal_ui() {
     let _theme = theme::ThemeManager::shared();

@@ -93,6 +93,18 @@ pub(super) fn general_page(
     super::search::tag(&udiskie_row, "Unlock encrypted volumes");
     desktop.append(&udiskie_row);
 
+    let media = super::settings_group(&preferences, "REMOVABLE MEDIA");
+    append_preference_switch(
+        &media,
+        &manager,
+        PreferenceSwitch {
+            title: "Mount removable media automatically",
+            description: "Mount USB sticks, discs and other media as soon as they are connected. This only happens while Querencia Files is running.",
+            read: PreferenceManager::automount_media,
+            write: PreferenceManager::set_automount_media,
+        },
+    );
+
     let startup = super::settings_group(&preferences, "STARTUP");
     append_default_directory_option(&startup, &manager);
     append_preference_switch(

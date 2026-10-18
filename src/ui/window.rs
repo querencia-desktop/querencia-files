@@ -49,8 +49,10 @@ use super::{
 
 mod bookmarks;
 mod composition;
+mod device_kind;
 mod device_labels;
 mod device_release;
+mod device_watch;
 mod devices;
 mod drive_dialogs;
 mod drive_ops;
@@ -316,6 +318,7 @@ pub(super) fn present_target(
         .build();
 
     let tabs = composition::TabWindow::new(&window, &preference_manager, restore_tabs);
+    register_tab_window(&tabs);
     let browser = tabs.active_browser();
     window.present();
     crate::metrics::mark_window_presented();
@@ -343,6 +346,47 @@ pub(super) fn present_target(
     }
     browser
 }
+
+thread_local! {
+    static TAB_WINDOWS: RefCell<Vec<std::rc::Weak<composition::TabWindow>>> =
+        const { RefCell::new(Vec::new()) };
+}
+
+fn register_tab_window(tabs: &Rc<composition::TabWindow>) {
+    TAB_WINDOWS.with(|windows| {
+        let mut windows = windows.borrow_mut();
+        windows.retain(|window| window.strong_count() > 0);
+        windows.push(Rc::downgrade(tabs));
+    });
+}
+
+/// The active tab of the focused Files window, else of any open one.
+fn active_browser_view() -> Option<BrowserView> {
+    let tab_windows: Vec<_> = TAB_WINDOWS.with(|windows| {
+        windows
+            .borrow()
+            .iter()
+            .filter_map(std::rc::Weak::upgrade)
+            .collect()
+    });
+    let alive = |tabs: &&Rc<composition::TabWindow>| tabs.window().is_some();
+    tab_windows
+        .iter()
+        .filter(alive)
+        .find(|tabs| tabs.window().is_some_and(|window| window.is_active()))
+        .or_else(|| tab_windows.iter().rfind(alive))
+        .map(|tabs| tabs.active_browser())
+}
+
+fn open_location_in_new_window(location: Location) {
+    let Some(application) = gio::Application::default().and_downcast::<gtk::Application>() else {
+        return;
+    };
+    open_argument::present_location_window(&application, location);
+}
+
+pub use device_watch::start as start_device_watch;
+pub(in crate::ui) use device_watch::{note_user_mount_drive, note_user_mount_volume};
 
 fn schedule_after_first_paint(
     window: &gtk::ApplicationWindow,
@@ -1745,7 +1789,8 @@ impl SidebarState {
             return None;
         }
         let ids = device_release::ids_for_mount(&mount);
-        let row = sidebar_button(crate::assets::icons::HARD_DRIVE, name);
+        let kind = device_kind::device_kind(&device_kind::mount_facts(&mount));
+        let row = sidebar_button(device_kind::icon_name(kind), name);
         if let Some(id) = drive_dialogs::PropertiesTarget::Mount(mount.clone()).label_id() {
             device_labels::bind_row_label(&row, &self.preference_manager, &id, name);
         }
@@ -2202,11 +2247,20 @@ impl SidebarState {
 
     fn append_volume(self: &Rc<Self>, volume: gio::Volume) -> Option<device_release::DeviceIds> {
         let name = volume.name().to_string();
-        let row = sidebar_button(crate::assets::icons::HARD_DRIVE, &name);
+        let kind = device_kind::device_kind(&device_kind::volume_facts(&volume));
+        let row = sidebar_button(device_kind::icon_name(kind), &name);
         if let Some(id) = drive_dialogs::PropertiesTarget::Volume(volume.clone()).label_id() {
             device_labels::bind_row_label(&row, &self.preference_manager, &id, &name);
         }
-        crate::ui::accessibility::set_description(&row, Some(&name));
+        if volume.get_mount().is_some() {
+            crate::ui::accessibility::set_description(&row, Some(&name));
+        } else {
+            row.add_css_class("sidebar-device-unmounted");
+            crate::ui::accessibility::set_description(
+                &row,
+                Some(&rust_i18n::t!("%{name}, not mounted", name = name)),
+            );
+        }
         let mounted_location = volume
             .get_mount()
             .as_ref()
@@ -2326,7 +2380,8 @@ impl SidebarState {
     fn append_password_drive(&self, drive: gio::Drive) -> Option<device_release::DeviceIds> {
         let ids = device_release::ids_for_drive(&drive);
         let name = drive.name().to_string();
-        let row = sidebar_button(crate::assets::icons::HARD_DRIVE, &name);
+        let kind = device_kind::device_kind(&device_kind::drive_facts(&drive));
+        let row = sidebar_button(device_kind::icon_name(kind), &name);
         crate::ui::accessibility::set_description(&row, Some(&name));
         if device_release::is_pending(&ids) {
             self.widget
@@ -2368,7 +2423,7 @@ impl SidebarState {
 
     fn append_smb_mount(self: &Rc<Self>, name: &str, location: Location, mount: gio::Mount) {
         let properties_location = location.clone();
-        let row = self.append_place(crate::assets::icons::NETWORK, name, location);
+        let row = self.append_place(crate::assets::icons::DEVICE_NETWORK, name, location);
         let menu = super::accessibility::menu_box();
         menu.add_css_class("folder-context-menu");
         let properties = sidebar_context_option(crate::assets::icons::INFO, "Properties", false);
@@ -2412,10 +2467,19 @@ impl SidebarState {
                     .await
                     && !error.matches(gio::IOErrorEnum::Cancelled)
                 {
+                    let message = if device_release::release_error_is_busy(&error) {
+                        format!(
+                            "{}\n{}",
+                            crate::i18n::tr(device_release::DEVICE_BUSY_MESSAGE),
+                            error.message()
+                        )
+                    } else {
+                        error.to_string()
+                    };
                     show_error_dialog(
                         &error_parent,
                         &crate::i18n::tr("Unable to disconnect"),
-                        &error.to_string(),
+                        &message,
                     );
                 }
             });

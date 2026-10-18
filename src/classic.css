@@ -231,6 +231,12 @@ window.querencia-classic .sidebar-device.active:hover {
   color: @strata_text;
 }
 
+window.querencia-classic .sidebar-row.sidebar-device-unmounted label,
+window.querencia-classic .sidebar-row.sidebar-device-unmounted image {
+  color: @strata_dim_text;
+  opacity: 0.75;
+}
+
 window.querencia-classic .sidebar-row.active image,
 window.querencia-classic .sidebar-device.active .sidebar-row image {
   color: @strata_text;

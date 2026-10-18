@@ -1295,5 +1295,14 @@
   "Cancel Login": "取消登录",
   "The system could not read the server’s key fingerprint, so it cannot be compared here.": "系统无法读取服务器的密钥指纹，因此无法在此处进行比较。",
   "The connection to the server was lost. Choose Reload or open the location again to reconnect.": "与服务器的连接已断开。请选择“重新加载”或再次打开该位置以重新连接。",
-  "Windows Network": "Windows 网络"
+  "Windows Network": "Windows 网络",
+  "REMOVABLE MEDIA": "可移动介质",
+  "Mount removable media automatically": "自动挂载可移动介质",
+  "Mount USB sticks, discs and other media as soon as they are connected. This only happens while Querencia Files is running.": "连接 U 盘、光盘和其他介质后立即挂载。仅在 Querencia Files 运行时生效。",
+  "The device is still in use. Close the files and programs that use it, then try again.": "设备仍在使用中。请关闭正在使用它的文件和程序，然后重试。",
+  "settings_keywords.automount-media": "自动挂载 U盘 USB 光盘 CD DVD 驱动器 卷 插入 连接 可移动介质",
+  "The device is still in use": "设备仍在使用中",
+  "Unmount Anyway": "仍然卸载",
+  "The programs could not be determined.": "无法确定相关程序。",
+  "Close the files and programs that use it, then try again. Unmounting anyway can lose data these programs have not saved.": "请关闭正在使用它的文件和程序，然后重试。仍然卸载可能会丢失这些程序中未保存的数据。"
 }

@@ -2,7 +2,7 @@
 
 use std::{
     cell::Cell,
-    path::PathBuf,
+    path::{Path, PathBuf},
     rc::Rc,
     sync::{
         Arc,
@@ -21,12 +21,13 @@ use crate::{
 };
 
 use super::{
-    DeviceIds, ReleaseKey, ReleaseKind, ReleasePhase, begin_pending, clear_release_dismissed,
-    complete_release_success, enter_releasing, is_pending, location_at_flush_for_test,
-    note_unmount_progress, pending_device_shell, present_release_overlay, release_body_text,
-    release_error_count, release_is_dismissed, release_is_pending, release_overlay_presented,
-    release_phase, release_shows_spinner, reset_releases, set_mounted_roots_for_test,
-    settle_pending_attempt, start_release, syncs_before_flush_for_test, unmatched_pending,
+    BusyProcess, DEVICE_BUSY_MESSAGE, DeviceIds, ReleaseKey, ReleaseKind, ReleasePhase,
+    begin_pending, clear_release_dismissed, complete_release_success, decide_gio, enter_releasing,
+    is_pending, location_at_flush_for_test, note_unmount_progress, pending_device_shell,
+    present_release_overlay, processes_using, release_body_text, release_error_count,
+    release_is_dismissed, release_is_pending, release_overlay_presented, release_phase,
+    release_shows_spinner, reset_releases, set_mounted_roots_for_test, settle_pending_attempt,
+    start_release, syncs_before_flush_for_test, unmatched_pending,
 };
 
 fn key(unix_device: &str) -> ReleaseKey {
@@ -251,6 +252,7 @@ fn flush_failure_does_not_start_unmount() {
     assert_eq!(calls.get(), 1);
     assert!(!release_is_pending(&device));
     let message = decision.dialog_message.expect("gio error dialog");
+    assert!(message.starts_with(DEVICE_BUSY_MESSAGE));
     assert!(message.contains("device busy"));
     assert!(message.contains("Writing data…"));
     assert_eq!(
@@ -745,4 +747,76 @@ fn start_release_claims_unplug_only_when_the_drive_is_removable_or_ejectable() {
             assert!(texts.iter().all(|text| !text.contains("can be unplugged")));
         },
     );
+}
+
+#[test]
+fn a_busy_device_explains_that_it_is_still_in_use() {
+    for error in [
+        glib::Error::new(gio::IOErrorEnum::Busy, "target is busy"),
+        glib::Error::new(
+            gio::IOErrorEnum::Failed,
+            "Error unmounting /dev/loop8: target is busy",
+        ),
+    ] {
+        let decision = decide_gio(ReleaseKind::Eject, None, Err(error), true);
+        let message = decision.dialog_message.expect("busy dialog");
+        assert!(message.starts_with(DEVICE_BUSY_MESSAGE), "{message}");
+        assert!(message.contains("target is busy"));
+        assert!(!decision.safe_to_remove);
+    }
+    let other = decide_gio(
+        ReleaseKind::Eject,
+        None,
+        Err(glib::Error::new(
+            gio::IOErrorEnum::PermissionDenied,
+            "denied",
+        )),
+        true,
+    );
+    assert!(
+        !other
+            .dialog_message
+            .expect("permission dialog")
+            .contains(DEVICE_BUSY_MESSAGE)
+    );
+}
+
+#[test]
+fn busy_programs_are_found_by_working_directory_and_open_files() {
+    let scratch = tempfile::tempdir().expect("scratch");
+    let proc_root = scratch.path().join("proc");
+    let mount = scratch.path().join("media/QFSTICK");
+    std::fs::create_dir_all(&mount).expect("mount");
+    let process = |pid: &str, name: &str, cwd: &Path, fd: Option<&Path>| {
+        let dir = proc_root.join(pid);
+        std::fs::create_dir_all(dir.join("fd")).expect("proc dir");
+        std::fs::write(dir.join("comm"), format!("{name}\n")).expect("comm");
+        std::os::unix::fs::symlink(cwd, dir.join("cwd")).expect("cwd");
+        if let Some(target) = fd {
+            std::os::unix::fs::symlink(target, dir.join("fd/3")).expect("fd");
+        }
+    };
+    process("4100", "bash", &mount.join("Fotos"), None);
+    process("4200", "vlc", scratch.path(), Some(&mount.join("film.mkv")));
+    process(
+        "4300",
+        "editor",
+        scratch.path(),
+        Some(&scratch.path().join("notes.txt")),
+    );
+    std::fs::create_dir_all(proc_root.join("self")).expect("non-numeric entry");
+    assert_eq!(
+        processes_using(&proc_root, &mount),
+        [
+            BusyProcess {
+                pid: 4100,
+                name: "bash".into()
+            },
+            BusyProcess {
+                pid: 4200,
+                name: "vlc".into()
+            },
+        ]
+    );
+    assert!(processes_using(&proc_root, &scratch.path().join("media/OTHER")).is_empty());
 }

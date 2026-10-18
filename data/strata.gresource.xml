@@ -44,6 +44,14 @@
     <file>icons/scalable/actions/strata-columns.svg</file>
     <file>icons/scalable/actions/strata-icons.svg</file>
     <file>icons/scalable/actions/strata-hard-drive.svg</file>
+    <file>icons/scalable/devices/strata-querencia-drive-encrypted.svg</file>
+    <file>icons/scalable/devices/strata-querencia-drive-harddisk.svg</file>
+    <file>icons/scalable/devices/strata-querencia-drive-network.svg</file>
+    <file>icons/scalable/devices/strata-querencia-drive-removable.svg</file>
+    <file>icons/scalable/devices/strata-querencia-media-optical.svg</file>
+    <file>icons/scalable/devices/strata-querencia-network-server.svg</file>
+    <file>icons/scalable/devices/strata-querencia-network-share.svg</file>
+    <file>icons/scalable/devices/strata-querencia-network-workgroup.svg</file>
     <file>icons/scalable/actions/strata-house.svg</file>
     <file>icons/scalable/actions/strata-image.svg</file>
     <file>icons/scalable/actions/strata-info.svg</file>

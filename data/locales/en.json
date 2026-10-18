@@ -1295,5 +1295,14 @@
   "Cancel Login": "Cancel Login",
   "The system could not read the server’s key fingerprint, so it cannot be compared here.": "The system could not read the server’s key fingerprint, so it cannot be compared here.",
   "The connection to the server was lost. Choose Reload or open the location again to reconnect.": "The connection to the server was lost. Choose Reload or open the location again to reconnect.",
-  "Windows Network": "Windows Network"
+  "Windows Network": "Windows Network",
+  "REMOVABLE MEDIA": "REMOVABLE MEDIA",
+  "Mount removable media automatically": "Mount removable media automatically",
+  "Mount USB sticks, discs and other media as soon as they are connected. This only happens while Querencia Files is running.": "Mount USB sticks, discs and other media as soon as they are connected. This only happens while Querencia Files is running.",
+  "The device is still in use. Close the files and programs that use it, then try again.": "The device is still in use. Close the files and programs that use it, then try again.",
+  "settings_keywords.automount-media": "automount usb stick disc cd dvd drive volume plug connect removable media",
+  "The device is still in use": "The device is still in use",
+  "Unmount Anyway": "Unmount Anyway",
+  "The programs could not be determined.": "The programs could not be determined.",
+  "Close the files and programs that use it, then try again. Unmounting anyway can lose data these programs have not saved.": "Close the files and programs that use it, then try again. Unmounting anyway can lose data these programs have not saved."
 }

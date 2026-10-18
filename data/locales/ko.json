@@ -1295,5 +1295,14 @@
   "Cancel Login": "로그인 취소",
   "The system could not read the server’s key fingerprint, so it cannot be compared here.": "시스템이 서버 키 지문을 읽지 못했으므로 여기에서 비교할 수 없습니다.",
   "The connection to the server was lost. Choose Reload or open the location again to reconnect.": "서버 연결이 끊어졌습니다. 다시 연결하려면 새로 고침을 선택하거나 위치를 다시 여세요.",
-  "Windows Network": "Windows 네트워크"
+  "Windows Network": "Windows 네트워크",
+  "REMOVABLE MEDIA": "이동식 미디어",
+  "Mount removable media automatically": "이동식 미디어 자동 마운트",
+  "Mount USB sticks, discs and other media as soon as they are connected. This only happens while Querencia Files is running.": "USB 스틱, 디스크 및 기타 미디어를 연결하는 즉시 마운트합니다. Querencia Files가 실행 중일 때만 동작합니다.",
+  "The device is still in use. Close the files and programs that use it, then try again.": "장치를 아직 사용 중입니다. 장치를 사용하는 파일과 프로그램을 닫은 다음 다시 시도하세요.",
+  "settings_keywords.automount-media": "자동 마운트 USB 스틱 디스크 CD DVD 드라이브 볼륨 연결 이동식 미디어",
+  "The device is still in use": "장치를 아직 사용 중입니다",
+  "Unmount Anyway": "그래도 마운트 해제",
+  "The programs could not be determined.": "프로그램을 확인할 수 없습니다.",
+  "Close the files and programs that use it, then try again. Unmounting anyway can lose data these programs have not saved.": "장치를 사용하는 파일과 프로그램을 닫은 다음 다시 시도하세요. 그래도 마운트를 해제하면 이 프로그램들의 저장되지 않은 데이터가 손실될 수 있습니다."
 }

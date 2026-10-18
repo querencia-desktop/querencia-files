@@ -1295,5 +1295,14 @@
   "Cancel Login": "Отменить вход",
   "The system could not read the server’s key fingerprint, so it cannot be compared here.": "Системе не удалось прочитать отпечаток ключа сервера, поэтому его нельзя сравнить здесь.",
   "The connection to the server was lost. Choose Reload or open the location again to reconnect.": "Соединение с сервером потеряно. Выберите «Обновить» или откройте расположение снова, чтобы переподключиться.",
-  "Windows Network": "Сеть Windows"
+  "Windows Network": "Сеть Windows",
+  "REMOVABLE MEDIA": "СЪЁМНЫЕ НОСИТЕЛИ",
+  "Mount removable media automatically": "Автоматически подключать съёмные носители",
+  "Mount USB sticks, discs and other media as soon as they are connected. This only happens while Querencia Files is running.": "Подключать USB-накопители, диски и другие носители сразу после подсоединения. Это происходит, только пока запущен Querencia Files.",
+  "The device is still in use. Close the files and programs that use it, then try again.": "Устройство всё ещё используется. Закройте файлы и программы, которые к нему обращаются, и повторите попытку.",
+  "settings_keywords.automount-media": "автоподключение usb флешка диск cd dvd накопитель том подключить съёмный носитель",
+  "The device is still in use": "Устройство всё ещё используется",
+  "Unmount Anyway": "Всё равно отключить",
+  "The programs could not be determined.": "Не удалось определить программы.",
+  "Close the files and programs that use it, then try again. Unmounting anyway can lose data these programs have not saved.": "Закройте файлы и программы, которые к нему обращаются, и повторите попытку. При принудительном отключении несохранённые данные этих программ могут быть потеряны."
 }

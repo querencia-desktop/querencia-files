@@ -400,7 +400,7 @@ pub(super) fn set_thumbnail_or_icon(
     thumbnail_size: i32,
 ) {
     super::file_providers::bind(image, entry.location.native_path());
-    image.set_theme_icon_names(super::theme_icons::entry_icon_names(entry));
+    bind_entry_theme_icon(image, entry);
     let Some(path) = entry.local_thumbnail_path() else {
         if entry.location.backend_name() == "gphoto2"
             && !entry.is_directory()
@@ -467,6 +467,7 @@ pub(super) fn set_thumbnail_or_icon_for_path(
     thumbnail_size: i32,
 ) {
     super::file_providers::bind(image, Some(path));
+    image.set_tooltip_text(None);
     image.set_theme_icon_names(super::theme_icons::path_icon_names(
         path,
         fallback_icon == crate::assets::icons::FOLDER,
@@ -1201,6 +1202,7 @@ fn forget_slot(image_id: usize) {
 /// earlier binding must not leak into it.
 pub(super) fn show_fallback_icon(image: &ThumbnailSlot, icon: &str, size: i32) {
     image.set_theme_icon_names(Vec::new());
+    image.set_tooltip_text(None);
     set_fallback_icon(image, None, icon, size);
 }
 
@@ -1210,8 +1212,16 @@ pub(super) fn show_fallback_icon_for_entry(
     icon: &str,
     size: i32,
 ) {
-    image.set_theme_icon_names(super::theme_icons::entry_icon_names(entry));
+    bind_entry_theme_icon(image, entry);
     set_fallback_icon(image, None, icon, size);
+}
+
+/// Querencia: a merged network entry names its discovery services on hover.
+fn bind_entry_theme_icon(image: &ThumbnailSlot, entry: &FileEntry) {
+    image.set_theme_icon_names(super::theme_icons::entry_icon_names(entry));
+    image.set_tooltip_text(
+        super::browser::network::network_sources_tooltip(&entry.location).as_deref(),
+    );
 }
 
 /// For rows known only by name: the theme icon follows the name's MIME type.
@@ -1221,6 +1231,7 @@ pub(super) fn show_fallback_icon_for_name(
     icon: &str,
     size: i32,
 ) {
+    image.set_tooltip_text(None);
     image.set_theme_icon_names(if icon == crate::assets::icons::FOLDER {
         super::theme_icons::folder_icon_names()
     } else {

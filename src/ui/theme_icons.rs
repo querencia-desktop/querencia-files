@@ -171,6 +171,9 @@ pub(crate) fn paintable(names: &[String], size: i32, scale: i32) -> Option<gdk::
 
 /// A sidebar place icon from the theme, or Strata's bundled icon.
 pub(crate) fn place_image(bundled: &str, pixel_size: i32) -> gtk::Image {
+    if is_querencia_icon(bundled) {
+        return querencia_image(bundled, pixel_size);
+    }
     let names: Vec<String> = place_icon_names(bundled)
         .iter()
         .map(|name| (*name).to_owned())
@@ -184,6 +187,19 @@ pub(crate) fn place_image(bundled: &str, pixel_size: i32) -> gtk::Image {
         }
         None => crate::assets::primary_icon(bundled, pixel_size),
     }
+}
+
+/// Querencia's own full-colour icons (`data/icons/scalable/devices`): they
+/// replace theme placeholders and are never tinted with the accent.
+pub(crate) fn is_querencia_icon(name: &str) -> bool {
+    name.starts_with("strata-querencia-")
+}
+
+pub(crate) fn querencia_image(name: &str, pixel_size: i32) -> gtk::Image {
+    let image = gtk::Image::from_icon_name(name);
+    image.set_pixel_size(pixel_size);
+    image.add_css_class("theme-icon");
+    image
 }
 
 /// GNOME 2's icon theme (GNOME Human: orange folders, inheriting the

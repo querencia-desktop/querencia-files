@@ -33,6 +33,14 @@ pub mod icons {
     pub const COG: &str = "strata-cog";
     pub const CORNER_DOWN_LEFT: &str = "strata-corner-down-left";
     pub const DISC: &str = "strata-disc";
+    pub const DEVICE_ENCRYPTED: &str = "strata-querencia-drive-encrypted";
+    pub const DEVICE_HARD_DISK: &str = "strata-querencia-drive-harddisk";
+    pub const DEVICE_NETWORK: &str = "strata-querencia-drive-network";
+    pub const DEVICE_OPTICAL: &str = "strata-querencia-media-optical";
+    pub const DEVICE_REMOVABLE: &str = "strata-querencia-drive-removable";
+    pub const NETWORK_SERVER: &str = "strata-querencia-network-server";
+    pub const NETWORK_SHARE: &str = "strata-querencia-network-share";
+    pub const NETWORK_WORKGROUP: &str = "strata-querencia-network-workgroup";
     pub const DOCUMENTS: &str = "strata-file-text";
     pub const DOWNLOADS: &str = "strata-download";
     pub const EJECT: &str = "strata-eject";

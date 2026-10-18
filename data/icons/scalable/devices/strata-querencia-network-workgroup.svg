@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <title>Arbeitsgruppe</title>
+  <rect x="8" y="32" width="48" height="5" fill="#f07746"/>
+  <rect x="29.5" y="20" width="5" height="14" fill="#f07746"/>
+  <rect x="10" y="34" width="5" height="10" fill="#f07746"/>
+  <rect x="49" y="34" width="5" height="10" fill="#f07746"/>
+  <rect x="18" y="3" width="28" height="19" rx="3" fill="#8c8c8c" stroke="#3c3c3c" stroke-width="3"/>
+  <rect x="22" y="7" width="20" height="11" fill="#fff4ee"/>
+  <rect x="1" y="42" width="24" height="17" rx="3" fill="#8c8c8c" stroke="#3c3c3c" stroke-width="3"/>
+  <rect x="5" y="46" width="16" height="9" fill="#fff4ee"/>
+  <rect x="39" y="42" width="24" height="17" rx="3" fill="#8c8c8c" stroke="#3c3c3c" stroke-width="3"/>
+  <rect x="43" y="46" width="16" height="9" fill="#fff4ee"/>
+</svg>

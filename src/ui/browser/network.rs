@@ -9,6 +9,7 @@
 use gtk::prelude::*;
 use gtk::{gio, glib};
 
+use crate::assets::icons;
 use crate::model::Location;
 use crate::services::{backend_unavailable_message, sanitize_failure_message};
 use crate::ui::browser::BrowserView;
@@ -212,14 +213,23 @@ pub(in crate::ui) fn server_address(
     Ok(address)
 }
 
-/// Theme icon names for GVfs network entries: the workgroup, a server root
-/// (`smb://nas/`, a DNS-SD or WS-Discovery host) or an SMB share.
+const SERVER_ICONS: &[&str] = &[icons::NETWORK_SERVER, "network-server", "computer"];
+const WORKGROUP_ICONS: &[&str] = &[
+    icons::NETWORK_WORKGROUP,
+    "network-workgroup",
+    "network-server",
+];
+const SHARE_ICONS: &[&str] = &[icons::NETWORK_SHARE, "folder-remote", "folder"];
+
+/// Icon names for GVfs network entries: the workgroup, a server root
+/// (`smb://nas/`, a DNS-SD or WS-Discovery host) or an SMB share. Querencia's
+/// own icons come first, the classic theme names stay as fallback.
 pub(in crate::ui) fn network_icon_names(location: &Location) -> Option<&'static [&'static str]> {
     let uri = location.uri_value()?;
     let (scheme, rest) = uri.split_once("://")?;
     let scheme = scheme.to_ascii_lowercase();
     if matches!(scheme.as_str(), "dns-sd" | "wsdd") {
-        return Some(&["network-server", "computer"]);
+        return Some(SERVER_ICONS);
     }
     if !SERVER_SCHEMES.contains(&scheme.as_str()) {
         return None;
@@ -228,13 +238,34 @@ pub(in crate::ui) fn network_icon_names(location: &Location) -> Option<&'static 
     let host = host.rsplit('@').next().unwrap_or(host);
     let segments = path.split('/').filter(|part| !part.is_empty()).count();
     match (host.is_empty(), segments) {
-        (true, 0) if scheme == "smb" => Some(&["network-workgroup", "network-server"]),
-        (false, 0) => Some(&["network-server", "computer"]),
-        (false, 1) if matches!(scheme.as_str(), "smb" | "afp") => {
-            Some(&["folder-remote", "folder"])
-        }
+        (true, 0) if scheme == "smb" => Some(WORKGROUP_ICONS),
+        (false, 0) => Some(SERVER_ICONS),
+        (false, 1) if matches!(scheme.as_str(), "smb" | "afp") => Some(SHARE_ICONS),
         _ => None,
     }
+}
+
+/// Querencia: names every discovery service a merged network entry came from.
+pub(in crate::ui) fn network_sources_tooltip(location: &Location) -> Option<String> {
+    use crate::adapters::DiscoveryService;
+    let sources = crate::adapters::merged_network_sources(location)?;
+    let lines: Vec<String> = sources
+        .iter()
+        .map(|source| match source.service {
+            DiscoveryService::DnsSd => rust_i18n::t!(
+                "Found via DNS-SD (Avahi): %{name} → %{target}",
+                name = source.display_name,
+                target = source.target
+            ),
+            DiscoveryService::WsDiscovery => rust_i18n::t!(
+                "Found via WS-Discovery (wsdd): %{name} → %{target}",
+                name = source.display_name,
+                target = source.target
+            ),
+        })
+        .map(|line| line.into_owned())
+        .collect();
+    Some(lines.join("\n"))
 }
 
 /// German-readable text for GVfs failures that only carry an English message
@@ -313,6 +344,16 @@ pub(in crate::ui) fn gvfs_question_text(message: &str) -> Option<String> {
 /// GVfs' SFTP and SMB password prompts in the UI language.
 pub(in crate::ui) fn gvfs_prompt_text(message: &str) -> Option<String> {
     let after = |start: &str| message.split_once(start).map(|(_, rest)| rest);
+    if let Some(rest) = after("A passphrase is needed to access encrypted data on “") {
+        let (device, _) = rest.split_once('”')?;
+        return Some(
+            rust_i18n::t!(
+                "Enter the passphrase to unlock the encrypted data on “%{device}”.",
+                device = device
+            )
+            .into_owned(),
+        );
+    }
     if let Some(rest) = after("Enter password for “") {
         let (user, rest) = rest.split_once("” on “")?;
         let (host, _) = rest.split_once('”')?;
