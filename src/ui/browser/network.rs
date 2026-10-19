@@ -364,8 +364,8 @@ const GVFS_HOST_KEY_QUESTIONS: &[[(&str, &str); 2]] = &[
 const GVFS_UNKNOWN_FINGERPRINT: &str = "???";
 
 /// Whether GVfs' question lacks the fingerprint. GVfs 1.60 expects OpenSSH's
-/// older “key fingerprint is SHA256:….” and sends “???” for OpenSSH 10's
-/// “key fingerprint is: SHA256:…”.
+/// older "key fingerprint is SHA256:...." and sends "???" for OpenSSH 10's
+/// "key fingerprint is: SHA256:...".
 pub(in crate::ui) fn gvfs_question_lacks_fingerprint(message: &str) -> bool {
     message.contains(GVFS_UNKNOWN_FINGERPRINT)
 }
@@ -476,7 +476,7 @@ pub(in crate::ui) fn host_key_probe_argv(location: &Location) -> Option<Vec<Stri
     Some(argv)
 }
 
-/// The host key from `ssh -v`'s “Server host key: <name> SHA256:<base64>”.
+/// The host key from `ssh -v`'s "Server host key: <name> SHA256:<base64>".
 pub(in crate::ui) fn host_key_from_ssh_log(log: &str) -> Option<HostKey> {
     let (name, fingerprint) = log.lines().find_map(|line| {
         let (_, rest) = line.split_once("Server host key: ")?;
