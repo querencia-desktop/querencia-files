@@ -266,6 +266,13 @@ fn host_key_probe_targets_the_sftp_server_and_never_trusts_or_authenticates() {
         "-oUserKnownHostsFile=/dev/null",
         "-oGlobalKnownHostsFile=/dev/null",
         "-oUpdateHostKeys=no",
+        "-oNoHostAuthenticationForLocalhost=no",
+        "-oVerifyHostKeyDNS=no",
+        "-oPubkeyAuthentication=no",
+        "-oPasswordAuthentication=no",
+        "-oKbdInteractiveAuthentication=no",
+        "-oHostbasedAuthentication=no",
+        "-oGSSAPIAuthentication=no",
     ] {
         assert!(probe.iter().any(|arg| arg == option), "{option}");
     }

@@ -431,8 +431,11 @@ pub(in crate::ui) struct HostKey {
 
 /// `ssh` arguments that read the SFTP server's host key the way GVfs' own
 /// `ssh` does (same user configuration, aliases and algorithm order) and stop
-/// at host-key verification: no known_hosts file is read or written and no
-/// authentication is attempted. `None` when the location has no usable host.
+/// at host-key verification: no known_hosts file is read or written. Every
+/// authentication method is disabled, so no credentials are offered even if
+/// the user configuration would accept the key (for example
+/// NoHostAuthenticationForLocalhost or VerifyHostKeyDNS). `None` when the
+/// location has no usable host.
 pub(in crate::ui) fn host_key_probe_argv(location: &Location) -> Option<Vec<String>> {
     if location.backend_name() != "sftp" && location.backend_name() != "ssh" {
         return None;
@@ -463,6 +466,13 @@ pub(in crate::ui) fn host_key_probe_argv(location: &Location) -> Option<Vec<Stri
         "-oForwardAgent=no",
         "-oPermitLocalCommand=no",
         "-oClearAllForwardings=yes",
+        "-oNoHostAuthenticationForLocalhost=no",
+        "-oVerifyHostKeyDNS=no",
+        "-oPubkeyAuthentication=no",
+        "-oPasswordAuthentication=no",
+        "-oKbdInteractiveAuthentication=no",
+        "-oHostbasedAuthentication=no",
+        "-oGSSAPIAuthentication=no",
     ]
     .map(str::to_owned)
     .into();
@@ -512,27 +522,44 @@ const HOST_KEY_PROBE_TIMEOUT: std::time::Duration = std::time::Duration::from_se
 /// reports no plain host key (for example a host certificate).
 pub(in crate::ui) async fn probe_host_key(argv: Vec<String>) -> Option<HostKey> {
     let argv: Vec<&std::ffi::OsStr> = argv.iter().map(std::ffi::OsStr::new).collect();
-    let process = gio::Subprocess::newv(
+    let process = match gio::Subprocess::newv(
         &argv,
         gio::SubprocessFlags::STDIN_PIPE
             | gio::SubprocessFlags::STDOUT_SILENCE
             | gio::SubprocessFlags::STDERR_PIPE,
-    )
-    .ok()?;
+    ) {
+        Ok(process) => process,
+        Err(error) => {
+            tracing::info!(%error, "host-key probe could not start ssh");
+            return None;
+        }
+    };
     let no_input = glib::Bytes::from_static(b"");
-    match glib::future_with_timeout(
+    let key = match glib::future_with_timeout(
         HOST_KEY_PROBE_TIMEOUT,
         process.communicate_future(Some(&no_input)),
     )
     .await
     {
         Ok(Ok((_, Some(log)))) => host_key_from_ssh_log(&String::from_utf8_lossy(&log)),
-        Ok(_) => None,
+        Ok(Ok((_, None))) => None,
+        Ok(Err(error)) => {
+            tracing::info!(%error, "host-key probe failed");
+            return None;
+        }
         Err(_) => {
             process.force_exit();
-            None
+            tracing::info!(
+                timeout_s = HOST_KEY_PROBE_TIMEOUT.as_secs(),
+                "host-key probe timed out"
+            );
+            return None;
         }
+    };
+    if key.is_none() {
+        tracing::info!("host-key probe found no plain host key in the ssh log");
     }
+    key
 }
 
 /// GVfs' SFTP and SMB password prompts in the UI language.
