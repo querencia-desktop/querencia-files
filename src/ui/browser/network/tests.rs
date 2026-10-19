@@ -367,3 +367,23 @@ fn the_udisks_passphrase_prompt_is_rewritten() {
         Some("Enter the passphrase to unlock the encrypted data on “/dev/sdb1”.")
     );
 }
+
+#[test]
+fn host_key_probe_reads_the_key_from_the_process_and_tolerates_failures() {
+    let key = probed_key();
+    let script = format!(
+        "read -r _; echo 'debug1: Server host key: ssh-ed25519 {}' >&2; echo 'Host key verification failed.' >&2; exit 255",
+        key.fingerprint
+    );
+    let probe = |argv: &[&str]| {
+        glib::MainContext::new().block_on(probe_host_key(
+            argv.iter().map(|arg| (*arg).to_owned()).collect(),
+        ))
+    };
+    assert_eq!(probe(&["sh", "-c", &script]), Some(key));
+    assert_eq!(
+        probe(&["sh", "-c", "echo 'Connection refused' >&2; exit 255"]),
+        None
+    );
+    assert_eq!(probe(&["/nonexistent/ssh"]), None);
+}

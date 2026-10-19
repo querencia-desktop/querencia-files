@@ -519,7 +519,12 @@ pub(in crate::ui) async fn probe_host_key(argv: Vec<String>) -> Option<HostKey> 
             | gio::SubprocessFlags::STDERR_PIPE,
     )
     .ok()?;
-    match glib::future_with_timeout(HOST_KEY_PROBE_TIMEOUT, process.communicate_future(None)).await
+    let no_input = glib::Bytes::from_static(b"");
+    match glib::future_with_timeout(
+        HOST_KEY_PROBE_TIMEOUT,
+        process.communicate_future(Some(&no_input)),
+    )
+    .await
     {
         Ok(Ok((_, Some(log)))) => host_key_from_ssh_log(&String::from_utf8_lossy(&log)),
         Ok(_) => None,
