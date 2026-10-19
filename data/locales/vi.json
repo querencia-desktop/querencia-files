@@ -421,7 +421,7 @@
   "Icons": "Biểu tượng",
   "Icons must be a Lucide icon name of lowercase letters, digits, and dashes": "Biểu tượng phải là tên biểu tượng Lucide gồm chữ thường, chữ số và dấu gạch ngang",
   "Id": "ID",
-  "If the server did not provide a fingerprint, verify it outside Strata before continuing.": "Nếu máy chủ không cung cấp dấu vân tay, hãy xác minh bên ngoài Strata trước khi tiếp tục.",
+  "If the server did not provide a fingerprint, verify it outside Querencia Files before continuing.": "Nếu máy chủ không cung cấp dấu vân tay, hãy xác minh bên ngoài Querencia Files trước khi tiếp tục.",
   "Image": "Hình ảnh",
   "Image exceeds the 8 MB preview limit": "Hình ảnh vượt quá giới hạn xem trước 8 MB",
   "Image files · Per item": "Tệp ảnh · Theo từng mục",

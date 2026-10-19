@@ -630,6 +630,7 @@
   "Process exited with status %{status}. Press Enter to close…": "Tiến trình đã kết thúc với trạng thái %{status}. Nhấn Enter để đóng…",
   "Processing archive…": "Đang xử lý tệp nén…",
   "Published %{date}": "Phát hành ngày %{date}",
+  "Querencia Files read the server’s key over a separate connection. %{key_type} key fingerprint:\n%{fingerprint}\nCompare it with the fingerprint you know from the administrator.": "Querencia Files đã đọc khóa của máy chủ qua một kết nối riêng. Dấu vân tay khóa %{key_type}:\n%{fingerprint}\nHãy so sánh với dấu vân tay bạn biết từ quản trị viên.",
   "Queued": "Đang chờ",
   "RAR compression is not supported": "Không hỗ trợ nén RAR",
   "RAR support is disabled in this build.": "Bản dựng này đã tắt hỗ trợ RAR.",

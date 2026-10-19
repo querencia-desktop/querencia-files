@@ -363,10 +363,18 @@ const GVFS_HOST_KEY_QUESTIONS: &[[(&str, &str); 2]] = &[
 /// GVfs' placeholder when it could not read the server's key fingerprint.
 const GVFS_UNKNOWN_FINGERPRINT: &str = "???";
 
+/// Whether GVfs' question lacks the fingerprint. GVfs 1.60 expects OpenSSH's
+/// older “key fingerprint is SHA256:….” and sends “???” for OpenSSH 10's
+/// “key fingerprint is: SHA256:…”.
+pub(in crate::ui) fn gvfs_question_lacks_fingerprint(message: &str) -> bool {
+    message.contains(GVFS_UNKNOWN_FINGERPRINT)
+}
+
 /// GVfs' SFTP host-key question, rebuilt in the UI language from the English
-/// or German GVfs wording. Other wordings stay as GVfs sent them, with the
-/// note about a missing fingerprint added when GVfs could not read it.
-pub(in crate::ui) fn gvfs_question_text(message: &str) -> Option<String> {
+/// or German GVfs wording. Other wordings stay as GVfs sent them. Where GVfs
+/// could not read the fingerprint, `probed` supplies it, or a note says it is
+/// missing.
+pub(in crate::ui) fn gvfs_question_text(message: &str, probed: Option<&HostKey>) -> Option<String> {
     let between = |(start, end): (&str, &str)| {
         let (_, rest) = message.split_once(start)?;
         rest.split_once(end)
@@ -376,11 +384,11 @@ pub(in crate::ui) fn gvfs_question_text(message: &str) -> Option<String> {
         .iter()
         .find_map(|[host, identity]| Some((between(*host)?, between(*identity)?)))
     else {
-        return message.contains(GVFS_UNKNOWN_FINGERPRINT).then(|| {
+        return gvfs_question_lacks_fingerprint(message).then(|| {
             format!(
                 "{}\n\n{}",
                 sanitize_failure_message(message),
-                unreadable_fingerprint_note()
+                missing_fingerprint_note(probed)
             )
         });
     };
@@ -389,7 +397,7 @@ pub(in crate::ui) fn gvfs_question_text(message: &str) -> Option<String> {
         host = host
     );
     let second = if identity.trim_matches('?').is_empty() {
-        unreadable_fingerprint_note()
+        missing_fingerprint_note(probed)
     } else {
         rust_i18n::t!(
             "The computer sent the key fingerprint “%{fingerprint}”. Compare it with the fingerprint you know from the administrator.",
@@ -400,10 +408,126 @@ pub(in crate::ui) fn gvfs_question_text(message: &str) -> Option<String> {
     Some(format!("{first}\n\n{second}"))
 }
 
-fn unreadable_fingerprint_note() -> String {
-    crate::i18n::tr(
-        "The system could not read the server’s key fingerprint, so it cannot be compared here.",
+fn missing_fingerprint_note(probed: Option<&HostKey>) -> String {
+    match probed {
+        Some(key) => rust_i18n::t!(
+            "Querencia Files read the server’s key over a separate connection. %{key_type} key fingerprint:\n%{fingerprint}\nCompare it with the fingerprint you know from the administrator.",
+            key_type = key.key_type,
+            fingerprint = key.fingerprint
+        )
+        .into_owned(),
+        None => crate::i18n::tr(
+            "The system could not read the server’s key fingerprint, so it cannot be compared here.",
+        ),
+    }
+}
+
+/// A server host key as OpenSSH names and fingerprints it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(in crate::ui) struct HostKey {
+    pub(in crate::ui) key_type: String,
+    pub(in crate::ui) fingerprint: String,
+}
+
+/// `ssh` arguments that read the SFTP server's host key the way GVfs' own
+/// `ssh` does (same user configuration, aliases and algorithm order) and stop
+/// at host-key verification: no known_hosts file is read or written and no
+/// authentication is attempted. `None` when the location has no usable host.
+pub(in crate::ui) fn host_key_probe_argv(location: &Location) -> Option<Vec<String>> {
+    if location.backend_name() != "sftp" && location.backend_name() != "ssh" {
+        return None;
+    }
+    let uri = glib::Uri::parse(location.uri_value()?, glib::UriFlags::HAS_PASSWORD).ok()?;
+    let usable = |value: &str| {
+        !value.is_empty()
+            && !value.starts_with('-')
+            && !value.chars().any(|c| c.is_whitespace() || c.is_control())
+    };
+    let host = uri.host().filter(|host| usable(host))?;
+    let mut argv: Vec<String> = [
+        "ssh",
+        "-v",
+        "-oBatchMode=yes",
+        "-oStrictHostKeyChecking=yes",
+        "-oUserKnownHostsFile=/dev/null",
+        "-oGlobalKnownHostsFile=/dev/null",
+        "-oKnownHostsCommand=none",
+        "-oUpdateHostKeys=no",
+        "-oCheckHostIP=no",
+        "-oFingerprintHash=sha256",
+        "-oVisualHostKey=no",
+        "-oConnectTimeout=5",
+        "-oControlMaster=no",
+        "-oControlPath=none",
+        "-oForwardX11=no",
+        "-oForwardAgent=no",
+        "-oPermitLocalCommand=no",
+        "-oClearAllForwardings=yes",
+    ]
+    .map(str::to_owned)
+    .into();
+    if uri.port() > 0 {
+        argv.extend(["-p".to_owned(), uri.port().to_string()]);
+    }
+    if let Some(user) = uri.user().filter(|user| usable(user)) {
+        argv.extend(["-l".to_owned(), user.to_string()]);
+    }
+    argv.extend(["--".to_owned(), host.to_string(), "true".to_owned()]);
+    Some(argv)
+}
+
+/// The host key from `ssh -v`'s “Server host key: <name> SHA256:<base64>”.
+pub(in crate::ui) fn host_key_from_ssh_log(log: &str) -> Option<HostKey> {
+    let (name, fingerprint) = log.lines().find_map(|line| {
+        let (_, rest) = line.split_once("Server host key: ")?;
+        let mut parts = rest.split_whitespace();
+        Some((parts.next()?, parts.next()?))
+    })?;
+    let digest = fingerprint.strip_prefix("SHA256:")?;
+    if digest.len() != 43
+        || !digest
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '+' || c == '/')
+    {
+        return None;
+    }
+    let key_type = match name {
+        "ssh-ed25519" => "ED25519",
+        "sk-ssh-ed25519@openssh.com" => "ED25519-SK",
+        "sk-ecdsa-sha2-nistp256@openssh.com" => "ECDSA-SK",
+        "ssh-rsa" | "rsa-sha2-256" | "rsa-sha2-512" => "RSA",
+        "ssh-dss" => "DSA",
+        name if name.starts_with("ecdsa-sha2-") => "ECDSA",
+        _ => return None,
+    };
+    Some(HostKey {
+        key_type: key_type.to_owned(),
+        fingerprint: fingerprint.to_owned(),
+    })
+}
+
+const HOST_KEY_PROBE_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(8);
+
+/// Runs the host-key probe; `None` when `ssh` is missing, times out or
+/// reports no plain host key (for example a host certificate).
+pub(in crate::ui) async fn probe_host_key(argv: Vec<String>) -> Option<HostKey> {
+    let argv: Vec<&std::ffi::OsStr> = argv.iter().map(std::ffi::OsStr::new).collect();
+    let process = gio::Subprocess::newv(
+        &argv,
+        gio::SubprocessFlags::STDIN_PIPE
+            | gio::SubprocessFlags::STDOUT_SILENCE
+            | gio::SubprocessFlags::STDERR_PIPE,
     )
+    .ok()?;
+    match glib::future_with_timeout(HOST_KEY_PROBE_TIMEOUT, process.communicate_future(None)).await
+    {
+        Ok(Ok((_, Some(log)))) => host_key_from_ssh_log(&String::from_utf8_lossy(&log)),
+        Ok(_) => None,
+        Err(_) => {
+            process.force_exit();
+            None
+        }
+    }
 }
 
 /// GVfs' SFTP and SMB password prompts in the UI language.

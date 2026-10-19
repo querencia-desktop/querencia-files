@@ -630,6 +630,7 @@
   "Process exited with status %{status}. Press Enter to close…": "Prozess mit Status %{status} beendet. Drücken Sie Enter zum Schließen…",
   "Processing archive…": "Archiv wird verarbeitet…",
   "Published %{date}": "Veröffentlicht am %{date}",
+  "Querencia Files read the server’s key over a separate connection. %{key_type} key fingerprint:\n%{fingerprint}\nCompare it with the fingerprint you know from the administrator.": "Querencia Files hat den Serverschlüssel über eine eigene Verbindung abgefragt. Fingerabdruck des %{key_type}-Schlüssels:\n%{fingerprint}\nVergleichen Sie ihn mit dem Fingerabdruck, den Sie vom Administrator kennen.",
   "Queued": "In Warteschlange",
   "RAR compression is not supported": "RAR-Komprimierung wird nicht unterstützt",
   "RAR support is disabled in this build.": "Die RAR-Unterstützung ist in diesem Build deaktiviert.",

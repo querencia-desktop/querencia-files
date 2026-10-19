@@ -630,6 +630,7 @@
   "Process exited with status %{status}. Press Enter to close…": "进程已退出，退出代码为 %{status}。按 Enter 关闭…",
   "Processing archive…": "正在处理压缩文件…",
   "Published %{date}": "发布于 %{date}",
+  "Querencia Files read the server’s key over a separate connection. %{key_type} key fingerprint:\n%{fingerprint}\nCompare it with the fingerprint you know from the administrator.": "Querencia Files 已通过单独的连接读取服务器密钥。%{key_type} 密钥指纹：\n%{fingerprint}\n请将其与管理员提供的指纹进行比较。",
   "Queued": "排队中",
   "RAR compression is not supported": "不支持 RAR 压缩",
   "RAR support is disabled in this build.": "此版本未启用 RAR 支持。",

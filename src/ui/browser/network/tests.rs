@@ -144,17 +144,31 @@ fn english_and_german_gvfs_failures_get_an_explanation_and_keep_the_original() {
 #[test]
 fn gvfs_host_key_question_is_rebuilt_only_when_recognized() {
     let question = "Identity Verification Failed\nVerifying the identity of “127.0.0.1” failed, this happens when you log in to a computer the first time.\n\nThe identity sent by the remote computer is “%s”. If you want to be absolutely sure it is safe to continue, contact the system administrator.";
-    let known = gvfs_question_text(&question.replace("%s", "SHA256:abc")).expect("parsed");
+    let known = gvfs_question_text(&question.replace("%s", "SHA256:abc"), None).expect("parsed");
     assert!(
         known.contains("127.0.0.1") && known.contains("SHA256:abc"),
         "{known}"
     );
-    let unknown = gvfs_question_text(&question.replace("%s", "???")).expect("parsed");
+    let unknown = gvfs_question_text(&question.replace("%s", "???"), None).expect("parsed");
     assert!(
         unknown.contains("127.0.0.1") && !unknown.contains("???"),
         "{unknown}"
     );
-    assert_eq!(gvfs_question_text("Continue?"), None);
+    let key = probed_key();
+    let probed = gvfs_question_text(&question.replace("%s", "???"), Some(&key)).expect("parsed");
+    assert!(
+        probed.contains("127.0.0.1")
+            && probed.contains("ED25519")
+            && probed.contains(&key.fingerprint)
+            && !probed.contains("???"),
+        "{probed}"
+    );
+    assert_eq!(
+        gvfs_question_text(&question.replace("%s", "SHA256:abc"), Some(&key)),
+        Some(known),
+        "a fingerprint sent by GVfs is shown instead of a probed one"
+    );
+    assert_eq!(gvfs_question_text("Continue?", Some(&key)), None);
     assert_eq!(gvfs_choice_label("Something else"), "Something else");
 }
 
@@ -162,11 +176,12 @@ fn gvfs_host_key_question_is_rebuilt_only_when_recognized() {
 fn german_gvfs_host_key_question_is_rebuilt_like_the_english_one() {
     let english = "Identity Verification Failed\nVerifying the identity of “127.0.0.1” failed, this happens when you log in to a computer the first time.\n\nThe identity sent by the remote computer is “%s”. If you want to be absolutely sure it is safe to continue, contact the system administrator.";
     let german = "Überprüfung der Identität fehlgeschlagen\nDie Identität von »127.0.0.1« konnte nicht überprüft werden. Dies ist immer der Fall, wenn Sie sich das erste Mal an einem Rechner anmelden.\n\nDie vom entfernten Rechner übermittelte Identität lautet »%s«. Wenn Sie vor dem Fortfahren absolut sicher gehen wollen, dann kontaktieren Sie Ihren Systemverwalter.";
-    for fingerprint in ["SHA256:abc", "???"] {
+    let key = probed_key();
+    for (fingerprint, probed) in [("SHA256:abc", None), ("???", None), ("???", Some(&key))] {
         assert_eq!(
-            gvfs_question_text(&german.replace("%s", fingerprint)),
-            gvfs_question_text(&english.replace("%s", fingerprint)),
-            "{fingerprint}"
+            gvfs_question_text(&german.replace("%s", fingerprint), probed),
+            gvfs_question_text(&english.replace("%s", fingerprint), probed),
+            "{fingerprint} {probed:?}"
         );
     }
 }
@@ -174,9 +189,98 @@ fn german_gvfs_host_key_question_is_rebuilt_like_the_english_one() {
 #[test]
 fn unrecognized_gvfs_host_key_question_keeps_its_text_and_notes_a_missing_fingerprint() {
     let french = "Échec de vérification d’identité\nL’identité envoyée par l’ordinateur distant est « ??? ».";
-    let shown = gvfs_question_text(french).expect("missing fingerprint");
+    let shown = gvfs_question_text(french, None).expect("missing fingerprint");
     assert!(shown.starts_with(french), "{shown}");
     assert!(shown.len() > french.len() + 20, "{shown}");
+    let key = probed_key();
+    let probed = gvfs_question_text(french, Some(&key)).expect("missing fingerprint");
+    assert!(
+        probed.starts_with(french) && probed.contains(&key.fingerprint),
+        "{probed}"
+    );
+}
+
+fn probed_key() -> HostKey {
+    HostKey {
+        key_type: "ED25519".to_owned(),
+        fingerprint: "SHA256:ZR1dXt7vffPdj1iFrJiYeRfFsqn8IYrpqxISVukc5/Q".to_owned(),
+    }
+}
+
+#[test]
+fn host_key_is_read_from_the_ssh_log_line_only_when_complete() {
+    let log = |line: &str| {
+        format!(
+            "debug1: Connecting to 192.0.2.145 [192.0.2.145] port 2222.\n\
+             debug1: kex: host key algorithm: ssh-ed25519\n\
+             {line}\n\
+             No ED25519 host key is known for [192.0.2.145]:2222 and you have requested strict checking.\n\
+             Host key verification failed.\n"
+        )
+    };
+    let fingerprint = "SHA256:ZR1dXt7vffPdj1iFrJiYeRfFsqn8IYrpqxISVukc5/Q";
+    for (name, key_type) in [
+        ("ssh-ed25519", Some("ED25519")),
+        ("ecdsa-sha2-nistp384", Some("ECDSA")),
+        ("rsa-sha2-512", Some("RSA")),
+        ("sk-ssh-ed25519@openssh.com", Some("ED25519-SK")),
+        ("ssh-ed25519-cert-v01@openssh.com", None),
+    ] {
+        assert_eq!(
+            host_key_from_ssh_log(&log(&format!(
+                "debug1: Server host key: {name} {fingerprint}"
+            ))),
+            key_type.map(|key_type| HostKey {
+                key_type: key_type.to_owned(),
+                fingerprint: fingerprint.to_owned(),
+            }),
+            "{name}"
+        );
+    }
+    for line in [
+        "debug1: Server host key: ssh-ed25519 MD5:12:34:56",
+        "debug1: Server host key: ssh-ed25519 SHA256:short",
+        "debug1: Server host key: ssh-ed25519",
+        "Host key verification failed.",
+    ] {
+        assert_eq!(host_key_from_ssh_log(&log(line)), None, "{line}");
+    }
+}
+
+#[test]
+fn host_key_probe_targets_the_sftp_server_and_never_trusts_or_authenticates() {
+    let argv = |uri: &str| host_key_probe_argv(&Location::uri(uri));
+    let probe = argv("sftp://benutzer@192.0.2.145:2222/home").expect("probe");
+    assert!(probe.ends_with(&[
+        "-p".to_owned(),
+        "2222".to_owned(),
+        "-l".to_owned(),
+        "benutzer".to_owned(),
+        "--".to_owned(),
+        "192.0.2.145".to_owned(),
+        "true".to_owned(),
+    ]));
+    for option in [
+        "-oBatchMode=yes",
+        "-oStrictHostKeyChecking=yes",
+        "-oUserKnownHostsFile=/dev/null",
+        "-oGlobalKnownHostsFile=/dev/null",
+        "-oUpdateHostKeys=no",
+    ] {
+        assert!(probe.iter().any(|arg| arg == option), "{option}");
+    }
+    assert!(argv("sftp://server.example/").expect("probe").ends_with(&[
+        "--".to_owned(),
+        "server.example".to_owned(),
+        "true".to_owned()
+    ]));
+    for rejected in [
+        "smb://server/share",
+        "sftp://-oProxyCommand=x/",
+        "file:///home",
+    ] {
+        assert_eq!(argv(rejected), None, "{rejected}");
+    }
 }
 
 #[test]

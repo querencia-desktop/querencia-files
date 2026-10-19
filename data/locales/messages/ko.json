@@ -630,6 +630,7 @@
   "Process exited with status %{status}. Press Enter to close…": "프로세스가 종료되었습니다(상태 %{status}). 닫으려면 Enter 키를 누르세요…",
   "Processing archive…": "압축 파일 처리 중…",
   "Published %{date}": "%{date} 게시",
+  "Querencia Files read the server’s key over a separate connection. %{key_type} key fingerprint:\n%{fingerprint}\nCompare it with the fingerprint you know from the administrator.": "Querencia Files가 별도 연결로 서버 키를 읽었습니다. %{key_type} 키 지문:\n%{fingerprint}\n관리자에게서 받은 지문과 비교하세요.",
   "Queued": "대기 중",
   "RAR compression is not supported": "RAR 압축은 지원되지 않습니다",
   "RAR support is disabled in this build.": "이 빌드에서는 RAR 지원이 비활성화되어 있습니다.",

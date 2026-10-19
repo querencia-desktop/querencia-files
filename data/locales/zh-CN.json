@@ -421,7 +421,7 @@
   "Icons": "图标",
   "Icons must be a Lucide icon name of lowercase letters, digits, and dashes": "图标必须是由小写字母、数字和连字符组成的 Lucide 图标名称",
   "Id": "ID",
-  "If the server did not provide a fingerprint, verify it outside Strata before continuing.": "如果服务器未提供指纹，请先在 Strata 之外完成验证，再继续操作。",
+  "If the server did not provide a fingerprint, verify it outside Querencia Files before continuing.": "如果服务器未提供指纹，请先在 Querencia Files 之外完成验证，再继续操作。",
   "Image": "图片",
   "Image exceeds the 8 MB preview limit": "图片超出 8 MB 预览上限",
   "Image files · Per item": "图片文件 · 逐项",

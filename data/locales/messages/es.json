@@ -630,6 +630,7 @@
   "Process exited with status %{status}. Press Enter to close…": "El proceso terminó con el estado %{status}. Pulsa Enter para cerrar…",
   "Processing archive…": "Procesando archivo comprimido…",
   "Published %{date}": "Publicada el %{date}",
+  "Querencia Files read the server’s key over a separate connection. %{key_type} key fingerprint:\n%{fingerprint}\nCompare it with the fingerprint you know from the administrator.": "Querencia Files leyó la clave del servidor mediante una conexión independiente. Huella de la clave %{key_type}:\n%{fingerprint}\nCompárela con la huella que le haya dado el administrador.",
   "Queued": "En cola",
   "RAR compression is not supported": "No se admite la compresión RAR",
   "RAR support is disabled in this build.": "La compatibilidad con RAR está desactivada en esta compilación.",

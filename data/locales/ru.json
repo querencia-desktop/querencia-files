@@ -421,7 +421,7 @@
   "Icons": "Значки",
   "Icons must be a Lucide icon name of lowercase letters, digits, and dashes": "Значок должен быть именем значка Lucide из строчных латинских букв, цифр и дефисов",
   "Id": "Идентификатор",
-  "If the server did not provide a fingerprint, verify it outside Strata before continuing.": "Если сервер не предоставил отпечаток, проверьте его вне Strata, прежде чем продолжить.",
+  "If the server did not provide a fingerprint, verify it outside Querencia Files before continuing.": "Если сервер не предоставил отпечаток, проверьте его вне Querencia Files, прежде чем продолжить.",
   "Image": "Изображение",
   "Image exceeds the 8 MB preview limit": "Изображение превышает предел предпросмотра в 8 МБ",
   "Image files · Per item": "Файлы изображений · Для каждого элемента",

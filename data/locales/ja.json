@@ -421,7 +421,7 @@
   "Icons": "アイコン",
   "Icons must be a Lucide icon name of lowercase letters, digits, and dashes": "アイコンには英小文字、数字、ハイフンからなる Lucide アイコン名を指定してください",
   "Id": "ID",
-  "If the server did not provide a fingerprint, verify it outside Strata before continuing.": "サーバーがフィンガープリントを提示しなかった場合は、続行する前に Strata の外部で確認してください。",
+  "If the server did not provide a fingerprint, verify it outside Querencia Files before continuing.": "サーバーがフィンガープリントを提示しなかった場合は、続行する前に Querencia Files の外部で確認してください。",
   "Image": "画像",
   "Image exceeds the 8 MB preview limit": "画像がプレビューの上限 8 MB を超えています",
   "Image files · Per item": "画像ファイル · 項目ごと",

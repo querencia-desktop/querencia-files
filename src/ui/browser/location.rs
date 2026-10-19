@@ -156,6 +156,7 @@ fn show_trust_question_dialog(
     browser_overlay: &gtk::Overlay,
     operation: &gio::MountOperation,
     message: &str,
+    probed: Option<&super::network::HostKey>,
     choices: &[String],
     declined: Rc<Cell<bool>>,
 ) -> Option<gtk::Box> {
@@ -182,12 +183,12 @@ fn show_trust_question_dialog(
         ModalTone::Danger,
     );
     let backend_message = message_dialog_description(
-        &super::network::gvfs_question_text(message)
+        &super::network::gvfs_question_text(message, probed)
             .unwrap_or_else(|| sanitize_failure_message(message)),
     );
     layout.body.append(&backend_message);
     let warning = message_dialog_description(&crate::i18n::tr(
-        "If the server did not provide a fingerprint, verify it outside Strata before continuing.",
+        "If the server did not provide a fingerprint, verify it outside Querencia Files before continuing.",
     ));
     layout.body.append(&warning);
     layout.actions.remove(&layout.cancel);
@@ -2071,11 +2072,19 @@ impl ViewState {
         let active_prompt = Rc::new(RefCell::new(None::<gtk::Box>));
         let active_question = Rc::new(RefCell::new(None::<gtk::Box>));
         let question_declined = Rc::new(Cell::new(false));
+        // Bumped per question and when the mount ends, so a late host-key
+        // probe never shows a question that is no longer pending.
+        let question_generation = Rc::new(Cell::new(0_u64));
         if sftp_question {
             let question_operation = operation.clone();
             let question_overlay = self.overlay.clone();
             let question_for_signal = active_question.clone();
             let declined_for_signal = question_declined.clone();
+            let generation_for_signal = question_generation.clone();
+            let probe_location = match &target {
+                MountTarget::Location(location, _) => Some(location.clone()),
+                _ => None,
+            };
             operation.connect_local("ask-question", false, move |values| {
                 let (Some(message), Some(choices)) = (
                     values.get(1).and_then(|value| value.get::<String>().ok()),
@@ -2093,14 +2102,44 @@ impl ViewState {
                     dismiss_authentication_prompt(&question_overlay, &previous);
                 }
                 let choices: Vec<String> = choices.iter().map(ToString::to_string).collect();
-                let prompt = show_trust_question_dialog(
-                    &question_overlay,
-                    question_operation.upcast_ref(),
-                    &message,
-                    &choices,
-                    declined_for_signal.clone(),
-                );
-                question_for_signal.replace(prompt);
+                let generation = generation_for_signal.get() + 1;
+                generation_for_signal.set(generation);
+                let probe = probe_location
+                    .as_ref()
+                    .filter(|_| super::network::gvfs_question_lacks_fingerprint(&message))
+                    .and_then(super::network::host_key_probe_argv);
+                let Some(probe) = probe else {
+                    let prompt = show_trust_question_dialog(
+                        &question_overlay,
+                        question_operation.upcast_ref(),
+                        &message,
+                        None,
+                        &choices,
+                        declined_for_signal.clone(),
+                    );
+                    question_for_signal.replace(prompt);
+                    return None;
+                };
+                let question_operation = question_operation.clone();
+                let question_overlay = question_overlay.clone();
+                let question_for_signal = question_for_signal.clone();
+                let declined_for_signal = declined_for_signal.clone();
+                let generation_for_signal = generation_for_signal.clone();
+                glib::spawn_future_local(async move {
+                    let probed = super::network::probe_host_key(probe).await;
+                    if generation_for_signal.get() != generation {
+                        return;
+                    }
+                    let prompt = show_trust_question_dialog(
+                        &question_overlay,
+                        question_operation.upcast_ref(),
+                        &message,
+                        probed.as_ref(),
+                        &choices,
+                        declined_for_signal,
+                    );
+                    question_for_signal.replace(prompt);
+                });
                 None
             });
         }
@@ -2200,6 +2239,7 @@ impl ViewState {
                     }
                 }
             };
+            question_generation.set(question_generation.get() + 1);
             let result = trust_question_result(result, question_declined.get());
             if let Some(location) = log_location.as_ref() {
                 log_mount_finished(location, &result);

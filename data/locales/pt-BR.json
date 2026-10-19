@@ -421,7 +421,7 @@
   "Icons": "Ícones",
   "Icons must be a Lucide icon name of lowercase letters, digits, and dashes": "O ícone deve ser um nome de ícone Lucide com letras minúsculas, dígitos e hífens",
   "Id": "ID",
-  "If the server did not provide a fingerprint, verify it outside Strata before continuing.": "Se o servidor não forneceu uma impressão digital, verifique-a fora do Strata antes de continuar.",
+  "If the server did not provide a fingerprint, verify it outside Querencia Files before continuing.": "Se o servidor não forneceu uma impressão digital, verifique-a fora do Querencia Files antes de continuar.",
   "Image": "Imagem",
   "Image exceeds the 8 MB preview limit": "A imagem excede o limite de prévia de 8 MB",
   "Image files · Per item": "Arquivos de imagem · Por item",

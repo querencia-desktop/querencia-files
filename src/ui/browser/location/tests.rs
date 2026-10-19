@@ -738,6 +738,7 @@ fn sftp_trust_prompt_requires_a_choice_and_preserves_backend_choice_indexes() {
                     &overlay,
                     &operation,
                     "Identity Verification Failed\nThe identity of sftp://user:secret@host/path is ???",
+                    None,
                     choices,
                     declined.clone(),
                 )
@@ -791,6 +792,7 @@ fn sftp_trust_prompt_requires_a_choice_and_preserves_backend_choice_indexes() {
                 &overlay,
                 &operation,
                 "Identity Verification Failed",
+                None,
                 &english,
                 declined.clone(),
             )

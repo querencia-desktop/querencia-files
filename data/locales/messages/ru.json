@@ -630,6 +630,7 @@
   "Process exited with status %{status}. Press Enter to close…": "Процесс завершился с кодом %{status}. Нажмите Enter, чтобы закрыть…",
   "Processing archive…": "Обработка архива…",
   "Published %{date}": "Опубликовано %{date}",
+  "Querencia Files read the server’s key over a separate connection. %{key_type} key fingerprint:\n%{fingerprint}\nCompare it with the fingerprint you know from the administrator.": "Querencia Files получил ключ сервера через отдельное подключение. Отпечаток ключа %{key_type}:\n%{fingerprint}\nСравните его с отпечатком, полученным от администратора.",
   "Queued": "В очереди",
   "RAR compression is not supported": "Сжатие в RAR не поддерживается",
   "RAR support is disabled in this build.": "Поддержка RAR отключена в этой сборке.",
