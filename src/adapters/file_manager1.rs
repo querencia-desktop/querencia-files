@@ -92,14 +92,38 @@ pub(crate) fn export_file_manager(
             invocation.return_value(None);
         })
         .build()?;
-    gio::bus_own_name_on_connection(
-        connection,
-        BUS_NAME,
-        gio::BusNameOwnerFlags::NONE,
-        |_, name| tracing::debug!(name, "acquired file manager bus name"),
-        |_, name| tracing::debug!(name, "file manager bus name held elsewhere"),
-    );
+    request_bus_name(connection);
     Ok(())
+}
+
+/// Asks the bus for the well-known name with `RequestName` (no flags, as
+/// `gio::bus_own_name_on_connection` with `BusNameOwnerFlags::NONE` would).
+/// That helper reports a name lost to a closing connection, for example at
+/// the end of the session, with no connection, which gio-rs 0.22 unwraps and
+/// aborts the process on. The bus releases the name with the connection.
+fn request_bus_name(connection: &gio::DBusConnection) {
+    use glib::prelude::ToVariant;
+
+    const PRIMARY_OWNER: u32 = 1;
+    const ALREADY_OWNER: u32 = 4;
+    connection.call(
+        Some("org.freedesktop.DBus"),
+        "/org/freedesktop/DBus",
+        "org.freedesktop.DBus",
+        "RequestName",
+        Some(&(BUS_NAME, 0_u32).to_variant()),
+        glib::VariantTy::new("(u)").ok(),
+        gio::DBusCallFlags::NONE,
+        -1,
+        gio::Cancellable::NONE,
+        |reply| match reply.map(|reply| reply.get::<(u32,)>()) {
+            Ok(Some((PRIMARY_OWNER | ALREADY_OWNER,))) => {
+                tracing::debug!(name = BUS_NAME, "acquired file manager bus name")
+            }
+            Ok(_) => tracing::debug!(name = BUS_NAME, "file manager bus name held elsewhere"),
+            Err(error) => tracing::debug!(%error, "file manager bus name request failed"),
+        },
+    );
 }
 
 /// Groups the named URIs into one request per directory, keeping the order

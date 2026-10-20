@@ -1,8 +1,18 @@
 // SPDX-License-Identifier: MIT
 
-use std::{ffi::OsStr, os::unix::ffi::OsStrExt, path::Path};
+use std::{
+    ffi::OsStr,
+    io::{BufRead, BufReader},
+    os::unix::ffi::OsStrExt,
+    path::Path,
+    process::{Command, Stdio},
+    time::{Duration, Instant},
+};
 
-use super::{Method, RevealRequest, reveal_requests};
+use glib::prelude::ToVariant;
+use gtk::{gio, glib};
+
+use super::{BUS_NAME, Method, RevealRequest, export_file_manager, reveal_requests};
 use crate::model::Location;
 
 fn uris(values: &[&str]) -> Vec<String> {
@@ -140,4 +150,72 @@ fn show_items_keeps_colliding_non_utf8_names_distinct() {
         [b"bad\xe8name.txt", b"bad\xe9name.txt"]
             .map(|name| Location::local(downloads.join(OsStr::from_bytes(name))))
     );
+}
+
+fn iterate_until(context: &glib::MainContext, done: impl Fn() -> bool) {
+    let deadline = Instant::now() + Duration::from_secs(5);
+    while !done() {
+        assert!(Instant::now() < deadline, "bus did not answer in time");
+        context.iteration(false);
+        std::thread::sleep(Duration::from_millis(10));
+    }
+}
+
+#[test]
+fn closing_the_bus_connection_releases_the_name_without_aborting() {
+    let mut daemon = Command::new("dbus-daemon")
+        .args(["--session", "--nofork", "--print-address"])
+        .stdout(Stdio::piped())
+        .stderr(Stdio::null())
+        .spawn()
+        .expect("dbus-daemon for a private test bus");
+    let mut address = String::new();
+    BufReader::new(daemon.stdout.take().expect("daemon address"))
+        .read_line(&mut address)
+        .expect("daemon address");
+    let context = glib::MainContext::new();
+    context
+        .with_thread_default(|| {
+            let connect = || {
+                gio::DBusConnection::for_address_sync(
+                    address.trim(),
+                    gio::DBusConnectionFlags::AUTHENTICATION_CLIENT
+                        | gio::DBusConnectionFlags::MESSAGE_BUS_CONNECTION,
+                    None,
+                    gio::Cancellable::NONE,
+                )
+                .expect("private bus connection")
+            };
+            let owner = connect();
+            let observer = connect();
+            let name_has_owner = || {
+                observer
+                    .call_sync(
+                        Some("org.freedesktop.DBus"),
+                        "/org/freedesktop/DBus",
+                        "org.freedesktop.DBus",
+                        "NameHasOwner",
+                        Some(&(BUS_NAME,).to_variant()),
+                        glib::VariantTy::new("(b)").ok(),
+                        gio::DBusCallFlags::NONE,
+                        -1,
+                        gio::Cancellable::NONE,
+                    )
+                    .ok()
+                    .and_then(|reply| reply.get::<(bool,)>())
+                    .is_some_and(|(owned,)| owned)
+            };
+            export_file_manager(&owner, |_| {}).expect("export");
+            iterate_until(&context, name_has_owner);
+            owner.close_sync(gio::Cancellable::NONE).expect("close");
+            iterate_until(&context, || !name_has_owner());
+            // A name-lost callback would run from this context after the close.
+            for _ in 0..50 {
+                context.iteration(false);
+                std::thread::sleep(Duration::from_millis(2));
+            }
+        })
+        .expect("thread-default context");
+    let _ = daemon.kill();
+    let _ = daemon.wait();
 }
