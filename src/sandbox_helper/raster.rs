@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: 2026 Querencia Desktop contributors
 
 //! Pure-Rust raster decoding through the `image` crate, used inside the
 //! decoder sandbox when gdk-pixbuf cannot decode there (its loaders run

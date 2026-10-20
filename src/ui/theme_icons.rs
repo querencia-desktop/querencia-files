@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: 2026 Querencia Desktop contributors
 
 //! Desktop icon-theme icons for files, folders and places. GIO's shared MIME
 //! database names the icons, the active GTK icon theme decides which of them

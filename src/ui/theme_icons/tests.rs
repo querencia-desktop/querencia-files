@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: 2026 Querencia Desktop contributors
 
 use std::path::Path;
 

@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: 2026 Querencia Desktop contributors
 
 //! QF-0m: classic network browsing on top of GVfs. Discovery stays GVfs'
 //! `network:///`; this adds the "Connect to Server" dialog, an explanatory
