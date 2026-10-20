@@ -394,4 +394,116 @@ fn host_key_probe_reads_the_key_from_the_process_and_tolerates_failures() {
     );
     assert_eq!(probe(&["/nonexistent/ssh"]), None);
 }
+
+#[test]
+fn known_hosts_target_follows_the_resolved_ssh_configuration() {
+    let config = |extra: &str| {
+        format!(
+            "user benutzer\nhostname 192.0.2.145\nport 2222\n{extra}\
+             userknownhostsfile /home/user/.ssh/known_hosts /home/user/.ssh/known_hosts2\n"
+        )
+    };
+    assert_eq!(
+        known_hosts_target(&config("")),
+        Some(KnownHostsTarget {
+            name: "[192.0.2.145]:2222".to_owned(),
+            files: vec![
+                "/home/user/.ssh/known_hosts".to_owned(),
+                "/home/user/.ssh/known_hosts2".to_owned(),
+            ],
+        })
+    );
+    assert_eq!(
+        known_hosts_target(&config("hostkeyalias server-test\n")).map(|target| target.name),
+        Some("server-test".to_owned())
+    );
+    assert_eq!(
+        known_hosts_target("hostname nas-test.local\nport 22\nuserknownhostsfile none\n"),
+        Some(KnownHostsTarget {
+            name: "nas-test.local".to_owned(),
+            files: Vec::new(),
+        })
+    );
+    assert_eq!(known_hosts_target("port 22\n"), None);
+    assert_eq!(
+        ssh_config_argv(&Location::uri("sftp://benutzer@192.0.2.145:2222/home")),
+        Some(
+            [
+                "ssh",
+                "-G",
+                "-p",
+                "2222",
+                "-l",
+                "benutzer",
+                "--",
+                "192.0.2.145"
+            ]
+            .map(str::to_owned)
+            .into()
+        )
+    );
+    assert_eq!(
+        ssh_config_argv(&Location::uri("smb://192.0.2.145/share")),
+        None
+    );
+}
+
+#[test]
+fn accepted_key_is_compared_with_every_saved_fingerprint_of_the_host() {
+    let shown = probed_key().fingerprint;
+    let other = "SHA256:mH6Eqcbn90asfv6U9n8BfowmtrWkCKB56mQTBSIGJNY";
+    let listing = format!(
+        "# Host [192.0.2.145]:2222 found: line 1 \n[192.0.2.145]:2222 RSA {other}\n\
+         # Host [192.0.2.145]:2222 found: line 2 \n[192.0.2.145]:2222 ED25519 {shown}\n\
+         @revoked [192.0.2.145]:2222 ED25519 {other}\n"
+    );
+    assert_eq!(known_hosts_fingerprints(&listing), [other, shown.as_str()]);
+    let file = |name: &str, fingerprints: &[&str]| {
+        (
+            name.to_owned(),
+            fingerprints
+                .iter()
+                .map(|value| (*value).to_owned())
+                .collect::<Vec<_>>(),
+        )
+    };
+    let name = "[192.0.2.145]:2222";
+    assert_eq!(
+        compare_known_hosts(&shown, name, &[file("a", &[other]), file("b", &[&shown])]),
+        KnownHostsCheck::Matches
+    );
+    assert_eq!(
+        compare_known_hosts(&shown, name, &[file("a", &[]), file("b", &[other])]),
+        KnownHostsCheck::Differs {
+            name: name.to_owned(),
+            file: "b".to_owned(),
+        }
+    );
+    assert_eq!(
+        compare_known_hosts(&shown, name, &[file("a", &[])]),
+        KnownHostsCheck::NotSaved
+    );
+    assert_eq!(
+        compare_known_hosts(&shown, name, &[]),
+        KnownHostsCheck::NotSaved
+    );
+}
+
+#[test]
+fn shown_fingerprint_prefers_the_one_gvfs_quoted() {
+    let gvfs = "Verifying the identity of “192.0.2.145” failed:\n\
+                The identity sent by the remote computer is “SHA256:mH6Eqcbn90asfv6U9n8BfowmtrWkCKB56mQTBSIGJNY”.";
+    let probed = probed_key();
+    assert_eq!(
+        shown_fingerprint(gvfs, Some(&probed)).as_deref(),
+        Some("SHA256:mH6Eqcbn90asfv6U9n8BfowmtrWkCKB56mQTBSIGJNY")
+    );
+    let unknown = "Verifying the identity of “192.0.2.145” failed:\n\
+                   The identity sent by the remote computer is “???”.";
+    assert_eq!(
+        shown_fingerprint(unknown, Some(&probed)),
+        Some(probed.fingerprint)
+    );
+    assert_eq!(shown_fingerprint(unknown, None), None);
+}
 // SPDX-FileCopyrightText: 2026 Querencia Desktop contributors

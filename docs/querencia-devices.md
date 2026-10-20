@@ -60,3 +60,19 @@ resolved address) and wsdd is used when it is the only source. Hovering the
 icon of a merged entry names both sources and their targets. Entries for
 different protocols of the same host stay separate. Servers, workgroups and
 shares use Querencia's own icons with the classic theme names as fallback.
+
+## SFTP host keys
+
+GVfs 1.60 cannot read OpenSSH 10's fingerprint line and asks about an unknown
+host key with `???`. Files then reads the key itself over a separate
+connection that stops at host-key verification and shows its type and SHA256
+fingerprint. Because GVfs' login is a different connection, Files compares
+the key `ssh` saved after **Log In Anyway** with the fingerprint it showed:
+`ssh -G` resolves the host's known-hosts name and files (aliases,
+`HostKeyAlias`, `UserKnownHostsFile`) without connecting, and
+`ssh-keygen -l -F` lists the saved fingerprints. The check runs before the
+password is asked for, or after the mount when a key logs in. If the saved key
+differs, Files cancels the login (or disconnects) and shows the fingerprint
+and the `ssh-keygen -R` command that removes the wrong entry. Files never
+edits `known_hosts` itself. When no entry is found the login continues and
+the log says so.

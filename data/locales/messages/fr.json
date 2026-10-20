@@ -630,6 +630,7 @@
   "Process exited with status %{status}. Press Enter to close…": "Le processus s’est terminé avec le code %{status}. Appuyez sur Enter pour fermer…",
   "Processing archive…": "Traitement de l’archive…",
   "Published %{date}": "Publiée le %{date}",
+  "Querencia Files cancelled the connection: during login the server presented a different key than the fingerprint shown before (%{fingerprint}). ssh has saved that other key. Remove it with “%{command}” and confirm the fingerprint with the server administrator before you connect again.": "Querencia Files a interrompu la connexion : lors de l’ouverture de session, le serveur a présenté une clé différente de l’empreinte affichée auparavant (%{fingerprint}). ssh a enregistré cette autre clé. Supprimez-la avec « %{command} » et confirmez l’empreinte auprès de l’administrateur du serveur avant de vous reconnecter.",
   "Querencia Files read the server’s key over a separate connection. %{key_type} key fingerprint:\n%{fingerprint}\nCompare it with the fingerprint you know from the administrator.": "Querencia Files a lu la clé du serveur via une connexion distincte. Empreinte de la clé %{key_type} :\n%{fingerprint}\nComparez-la avec celle fournie par l’administrateur.",
   "Queued": "En attente",
   "RAR compression is not supported": "La compression RAR n’est pas prise en charge",

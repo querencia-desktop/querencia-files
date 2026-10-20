@@ -375,15 +375,7 @@ pub(in crate::ui) fn gvfs_question_lacks_fingerprint(message: &str) -> bool {
 /// could not read the fingerprint, `probed` supplies it, or a note says it is
 /// missing.
 pub(in crate::ui) fn gvfs_question_text(message: &str, probed: Option<&HostKey>) -> Option<String> {
-    let between = |(start, end): (&str, &str)| {
-        let (_, rest) = message.split_once(start)?;
-        rest.split_once(end)
-            .map(|(value, _)| value.trim().to_owned())
-    };
-    let Some((host, identity)) = GVFS_HOST_KEY_QUESTIONS
-        .iter()
-        .find_map(|[host, identity]| Some((between(*host)?, between(*identity)?)))
-    else {
+    let Some((host, identity)) = gvfs_question_parts(message) else {
         return gvfs_question_lacks_fingerprint(message).then(|| {
             format!(
                 "{}\n\n{}",
@@ -406,6 +398,36 @@ pub(in crate::ui) fn gvfs_question_text(message: &str, probed: Option<&HostKey>)
         .into_owned()
     };
     Some(format!("{first}\n\n{second}"))
+}
+
+/// The host and the identity GVfs quotes in a known wording of its question.
+fn gvfs_question_parts(message: &str) -> Option<(String, String)> {
+    let between = |(start, end): (&str, &str)| {
+        let (_, rest) = message.split_once(start)?;
+        rest.split_once(end)
+            .map(|(value, _)| value.trim().to_owned())
+    };
+    GVFS_HOST_KEY_QUESTIONS
+        .iter()
+        .find_map(|[host, identity]| Some((between(*host)?, between(*identity)?)))
+}
+
+/// The SHA256 fingerprint the host-key question showed: the one GVfs quoted,
+/// else the one Querencia Files read itself.
+pub(in crate::ui) fn shown_fingerprint(message: &str, probed: Option<&HostKey>) -> Option<String> {
+    gvfs_question_parts(message)
+        .map(|(_, identity)| identity)
+        .filter(|identity| is_sha256_fingerprint(identity))
+        .or_else(|| probed.map(|key| key.fingerprint.clone()))
+}
+
+fn is_sha256_fingerprint(value: &str) -> bool {
+    value.strip_prefix("SHA256:").is_some_and(|digest| {
+        digest.len() == 43
+            && digest
+                .chars()
+                .all(|c| c.is_ascii_alphanumeric() || c == '+' || c == '/')
+    })
 }
 
 fn missing_fingerprint_note(probed: Option<&HostKey>) -> String {
@@ -437,16 +459,7 @@ pub(in crate::ui) struct HostKey {
 /// NoHostAuthenticationForLocalhost or VerifyHostKeyDNS). `None` when the
 /// location has no usable host.
 pub(in crate::ui) fn host_key_probe_argv(location: &Location) -> Option<Vec<String>> {
-    if location.backend_name() != "sftp" && location.backend_name() != "ssh" {
-        return None;
-    }
-    let uri = glib::Uri::parse(location.uri_value()?, glib::UriFlags::HAS_PASSWORD).ok()?;
-    let usable = |value: &str| {
-        !value.is_empty()
-            && !value.starts_with('-')
-            && !value.chars().any(|c| c.is_whitespace() || c.is_control())
-    };
-    let host = uri.host().filter(|host| usable(host))?;
+    let target = ssh_target_argv(location)?;
     let mut argv: Vec<String> = [
         "ssh",
         "-v",
@@ -476,13 +489,32 @@ pub(in crate::ui) fn host_key_probe_argv(location: &Location) -> Option<Vec<Stri
     ]
     .map(str::to_owned)
     .into();
+    argv.extend(target);
+    argv.push("true".to_owned());
+    Some(argv)
+}
+
+/// `[-p port] [-l user] -- host` of an SFTP location, or `None` when it has
+/// no usable host.
+fn ssh_target_argv(location: &Location) -> Option<Vec<String>> {
+    if location.backend_name() != "sftp" && location.backend_name() != "ssh" {
+        return None;
+    }
+    let uri = glib::Uri::parse(location.uri_value()?, glib::UriFlags::HAS_PASSWORD).ok()?;
+    let usable = |value: &str| {
+        !value.is_empty()
+            && !value.starts_with('-')
+            && !value.chars().any(|c| c.is_whitespace() || c.is_control())
+    };
+    let host = uri.host().filter(|host| usable(host))?;
+    let mut argv = Vec::new();
     if uri.port() > 0 {
         argv.extend(["-p".to_owned(), uri.port().to_string()]);
     }
     if let Some(user) = uri.user().filter(|user| usable(user)) {
         argv.extend(["-l".to_owned(), user.to_string()]);
     }
-    argv.extend(["--".to_owned(), host.to_string(), "true".to_owned()]);
+    argv.extend(["--".to_owned(), host.to_string()]);
     Some(argv)
 }
 
@@ -493,12 +525,7 @@ pub(in crate::ui) fn host_key_from_ssh_log(log: &str) -> Option<HostKey> {
         let mut parts = rest.split_whitespace();
         Some((parts.next()?, parts.next()?))
     })?;
-    let digest = fingerprint.strip_prefix("SHA256:")?;
-    if digest.len() != 43
-        || !digest
-            .chars()
-            .all(|c| c.is_ascii_alphanumeric() || c == '+' || c == '/')
-    {
+    if !is_sha256_fingerprint(fingerprint) {
         return None;
     }
     let key_type = match name {
@@ -560,6 +587,206 @@ pub(in crate::ui) async fn probe_host_key(argv: Vec<String>) -> Option<HostKey> 
         tracing::info!("host-key probe found no plain host key in the ssh log");
     }
     key
+}
+
+/// `ssh -G` for an SFTP location: resolves the user configuration (aliases,
+/// `HostKeyAlias`, `UserKnownHostsFile`) without connecting.
+pub(in crate::ui) fn ssh_config_argv(location: &Location) -> Option<Vec<String>> {
+    let mut argv = vec!["ssh".to_owned(), "-G".to_owned()];
+    argv.extend(ssh_target_argv(location)?);
+    Some(argv)
+}
+
+/// Where `ssh` saves a host's key: its name in known_hosts and the user
+/// known-hosts files, as `ssh -G` printed them.
+#[derive(Debug, PartialEq, Eq)]
+pub(in crate::ui) struct KnownHostsTarget {
+    pub(in crate::ui) name: String,
+    pub(in crate::ui) files: Vec<String>,
+}
+
+pub(in crate::ui) fn known_hosts_target(config: &str) -> Option<KnownHostsTarget> {
+    let value = |key: &str| {
+        config.lines().find_map(|line| {
+            let (name, value) = line.split_once(' ')?;
+            (name == key).then(|| value.trim())
+        })
+    };
+    let name = match value("hostkeyalias").filter(|alias| !alias.is_empty() && *alias != "none") {
+        Some(alias) => alias.to_owned(),
+        None => {
+            let host = value("hostname").filter(|host| !host.is_empty())?;
+            match value("port") {
+                Some(port) if port != "22" => format!("[{host}]:{port}"),
+                _ => host.to_owned(),
+            }
+        }
+    };
+    let files = value("userknownhostsfile")?
+        .split_whitespace()
+        .filter(|file| *file != "none")
+        .map(str::to_owned)
+        .collect();
+    Some(KnownHostsTarget { name, files })
+}
+
+pub(in crate::ui) fn known_hosts_lookup_argv(name: &str, file: &str) -> Vec<String> {
+    ["ssh-keygen", "-l", "-F", name, "-f", file]
+        .map(str::to_owned)
+        .into()
+}
+
+/// The fingerprints in `ssh-keygen -l -F`'s listing, without marked
+/// (`@revoked`, `@cert-authority`) entries.
+pub(in crate::ui) fn known_hosts_fingerprints(listing: &str) -> Vec<String> {
+    listing
+        .lines()
+        .filter(|line| !line.starts_with('#') && !line.starts_with('@'))
+        .filter_map(|line| line.split_whitespace().last())
+        .filter(|fingerprint| is_sha256_fingerprint(fingerprint))
+        .map(str::to_owned)
+        .collect()
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub(in crate::ui) enum KnownHostsCheck {
+    Matches,
+    NotSaved,
+    Differs { name: String, file: String },
+}
+
+/// Compares the fingerprint the question showed with what known_hosts holds
+/// for the host after the user accepted it; `saved` lists each file's
+/// fingerprints in ssh's order.
+pub(in crate::ui) fn compare_known_hosts(
+    shown: &str,
+    name: &str,
+    saved: &[(String, Vec<String>)],
+) -> KnownHostsCheck {
+    if saved
+        .iter()
+        .any(|(_, fingerprints)| fingerprints.iter().any(|saved| saved == shown))
+    {
+        return KnownHostsCheck::Matches;
+    }
+    saved
+        .iter()
+        .find(|(_, fingerprints)| !fingerprints.is_empty())
+        .map_or(KnownHostsCheck::NotSaved, |(file, _)| {
+            KnownHostsCheck::Differs {
+                name: name.to_owned(),
+                file: file.clone(),
+            }
+        })
+}
+
+const KNOWN_HOSTS_CHECK_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(5);
+
+async fn command_output(argv: &[String]) -> Option<String> {
+    let argv: Vec<&std::ffi::OsStr> = argv.iter().map(std::ffi::OsStr::new).collect();
+    let process = gio::Subprocess::newv(
+        &argv,
+        gio::SubprocessFlags::STDIN_PIPE
+            | gio::SubprocessFlags::STDOUT_PIPE
+            | gio::SubprocessFlags::STDERR_SILENCE,
+    )
+    .inspect_err(|error| tracing::info!(%error, "known_hosts check could not start a command"))
+    .ok()?;
+    let no_input = glib::Bytes::from_static(b"");
+    match glib::future_with_timeout(
+        KNOWN_HOSTS_CHECK_TIMEOUT,
+        process.communicate_future(Some(&no_input)),
+    )
+    .await
+    {
+        Ok(Ok((Some(output), _))) => Some(String::from_utf8_lossy(&output).into_owned()),
+        Ok(Ok((None, _))) => Some(String::new()),
+        Ok(Err(error)) => {
+            tracing::info!(%error, "known_hosts check command failed");
+            None
+        }
+        Err(_) => {
+            process.force_exit();
+            tracing::info!("known_hosts check command timed out");
+            None
+        }
+    }
+}
+
+/// After the user accepted an SFTP host key: does the entry `ssh` saved match
+/// the fingerprint the question showed? The key is read from known_hosts
+/// because GVfs' login is a different connection than the probe.
+pub(in crate::ui) async fn check_known_hosts(location: Location, shown: String) -> KnownHostsCheck {
+    let Some(argv) = ssh_config_argv(&location) else {
+        return KnownHostsCheck::NotSaved;
+    };
+    let Some(target) = command_output(&argv)
+        .await
+        .as_deref()
+        .and_then(known_hosts_target)
+    else {
+        tracing::info!("known_hosts check could not resolve the ssh configuration");
+        return KnownHostsCheck::NotSaved;
+    };
+    let mut saved = Vec::new();
+    for file in target.files {
+        if !std::path::Path::new(&file).is_file() {
+            continue;
+        }
+        let listing = command_output(&known_hosts_lookup_argv(&target.name, &file)).await;
+        saved.push((
+            file,
+            known_hosts_fingerprints(listing.as_deref().unwrap_or("")),
+        ));
+    }
+    let check = compare_known_hosts(&shown, &target.name, &saved);
+    match &check {
+        KnownHostsCheck::Matches => {
+            tracing::info!("known_hosts entry matches the accepted host key")
+        }
+        KnownHostsCheck::NotSaved => {
+            tracing::info!("known_hosts holds no entry for the accepted host key")
+        }
+        KnownHostsCheck::Differs { .. } => {
+            tracing::warn!("known_hosts entry differs from the accepted host key")
+        }
+    }
+    check
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, glib::ErrorDomain)]
+#[error_domain(name = "querencia-files-known-hosts")]
+pub(in crate::ui) enum KnownHostsError {
+    Differs,
+}
+
+/// The mount failure for a known_hosts entry that differs from the shown
+/// fingerprint, with the command that removes the entry.
+pub(in crate::ui) fn known_hosts_mismatch_error(
+    shown: &str,
+    name: &str,
+    file: &str,
+) -> glib::Error {
+    let command = format!("ssh-keygen -R {} -f {}", shell_word(name), shell_word(file));
+    glib::Error::new(
+        KnownHostsError::Differs,
+        &rust_i18n::t!(
+            "Querencia Files cancelled the connection: during login the server presented a different key than the fingerprint shown before (%{fingerprint}). ssh has saved that other key. Remove it with “%{command}” and confirm the fingerprint with the server administrator before you connect again.",
+            fingerprint = shown,
+            command = command
+        ),
+    )
+}
+
+fn shell_word(value: &str) -> String {
+    if value
+        .chars()
+        .all(|c| c.is_ascii_alphanumeric() || "-_./:@%+=,".contains(c))
+    {
+        value.to_owned()
+    } else {
+        format!("'{}'", value.replace('\'', "'\\''"))
+    }
 }
 
 /// GVfs' SFTP and SMB password prompts in the UI language.

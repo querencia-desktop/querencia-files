@@ -630,6 +630,7 @@
   "Process exited with status %{status}. Press Enter to close…": "프로세스가 종료되었습니다(상태 %{status}). 닫으려면 Enter 키를 누르세요…",
   "Processing archive…": "압축 파일 처리 중…",
   "Published %{date}": "%{date} 게시",
+  "Querencia Files cancelled the connection: during login the server presented a different key than the fingerprint shown before (%{fingerprint}). ssh has saved that other key. Remove it with “%{command}” and confirm the fingerprint with the server administrator before you connect again.": "Querencia Files가 연결을 취소했습니다. 로그인할 때 서버가 앞서 표시한 지문(%{fingerprint})과 다른 키를 제시했습니다. ssh가 그 다른 키를 저장했습니다. “%{command}”(으)로 제거하고, 다시 연결하기 전에 서버 관리자와 지문을 확인하세요.",
   "Querencia Files read the server’s key over a separate connection. %{key_type} key fingerprint:\n%{fingerprint}\nCompare it with the fingerprint you know from the administrator.": "Querencia Files가 별도 연결로 서버 키를 읽었습니다. %{key_type} 키 지문:\n%{fingerprint}\n관리자에게서 받은 지문과 비교하세요.",
   "Queued": "대기 중",
   "RAR compression is not supported": "RAR 압축은 지원되지 않습니다",

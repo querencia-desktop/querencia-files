@@ -733,14 +733,18 @@ fn sftp_trust_prompt_requires_a_choice_and_preserves_backend_choice_indexes() {
                 operation.connect_reply(move |operation, reply| {
                     observed.borrow_mut().push((reply, operation.choice()));
                 });
-                let declined = Rc::new(Cell::new(false));
+                let answer = TrustAnswer::default();
+                let probed = crate::ui::browser::network::HostKey {
+                    key_type: "ED25519".to_owned(),
+                    fingerprint: "SHA256:ZR1dXt7vffPdj1iFrJiYeRfFsqn8IYrpqxISVukc5/Q".to_owned(),
+                };
                 let prompt = show_trust_question_dialog(
                     &overlay,
                     &operation,
                     "Identity Verification Failed\nThe identity of sftp://user:secret@host/path is ???",
-                    None,
+                    Some(&probed),
                     choices,
-                    declined.clone(),
+                    answer.clone(),
                 )
                 .expect("themed trust question");
                 assert!(
@@ -779,7 +783,12 @@ fn sftp_trust_prompt_requires_a_choice_and_preserves_backend_choice_indexes() {
                     *replies.borrow(),
                     vec![(gio::MountOperationResult::Handled, expected_choice)]
                 );
-                assert_eq!(declined.get(), expected_choice == 1);
+                assert_eq!(answer.declined.get(), expected_choice == 1);
+                assert_eq!(
+                    *answer.accepted.borrow(),
+                    (expected_choice == 0).then(|| probed.fingerprint.clone()),
+                    "only trusting the key records the shown fingerprint"
+                );
                 dismiss_authentication_prompt(&overlay, &prompt);
             }
 
@@ -787,14 +796,14 @@ fn sftp_trust_prompt_requires_a_choice_and_preserves_backend_choice_indexes() {
             let replies = Rc::new(RefCell::new(Vec::new()));
             let observed = replies.clone();
             operation.connect_reply(move |_, reply| observed.borrow_mut().push(reply));
-            let declined = Rc::new(Cell::new(false));
+            let answer = TrustAnswer::default();
             let prompt = show_trust_question_dialog(
                 &overlay,
                 &operation,
                 "Identity Verification Failed",
                 None,
                 &english,
-                declined.clone(),
+                answer.clone(),
             )
             .expect("themed trust question");
             let close = descendants(&prompt.clone().upcast())
@@ -808,11 +817,25 @@ fn sftp_trust_prompt_requires_a_choice_and_preserves_backend_choice_indexes() {
                 .expect("trust dialog close button");
             close.emit_clicked();
             assert_eq!(*replies.borrow(), vec![gio::MountOperationResult::Aborted]);
-            assert!(declined.get());
+            assert!(answer.declined.get());
             dismiss_authentication_prompt(&overlay, &prompt);
             window.destroy();
         },
     );
+}
+
+#[test]
+fn known_hosts_mismatch_is_shown_and_never_asks_for_the_password_again() {
+    let location = Location::uri("sftp://benutzer@192.0.2.145:2222/");
+    let error = crate::ui::browser::network::known_hosts_mismatch_error(
+        "SHA256:ZR1dXt7vffPdj1iFrJiYeRfFsqn8IYrpqxISVukc5/Q",
+        "[192.0.2.145]:2222",
+        "/home/user/.ssh/known_hosts",
+    );
+    assert!(!mount_error_is_authentication_failure(&location, &error));
+    let message = mount_failure_message(&location, &error).expect("mismatch is reported");
+    assert!(message.contains("SHA256:ZR1dXt7vffPdj1iFrJiYeRfFsqn8IYrpqxISVukc5/Q"));
+    assert!(message.contains("ssh-keygen -R '[192.0.2.145]:2222' -f /home/user/.ssh/known_hosts"));
 }
 
 #[test]

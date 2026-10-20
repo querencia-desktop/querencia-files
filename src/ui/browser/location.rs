@@ -152,13 +152,21 @@ fn authentication_retry_message(flags: gio::AskPasswordFlags, message: &str) -> 
 
 const AUTHENTICATION_TEXT_WIDTH_CHARS: i32 = 64;
 
+/// How the user answered an SFTP host-key question: `declined` when they
+/// refused it, `accepted` the fingerprint shown when they trusted it.
+#[derive(Clone, Default)]
+struct TrustAnswer {
+    declined: Rc<Cell<bool>>,
+    accepted: Rc<RefCell<Option<String>>>,
+}
+
 fn show_trust_question_dialog(
     browser_overlay: &gtk::Overlay,
     operation: &gio::MountOperation,
     message: &str,
     probed: Option<&super::network::HostKey>,
     choices: &[String],
-    declined: Rc<Cell<bool>>,
+    answer: TrustAnswer,
 ) -> Option<gtk::Box> {
     if choices.is_empty() {
         operation.reply(gio::MountOperationResult::Unhandled);
@@ -206,13 +214,14 @@ fn show_trust_question_dialog(
     let close_overlay = window_overlay.clone();
     let close_root = blurred_root.clone();
     let close_operation = operation.clone();
-    let close_declined = declined.clone();
+    let close_declined = answer.declined.clone();
     layout.close.connect_clicked(move |_| {
         close_declined.set(true);
         dismiss_modal_layer(&close_layer, &close_overlay, close_root.as_ref());
         close_operation.reply(gio::MountOperationResult::Aborted);
     });
 
+    let shown = super::network::shown_fingerprint(message, probed);
     let mut rejection = None;
     for super::network::GvfsChoice {
         index,
@@ -232,10 +241,13 @@ fn show_trust_question_dialog(
         let answer_overlay = window_overlay.clone();
         let answer_root = blurred_root.clone();
         let answer_operation = operation.clone();
-        let answer_declined = declined.clone();
+        let answer = answer.clone();
+        let shown = shown.clone();
         button.connect_clicked(move |_| {
             if rejects {
-                answer_declined.set(true);
+                answer.declined.set(true);
+            } else {
+                answer.accepted.replace(shown.clone());
             }
             dismiss_modal_layer(&answer_layer, &answer_overlay, answer_root.as_ref());
             answer_operation.set_choice(index as i32);
@@ -250,7 +262,7 @@ fn show_trust_question_dialog(
     let escape_overlay = window_overlay.clone();
     let escape_root = blurred_root;
     close_on_escape(&layer, move || {
-        declined.set(true);
+        answer.declined.set(true);
         dismiss_modal_layer(&escape_layer, &escape_overlay, escape_root.as_ref());
         escape_operation.reply(gio::MountOperationResult::Aborted);
     });
@@ -632,7 +644,7 @@ fn mount_result_is_ok(result: &Result<(), glib::Error>) -> bool {
 }
 
 fn mount_error_is_authentication_failure(location: &Location, error: &glib::Error) -> bool {
-    if location.uri_value().is_none() {
+    if location.uri_value().is_none() || error.kind::<super::network::KnownHostsError>().is_some() {
         return false;
     }
     if mount_error_is_host_key_rejection(error) {
@@ -677,6 +689,9 @@ fn mount_error_is_host_key_rejection(error: &glib::Error) -> bool {
 /// per lgse/strata#20's "cancelling authentication returns to the prior
 /// committed location" requirement.
 fn mount_failure_message(location: &Location, error: &glib::Error) -> Option<String> {
+    if error.kind::<super::network::KnownHostsError>().is_some() {
+        return Some(error.message().to_owned());
+    }
     if mount_error_is_cancelled(error) {
         return None;
     }
@@ -714,6 +729,21 @@ fn transport_failure_message(error: &glib::Error) -> Option<String> {
         return None;
     };
     Some(crate::i18n::tr(message))
+}
+
+/// Unmounts the mount a just-connected location lives on.
+async fn disconnect_location(location: &Location) {
+    let file = gio_file_for_location(location);
+    let Ok(mount) = file.find_enclosing_mount(gio::Cancellable::NONE) else {
+        tracing::warn!("known_hosts mismatch: no mount to disconnect");
+        return;
+    };
+    if let Err(error) = mount
+        .unmount_with_operation_future(gio::MountUnmountFlags::FORCE, gio::MountOperation::NONE)
+        .await
+    {
+        tracing::warn!(%error, "known_hosts mismatch: disconnect failed");
+    }
 }
 
 fn mount_error_is_cancelled(error: &glib::Error) -> bool {
@@ -2071,7 +2101,8 @@ impl ViewState {
         let prompt_overlay = self.overlay.clone();
         let active_prompt = Rc::new(RefCell::new(None::<gtk::Box>));
         let active_question = Rc::new(RefCell::new(None::<gtk::Box>));
-        let question_declined = Rc::new(Cell::new(false));
+        let trust_answer = TrustAnswer::default();
+        let known_hosts_mismatch = Rc::new(RefCell::new(None::<glib::Error>));
         // Bumped per question and when the mount ends, so a late host-key
         // probe never shows a question that is no longer pending.
         let question_generation = Rc::new(Cell::new(0_u64));
@@ -2079,7 +2110,7 @@ impl ViewState {
             let question_operation = operation.clone();
             let question_overlay = self.overlay.clone();
             let question_for_signal = active_question.clone();
-            let declined_for_signal = question_declined.clone();
+            let answer_for_signal = trust_answer.clone();
             let generation_for_signal = question_generation.clone();
             let probe_location = match &target {
                 MountTarget::Location(location, _) => Some(location.clone()),
@@ -2115,7 +2146,7 @@ impl ViewState {
                         &message,
                         None,
                         &choices,
-                        declined_for_signal.clone(),
+                        answer_for_signal.clone(),
                     );
                     question_for_signal.replace(prompt);
                     return None;
@@ -2123,7 +2154,7 @@ impl ViewState {
                 let question_operation = question_operation.clone();
                 let question_overlay = question_overlay.clone();
                 let question_for_signal = question_for_signal.clone();
-                let declined_for_signal = declined_for_signal.clone();
+                let answer_for_signal = answer_for_signal.clone();
                 let generation_for_signal = generation_for_signal.clone();
                 glib::spawn_future_local(async move {
                     let probed = super::network::probe_host_key(probe).await;
@@ -2136,7 +2167,7 @@ impl ViewState {
                         &message,
                         probed.as_ref(),
                         &choices,
-                        declined_for_signal,
+                        answer_for_signal,
                     );
                     question_for_signal.replace(prompt);
                 });
@@ -2155,11 +2186,12 @@ impl ViewState {
         let progress_name = unlock_name;
         let progress_keys = unlock_keys;
         let progress_encrypted = encrypted;
-        operation.connect_ask_password(
-            move |operation, message, default_user, default_domain, flags| {
-                // Suppress GtkMountOperation's native password dialog: we reply
-                // ourselves so it cannot race the Strata authentication prompt.
-                operation.stop_signal_emission_by_name("ask-password");
+        let ask_password = Rc::new(
+            move |operation: &gtk::MountOperation,
+                  message: &str,
+                  default_user: &str,
+                  default_domain: &str,
+                  flags: gio::AskPasswordFlags| {
                 details_for_signal.replace(Some(MountPromptDetails {
                     message: message.to_owned(),
                     default_user: default_user.to_owned(),
@@ -2207,6 +2239,52 @@ impl ViewState {
                 prompt_for_signal.replace(prompt);
             },
         );
+        let known_hosts_location = match &target {
+            MountTarget::Location(location, _) if sftp_question => Some(location.clone()),
+            _ => None,
+        };
+        let accepted_for_signal = trust_answer.accepted.clone();
+        let mismatch_for_signal = known_hosts_mismatch.clone();
+        let location_for_signal = known_hosts_location.clone();
+        operation.connect_ask_password(
+            move |operation, message, default_user, default_domain, flags| {
+                // Suppress GtkMountOperation's native password dialog: we reply
+                // ourselves so it cannot race the Strata authentication prompt.
+                operation.stop_signal_emission_by_name("ask-password");
+                let accepted = accepted_for_signal.borrow_mut().take();
+                let (Some(shown), Some(location)) = (accepted, location_for_signal.clone()) else {
+                    ask_password(operation, message, default_user, default_domain, flags);
+                    return;
+                };
+                // ssh saved the accepted key before asking for the password:
+                // compare it first, so a different key never gets the password.
+                let operation = operation.clone();
+                let (message, default_user, default_domain) = (
+                    message.to_owned(),
+                    default_user.to_owned(),
+                    default_domain.to_owned(),
+                );
+                let ask_password = ask_password.clone();
+                let mismatch = mismatch_for_signal.clone();
+                glib::spawn_future_local(async move {
+                    match super::network::check_known_hosts(location, shown.clone()).await {
+                        super::network::KnownHostsCheck::Differs { name, file } => {
+                            mismatch.replace(Some(super::network::known_hosts_mismatch_error(
+                                &shown, &name, &file,
+                            )));
+                            operation.reply(gio::MountOperationResult::Aborted);
+                        }
+                        _ => ask_password(
+                            &operation,
+                            &message,
+                            &default_user,
+                            &default_domain,
+                            flags,
+                        ),
+                    }
+                });
+            },
+        );
         let weak = Rc::downgrade(self);
         let result_overlay = self.overlay.clone();
         glib::MainContext::default().spawn_local(async move {
@@ -2240,7 +2318,21 @@ impl ViewState {
                 }
             };
             question_generation.set(question_generation.get() + 1);
-            let result = trust_question_result(result, question_declined.get());
+            let mut result = trust_question_result(result, trust_answer.declined.get());
+            let mismatch = known_hosts_mismatch.borrow_mut().take();
+            let accepted = trust_answer.accepted.borrow_mut().take();
+            if let Some(error) = mismatch {
+                result = Err(error);
+            } else if result.is_ok()
+                && let (Some(location), Some(shown)) = (known_hosts_location.as_ref(), accepted)
+                && let super::network::KnownHostsCheck::Differs { name, file } =
+                    super::network::check_known_hosts(location.clone(), shown.clone()).await
+            {
+                disconnect_location(location).await;
+                result = Err(super::network::known_hosts_mismatch_error(
+                    &shown, &name, &file,
+                ));
+            }
             if let Some(location) = log_location.as_ref() {
                 log_mount_finished(location, &result);
             }

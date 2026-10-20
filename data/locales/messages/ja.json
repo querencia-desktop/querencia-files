@@ -630,6 +630,7 @@
   "Process exited with status %{status}. Press Enter to close…": "プロセスがステータス %{status} で終了しました。Enter を押すと閉じます…",
   "Processing archive…": "アーカイブを処理中…",
   "Published %{date}": "公開日 %{date}",
+  "Querencia Files cancelled the connection: during login the server presented a different key than the fingerprint shown before (%{fingerprint}). ssh has saved that other key. Remove it with “%{command}” and confirm the fingerprint with the server administrator before you connect again.": "Querencia Files は接続を中止しました: ログイン時にサーバーが、先ほど表示したフィンガープリント (%{fingerprint}) とは別の鍵を提示しました。ssh はその別の鍵を保存しています。「%{command}」で削除し、再接続する前にサーバー管理者とフィンガープリントを確認してください。",
   "Querencia Files read the server’s key over a separate connection. %{key_type} key fingerprint:\n%{fingerprint}\nCompare it with the fingerprint you know from the administrator.": "Querencia Files は別の接続でサーバーの鍵を読み取りました。%{key_type} 鍵のフィンガープリント:\n%{fingerprint}\n管理者から知らされたフィンガープリントと比較してください。",
   "Queued": "待機中",
   "RAR compression is not supported": "RAR 形式での圧縮には対応していません",

@@ -630,6 +630,7 @@
   "Process exited with status %{status}. Press Enter to close…": "进程已退出，退出代码为 %{status}。按 Enter 关闭…",
   "Processing archive…": "正在处理压缩文件…",
   "Published %{date}": "发布于 %{date}",
+  "Querencia Files cancelled the connection: during login the server presented a different key than the fingerprint shown before (%{fingerprint}). ssh has saved that other key. Remove it with “%{command}” and confirm the fingerprint with the server administrator before you connect again.": "Querencia Files 已取消连接：登录时服务器提供的密钥与之前显示的指纹（%{fingerprint}）不同。ssh 已保存这个不同的密钥。请用“%{command}”删除它，并在重新连接前向服务器管理员核实指纹。",
   "Querencia Files read the server’s key over a separate connection. %{key_type} key fingerprint:\n%{fingerprint}\nCompare it with the fingerprint you know from the administrator.": "Querencia Files 已通过单独的连接读取服务器密钥。%{key_type} 密钥指纹：\n%{fingerprint}\n请将其与管理员提供的指纹进行比较。",
   "Queued": "排队中",
   "RAR compression is not supported": "不支持 RAR 压缩",
