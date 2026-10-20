@@ -82,11 +82,7 @@ fn names_match_without_case_and_local_suffix() {
 fn wsdd_alone_stays_and_other_protocols_or_entries_are_not_folded() {
     let listing = vec![
         network_entry("wsdd-server-1", "PRINTSRV", "smb://PRINTSRV.local/"),
-        network_entry(
-            "dnssd-server-nas._smb._tcp",
-            "nas",
-            "smb://192.0.2.20:445/",
-        ),
+        network_entry("dnssd-server-nas._smb._tcp", "nas", "smb://192.0.2.20:445/"),
         network_entry(
             "dnssd-server-nas._sftp-ssh._tcp",
             "nas",
@@ -102,11 +98,7 @@ fn wsdd_alone_stays_and_other_protocols_or_entries_are_not_folded() {
 #[test]
 fn the_listing_remembers_merged_sources_for_the_tooltip() {
     let entries = merge_network_listing(vec![
-        network_entry(
-            "dnssd-server-nas._smb._tcp",
-            "nas",
-            "smb://192.0.2.20:445/",
-        ),
+        network_entry("dnssd-server-nas._smb._tcp", "nas", "smb://192.0.2.20:445/"),
         network_entry("wsdd-server-2", "NAS", "smb://NAS.local/"),
     ]);
     let kept = entries[0].location.clone();

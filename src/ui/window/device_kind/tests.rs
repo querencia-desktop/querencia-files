@@ -69,11 +69,7 @@ fn network_uris_are_recognised_by_scheme() {
     ] {
         assert!(is_network_uri(uri), "{uri}");
     }
-    for uri in [
-        "file:///run/media/user/cidata",
-        "trash:///",
-        "network:///",
-    ] {
+    for uri in ["file:///run/media/user/cidata", "trash:///", "network:///"] {
         assert!(!is_network_uri(uri), "{uri}");
     }
 }

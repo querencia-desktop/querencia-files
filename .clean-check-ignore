@@ -1,9 +1,8 @@
 # clean_check (ai-clean): Ausnahmen für Querencia Files.
-# Bewusst KEINE Pfadeinträge: Das Format nimmt nur ganze Dateien aus und würde
+# Keine Pfadeinträge für Code und Testdaten: Das Format nimmt nur ganze Dateien aus und würde
 # damit auch künftige Befunde (Secrets, Bidi/Zero-Width) in diesen Dateien
 # verstecken. Die folgenden Befunde bleiben im Bericht sichtbar und gelten als
-# begründete Ausnahme (Entscheidung Status-Session/Startsession für pottrauschen,
-# 20.10.2026, QF-0o-2).
+# begründete Ausnahme (Entscheidung des Besitzers, 20.10.2026, QF-0o-2).
 #
 # SEC001 scripts/test_sign_update_manifest.py:22
 #   PEM-Literal eines deterministischen Testschlüssels in test_key(): öffentlicher
@@ -20,5 +19,6 @@
 # (origin/main): `git diff 2317e1af HEAD -- <datei>` ist leer, kein
 # Querencia-Commit berührt sie. Bei einer Änderung dieser Dateien neu prüfen.
 #
-# Byte-gleich mit Upstream, Testdaten. Belege: ,
-# Abschnitt 10 (Querencia-Arbeitsbericht, nicht im Repo).
+# Byte-gleich mit Upstream, Testdaten. Belege im Querencia-Arbeitsbericht zu
+# QF-0o-2, Abschnitt 10 (nicht im Repo).
+#
