@@ -80,7 +80,7 @@ impl ViewState {
     /// * `block_dismiss` - When `Some` and it returns `true`, backdrop clicks do
     ///   not close the dialog (used for dirty forms). Escape and cancel/close
     ///   still dismiss.
-    pub(super) fn build_archive_modal(
+    fn build_archive_modal(
         self: &Rc<Self>,
         icon: &str,
         title: &str,
@@ -264,10 +264,6 @@ impl ViewState {
     /// [`normalized_archive_name`] and checked with [`validate_basename`] before
     /// [`Self::start_compression`].
     pub(super) fn show_compress_dialog(self: &Rc<Self>, entries: Vec<FileEntry>) {
-        if let Some(tool) = super::querencia_archive::ArchiveTool::find() {
-            self.show_archive_tool_compress_dialog(tool, entries);
-            return;
-        }
         if entries.is_empty()
             || entries
                 .iter()

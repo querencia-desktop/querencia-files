@@ -3,7 +3,7 @@
 use std::ffi::OsString;
 use std::path::PathBuf;
 
-use super::{ARCHIVE_TYPES, ArchiveTool, archive_file_name};
+use super::{ARCHIVE_TYPES, ArchiveTool};
 use crate::model::{EntryKind, FileEntry, Location, MetadataValue};
 
 fn entry(location: Location, name: &str, kind: EntryKind) -> FileEntry {
@@ -96,35 +96,12 @@ fn only_local_archive_files_of_a_listed_type_are_extracted_by_archiv() {
 }
 
 #[test]
-fn archiv_commands_name_the_archive_and_the_items() {
-    let archiv = tool(&ARCHIVE_TYPES);
-    let args = |command: std::process::Command| {
-        command
-            .get_args()
-            .map(|arg| arg.to_string_lossy().into_owned())
-            .collect::<Vec<_>>()
-    };
-    assert_eq!(
-        args(archiv.extract_here_command(std::path::Path::new("/fixture/bericht.zip"))),
-        ["--entpacken-hier", "/fixture/bericht.zip"]
-    );
-    assert_eq!(
-        args(archiv.create_command(
-            std::path::Path::new("/fixture/paket.tar.xz"),
-            &[
-                PathBuf::from("/fixture/a.txt"),
-                PathBuf::from("/fixture/ordner")
-            ]
-        )),
-        [
-            "--erstellen",
-            "/fixture/paket.tar.xz",
-            "/fixture/a.txt",
-            "/fixture/ordner"
-        ]
-    );
-    assert_eq!(archive_file_name("paket", "tar.xz"), "paket.tar.xz");
-    assert_eq!(archive_file_name("paket.tar.xz", "tar.xz"), "paket.tar.xz");
-    assert_eq!(archive_file_name("paket.zip", "tar.gz"), "paket.zip.tar.gz");
+fn extract_here_names_only_the_archive() {
+    let args: Vec<String> = tool(&ARCHIVE_TYPES)
+        .extract_here_command(std::path::Path::new("/fixture/bericht.zip"))
+        .get_args()
+        .map(|arg| arg.to_string_lossy().into_owned())
+        .collect();
+    assert_eq!(args, ["--entpacken-hier", "/fixture/bericht.zip"]);
 }
 // SPDX-FileCopyrightText: 2026 Querencia Desktop contributors
