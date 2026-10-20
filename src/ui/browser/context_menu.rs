@@ -1764,7 +1764,9 @@ pub(in crate::ui) fn install_resolved_item_context_menu(
                     .is_some_and(|handler| handler(&entry.location) == PinStatus::Available),
             );
             let can_extract = ArchiveFormat::for_entry(&entry).is_some();
-            extract.set_visible(can_extract);
+            let archive_tool_extracts = super::querencia_archive::ArchiveTool::find()
+                .is_some_and(|tool| tool.extracts(&entry));
+            extract.set_visible(can_extract || archive_tool_extracts);
             extract_to.set_visible(can_extract);
             customize.set_visible(
                 !in_trash && entries.len() == 1 && entry.location.native_path().is_some(),

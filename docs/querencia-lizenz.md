@@ -38,6 +38,9 @@ as data; they keep their content unchanged and are covered by this notice:
 - `src/ui/window/device_kind/tests.rs`
 - `src/ui/window/device_watch.rs`
 - `src/ui/window/device_watch/tests.rs`
+- `docs/querencia-archiv.md`
+- `src/ui/browser/querencia_archive.rs`
+- `src/ui/browser/querencia_archive/tests.rs`
 - `src/ui/settings/about/tests.rs`
 - `docs/querencia-lizenz.md` (this file)
 
