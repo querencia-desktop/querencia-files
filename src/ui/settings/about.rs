@@ -4,9 +4,6 @@ use super::{page_content, scrollable_page, settings_group};
 use crate::{assets::icons, services};
 use gtk::prelude::*;
 
-#[cfg(test)]
-mod tests;
-
 pub(super) fn about_page() -> gtk::Widget {
     let content = page_content();
     content.add_css_class("about-page");
@@ -118,19 +115,17 @@ pub(super) fn about_page() -> gtk::Widget {
     scrollable_page(&content, None)
 }
 
-const APP_ICON: &str = "org.querencia.Files";
-const BUNDLED_APP_ICON: &str = "/io/github/lgse/Strata/brand/org.querencia.Files.svg";
-
-/// Querencia: the application icon from the icon theme, or the bundled copy
-/// when the theme lacks it, instead of the Strata logo.
+/// Querencia: the application icon from the icon theme instead of the Strata
+/// logo, or the theme's generic file manager icon when the theme lacks it.
 fn app_icon() -> gtk::Image {
+    const APP_ICON: &str = "org.querencia.Files";
     let themed = gtk::gdk::Display::default()
         .is_some_and(|display| gtk::IconTheme::for_display(&display).has_icon(APP_ICON));
-    if themed {
-        gtk::Image::from_icon_name(APP_ICON)
+    gtk::Image::from_icon_name(if themed {
+        APP_ICON
     } else {
-        gtk::Image::from_resource(BUNDLED_APP_ICON)
-    }
+        "system-file-manager"
+    })
 }
 
 fn toolkit_version() -> String {
