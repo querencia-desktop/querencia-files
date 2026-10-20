@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-// SPDX-FileCopyrightText: 2026 Querencia Desktop contributors
 
 use super::*;
 
@@ -93,3 +92,4 @@ fn usb_sticks_get_their_own_notification_noun() {
         "Removable medium “%{name}” mounted"
     );
 }
+// SPDX-FileCopyrightText: 2026 Querencia Desktop contributors

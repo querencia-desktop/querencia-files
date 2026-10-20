@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-// SPDX-FileCopyrightText: 2026 Querencia Desktop contributors
 
 //! Querencia: GVfs lists a device once per discovery service, for example
 //! `nas-test` from DNS-SD (Avahi) and `NAS-TEST` from WS-Discovery (wsdd).
@@ -122,3 +121,4 @@ pub(crate) fn merged_network_sources(location: &Location) -> Option<Vec<NetworkS
 
 #[cfg(test)]
 mod tests;
+// SPDX-FileCopyrightText: 2026 Querencia Desktop contributors

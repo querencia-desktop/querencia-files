@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-// SPDX-FileCopyrightText: 2026 Querencia Desktop contributors
 
 //! Querencia: which kind of device a sidebar row, notification or desktop
 //! icon stands for, decided from the GIO facts that GVfs publishes.
@@ -169,3 +168,4 @@ fn icon_names_of_drive(drive: &gio::Drive) -> Vec<String> {
 
 #[cfg(test)]
 mod tests;
+// SPDX-FileCopyrightText: 2026 Querencia Desktop contributors

@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-// SPDX-FileCopyrightText: 2026 Querencia Desktop contributors
 
 //! Classic window chrome in the GNOME 2 / Caja arrangement: a menu bar, a
 //! navigation toolbar, a location row and a status bar. Every control routes
@@ -997,3 +996,4 @@ mod toolbar_tests {
         );
     }
 }
+// SPDX-FileCopyrightText: 2026 Querencia Desktop contributors

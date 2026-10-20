@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-// SPDX-FileCopyrightText: 2026 Querencia Desktop contributors
 
 //! QF-0m: classic network browsing on top of GVfs. Discovery stays GVfs'
 //! `network:///`; this adds the "Connect to Server" dialog, an explanatory
@@ -919,3 +918,4 @@ pub(in crate::ui) fn same_location(left: &Location, right: &Location) -> bool {
         || crate::adapters::gio_file_for_location(left)
             .equal(&crate::adapters::gio_file_for_location(right))
 }
+// SPDX-FileCopyrightText: 2026 Querencia Desktop contributors

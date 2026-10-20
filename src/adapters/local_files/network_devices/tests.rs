@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-// SPDX-FileCopyrightText: 2026 Querencia Desktop contributors
 
 use gtk::gio;
 
@@ -118,3 +117,4 @@ fn the_listing_remembers_merged_sources_for_the_tooltip() {
     merge_network_listing(Vec::new());
     assert!(merged_network_sources(&kept).is_none());
 }
+// SPDX-FileCopyrightText: 2026 Querencia Desktop contributors

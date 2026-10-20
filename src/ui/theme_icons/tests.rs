@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-// SPDX-FileCopyrightText: 2026 Querencia Desktop contributors
 
 use std::path::Path;
 
@@ -121,3 +120,4 @@ fn sidebar_places_ask_for_their_classic_gnome_icon_first() {
     sorted.dedup();
     assert_eq!(sorted.len(), names.len(), "{names:?}");
 }
+// SPDX-FileCopyrightText: 2026 Querencia Desktop contributors

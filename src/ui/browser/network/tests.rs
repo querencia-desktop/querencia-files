@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-// SPDX-FileCopyrightText: 2026 Querencia Desktop contributors
 
 use super::*;
 
@@ -395,3 +394,4 @@ fn host_key_probe_reads_the_key_from_the_process_and_tolerates_failures() {
     );
     assert_eq!(probe(&["/nonexistent/ssh"]), None);
 }
+// SPDX-FileCopyrightText: 2026 Querencia Desktop contributors

@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-// SPDX-FileCopyrightText: 2026 Querencia Desktop contributors
 
 use std::io::{Cursor, Write};
 
@@ -148,3 +147,4 @@ fn files_are_read_from_the_given_path_only() {
     assert!(render(text.path(), 16).is_err());
     assert!(render(std::path::Path::new("/nonexistent/image.png"), 16).is_err());
 }
+// SPDX-FileCopyrightText: 2026 Querencia Desktop contributors

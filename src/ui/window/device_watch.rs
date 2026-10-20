@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-// SPDX-FileCopyrightText: 2026 Querencia Desktop contributors
 
 //! Querencia: one watcher per Files process. It mounts newly connected media
 //! when "Mount removable media automatically" is on and announces new device
@@ -331,3 +330,4 @@ fn notification_image(icon: &str) -> Option<glib::Variant> {
 
 #[cfg(test)]
 mod tests;
+// SPDX-FileCopyrightText: 2026 Querencia Desktop contributors

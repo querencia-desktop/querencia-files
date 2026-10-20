@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-// SPDX-FileCopyrightText: 2026 Querencia Desktop contributors
 
 use std::time::{Duration, Instant};
 
@@ -83,3 +82,4 @@ fn a_mount_requested_in_files_suppresses_one_announcement_for_a_while() {
         "a failed mount must not silence the device forever"
     );
 }
+// SPDX-FileCopyrightText: 2026 Querencia Desktop contributors

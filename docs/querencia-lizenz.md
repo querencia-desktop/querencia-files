@@ -38,7 +38,7 @@ as data; they keep their content unchanged and are covered by this notice:
 - `src/ui/window/device_kind/tests.rs`
 - `src/ui/window/device_watch.rs`
 - `src/ui/window/device_watch/tests.rs`
-- `docs/querencia-license.md` (this file)
+- `docs/querencia-lizenz.md` (this file)
 
 Upstream Strata files that Querencia changed (QF-0a … QF-0o-2) keep their
 upstream notice; the Querencia changes in them are MIT-licensed as well. The
