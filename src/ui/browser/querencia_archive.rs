@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 
 //! Querencia: archive commands through Querencia Archiv. When its program is
-//! in PATH or its launcher is installed, "Extract here" and "Compress…" run
-//! `querencia-archiv`, which shows its own progress, conflict and error
+//! in PATH or its launcher is installed, "Extract here" and "Compress" run
+//! querencia-archiv, which shows its own progress, conflict and error
 //! windows; otherwise Files' built-in archive support stays.
 
 use std::path::{Path, PathBuf};
@@ -45,7 +45,7 @@ const ARCHIVE_TYPES: [&str; 14] = [
     "application/x-zstd-compressed-tar",
     "application/x-zip-compressed",
 ];
-/// The formats `querencia-archiv --erstellen` writes, as label and extension.
+/// The formats querencia-archiv --erstellen writes, as label and extension.
 const CREATE_FORMATS: [(&str, &str); 3] =
     [("ZIP", "zip"), ("TAR.GZ", "tar.gz"), ("TAR.XZ", "tar.xz")];
 
@@ -83,7 +83,7 @@ impl ArchiveTool {
         Some(Self { program, types })
     }
 
-    /// Whether Archiv opens `entry`: a local file whose name gives one of the
+    /// Whether Archiv opens the entry: a local file whose name gives one of the
     /// launcher's archive types exactly (an OpenDocument file is a zip
     /// subtype, not an archive to extract).
     pub(super) fn extracts(&self, entry: &FileEntry) -> bool {
@@ -109,7 +109,7 @@ impl ArchiveTool {
     }
 }
 
-/// The archive's file name for the typed `name`: one `.{extension}`, even
+/// The archive's file name for the typed name: one ".{extension}", even
 /// when the name already ends with it.
 fn archive_file_name(name: &str, extension: &str) -> String {
     let base = name.strip_suffix(&format!(".{extension}")).unwrap_or(name);
