@@ -4,13 +4,16 @@ use super::{page_content, scrollable_page, settings_group};
 use crate::{assets::icons, services};
 use gtk::prelude::*;
 
+#[cfg(test)]
+mod tests;
+
 pub(super) fn about_page() -> gtk::Widget {
     let content = page_content();
     content.add_css_class("about-page");
     let identity = gtk::Box::new(gtk::Orientation::Horizontal, 20);
     identity.add_css_class("about-identity");
     super::search::tag(&identity, "Version information");
-    let icon = gtk::Image::from_resource("/io/github/lgse/Strata/brand/strata-logo-white.svg");
+    let icon = app_icon();
     icon.set_pixel_size(36);
     let logo = gtk::Box::new(gtk::Orientation::Horizontal, 0);
     logo.add_css_class("about-logo");
@@ -113,6 +116,21 @@ pub(super) fn about_page() -> gtk::Widget {
         links.append(&button);
     }
     scrollable_page(&content, None)
+}
+
+const APP_ICON: &str = "org.querencia.Files";
+const BUNDLED_APP_ICON: &str = "/io/github/lgse/Strata/brand/org.querencia.Files.svg";
+
+/// Querencia: the application icon from the icon theme, or the bundled copy
+/// when the theme lacks it, instead of the Strata logo.
+fn app_icon() -> gtk::Image {
+    let themed = gtk::gdk::Display::default()
+        .is_some_and(|display| gtk::IconTheme::for_display(&display).has_icon(APP_ICON));
+    if themed {
+        gtk::Image::from_icon_name(APP_ICON)
+    } else {
+        gtk::Image::from_resource(BUNDLED_APP_ICON)
+    }
 }
 
 fn toolkit_version() -> String {

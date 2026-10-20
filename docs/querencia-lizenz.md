@@ -38,9 +38,15 @@ as data; they keep their content unchanged and are covered by this notice:
 - `src/ui/window/device_kind/tests.rs`
 - `src/ui/window/device_watch.rs`
 - `src/ui/window/device_watch/tests.rs`
+- `src/ui/settings/about/tests.rs`
 - `docs/querencia-lizenz.md` (this file)
 
-Upstream Strata files that Querencia changed (QF-0a … QF-0o-2) keep their
+`data/brand/org.querencia.Files.svg`, the application icon the About page
+falls back to when the icon theme lacks `org.querencia.Files`, is an unchanged
+copy from the Querencia icon theme (`querencia-symbole`) and keeps its license
+there: CC-BY-SA-4.0, attribution “Querencia Desktop contributors”.
+
+Upstream Strata files that Querencia changed (QF-0a … QF-0p) keep their
 upstream notice; the Querencia changes in them are MIT-licensed as well. The
 history of every change is in the Git log (commits starting with `QF-` or
 `feat(querencia)`).

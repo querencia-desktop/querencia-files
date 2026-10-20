@@ -2,6 +2,7 @@
 <gresources>
   <gresource prefix="/io/github/lgse/Strata">
     <file>brand/strata-logo-white.svg</file>
+    <file>brand/org.querencia.Files.svg</file>
     <file>icons/scalable/actions/strata-arrow-down.svg</file>
     <file>icons/scalable/actions/strata-arrow-down-wide-narrow.svg</file>
     <file>icons/scalable/actions/strata-arrow-left.svg</file>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-labelledby="title description">
+  <title id="title">Querencia Files</title>
+  <desc id="description">Aktenschrank nach Nautilus 2: Korpus grau, zwei Schubladen in Querencia-Orange (#F07746) mit hellen Griffen, flächig (Thema-2).</desc>
+  <!-- Korpus -->
+  <rect x="8" y="4" width="48" height="56" rx="4" fill="#c9c6c2" stroke="#5a5a5a" stroke-width="4"/>
+  <!-- Schubladen -->
+  <rect x="13.5" y="10" width="37" height="20.5" rx="2" fill="#F07746" stroke="#5a5a5a" stroke-width="3"/>
+  <rect x="13.5" y="34" width="37" height="20.5" rx="2" fill="#F07746" stroke="#5a5a5a" stroke-width="3"/>
+  <!-- Griffe -->
+  <rect x="24" y="17" width="16" height="6" rx="3" fill="#f4f3f1" stroke="#5a5a5a" stroke-width="2.5"/>
+  <rect x="24" y="41" width="16" height="6" rx="3" fill="#f4f3f1" stroke="#5a5a5a" stroke-width="2.5"/>
+</svg>
