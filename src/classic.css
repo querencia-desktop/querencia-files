@@ -7,8 +7,8 @@
    QF-0f visual hierarchy (GNOME 2 / Nautilus 2.30 as reference):
    - chrome (menu bar, toolbar, status bar) on the light warm surface with a
      soft top-down sheen, 1 px borders, no rounded pills;
-   - menus highlight like the panel menus (HMP-05): an accent gradient with
-     light text;
+   - menus highlight like the panel menus (HMP-05): an accent gradient, with
+     dark text like the GTK theme Querencia-Klassisch;
    - in the file area and the sidebar the accent is only a soft wash with a
      thin accent edge, so selections stay calm on large white areas;
    - toolbar hover and press are neutral (no accent), like GTK 2 buttons. */
@@ -55,7 +55,10 @@ window.querencia-classic popover.menu modelbutton:hover {
   background-image: linear-gradient(to bottom, shade(@strata_accent, 1.08), shade(@strata_accent, 0.95));
   border-color: shade(@strata_accent, 0.75);
   box-shadow: inset 0 1px alpha(white, 0.25);
-  color: @strata_bg;
+  /* Dark text as in the GTK theme Querencia-Klassisch. A fixed #1a1a1a, not
+     a token: @strata_text and shades of it fall below 4.5:1 on the accent in
+     most catalog themes, #1a1a1a reaches 5.6:1 here and suits more of them. */
+  color: #1a1a1a;
 }
 
 /* Menus dropped from the bar: flat, square, no glow. */

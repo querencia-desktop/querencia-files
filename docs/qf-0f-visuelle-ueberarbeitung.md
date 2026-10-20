@@ -48,7 +48,7 @@ super umgesetzt, aber visuell finde ich ihn noch nicht perfekt.“
    - Spaltenköpfe mit leichtem Verlauf, Trennlinien und normaler Schriftstärke;
    - sehr dezentes Überfahren;
    - Auswahl als Akzentfläche (28 %) mit Akzentrand, Text und Symbole behalten ihre Farbe.
-6. **Menüs:** Die Hervorhebung von Menüleiste und Menüeinträgen entspricht den Panelmenüs (Akzentverlauf, helle Schrift); die Menüfläche ist hell mit Schatten.
+6. **Menüs:** Die Hervorhebung von Menüleiste und Menüeinträgen entspricht den Panelmenüs (Akzentverlauf); die Menüfläche ist hell mit Schatten. Seit QF-0o-3 (CSS-Welle, 20.10.2026) ist die Schrift auf dem Verlauf dunkel (`#1a1a1a`) wie im GTK-Thema Querencia-Klassisch, vorher hell (`@strata_bg`).
 7. **Pfad und Bereichstitel:** Der aktuelle Ordner wird fett in Textfarbe dargestellt statt in Akzentfarbe (wie Nautilus 2).
 
 Alle CSS-Regeln bleiben auf `window.querencia-classic` begrenzt und nutzen die Farbmarken des Themas. Es gibt keine globalen Regeln.
