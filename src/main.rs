@@ -240,6 +240,7 @@ fn main() -> gtk::glib::ExitCode {
     );
     application.connect_handle_local_options(|_, _| ControlFlow::Continue(()));
     application.connect_startup(|_| install_x11_program_class());
+    application.connect_startup(|_| refresh_interface_color_scheme());
     application.connect_startup(export_file_manager_interface);
     application.connect_startup(|_application| ui::schedule_rollback_cleanup());
     application.connect_startup(ui::start_device_watch);
@@ -390,6 +391,18 @@ fn finish_portal_setup(result: Result<String, String>) -> gtk::glib::ExitCode {
             eprintln!("{error}");
             gtk::glib::ExitCode::FAILURE
         }
+    }
+}
+
+/// Querencia (QD-081): GTK 4.22 resets the colour scheme while loading the
+/// named theme at startup, so a dark preference only applied after a later
+/// change. Announcing the setting once loads the matching theme variant.
+fn refresh_interface_color_scheme() {
+    const COLOR_SCHEME: &str = "gtk-interface-color-scheme";
+    if let Some(settings) = gtk::Settings::default()
+        && settings.find_property(COLOR_SCHEME).is_some()
+    {
+        settings.notify(COLOR_SCHEME);
     }
 }
 
