@@ -22,3 +22,9 @@
 # Byte-gleich mit Upstream, Testdaten. Belege im Querencia-Arbeitsbericht zu
 # QF-0o-2, Abschnitt 10 (nicht im Repo).
 #
+# Pfadeinträge nur für die Veröffentlichungsdateien des Zweigs querencia
+# (Doku-Standard): GitHub und die Fork-Regel erwarten sie im Root bzw. unter
+# .github/, deshalb liegen sie nicht unter docs/.
+MARKE.md
+SECURITY.md
+UPSTREAM.md

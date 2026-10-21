@@ -60,4 +60,3 @@ the full text of `LICENSE` (embedded in the program), and "Copy version info"
 ends with "Based on Strata <version> (LGSE Ltd., MIT)". The application ID
 `io.github.lgse.Strata`, resource paths, D-Bus names, file names and internal
 identifiers still carry the Strata name; renaming them is a separate step.
-

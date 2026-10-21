@@ -1,3 +1,50 @@
+<!-- Querencia-Abschnitt: von Querencia ergänzt. Darunter folgt der unveränderte Strata-README. -->
+# Querencia Files
+
+Dateimanager von [Querencia Desktop](https://github.com/querencia-desktop/querencia) –
+einer klassischen Desktopumgebung im GNOME-2-Stil für Wayland (labwc, Rust, GTK 4).
+Querencia Files ist ein **Fork von [Strata](https://github.com/lgse/strata)** (LGSE Ltd.,
+MIT) mit Bedienung und Optik nach Nautilus 2.30: Menüleiste, Werkzeugleiste,
+Ortszeile, Symbolthema GNOME Human, klassische Dateioperationen, Datenträger und
+Netzwerk wie in GNOME 2.
+
+*English summary:* Querencia Files is a fork of Strata, restyled after the GNOME 2
+file manager for the Querencia Desktop. Alpha software; the Querencia notes are in
+German, the Strata README below is unchanged.
+
+> **Alpha.** Querencia-Zweig `querencia`, Stand QF-0r-1 (Tag `querencia/qf-0r-1`).
+> Keine Sicherheits- oder Datenverlustgarantie. Querencia ist mit LGSE Ltd. und Strata
+> weder verbunden noch von ihnen unterstützt; Fehler in Querencia Files bitte an die
+> Meldestelle von Querencia melden, nicht bei Strata.
+
+- **Was Querencia geändert hat**, Basis-Commit, Tags und Upstream-Abgleich:
+  [UPSTREAM.md](UPSTREAM.md)
+- **Bauen** wie die Querencia-Pakete (Rust 1.98.1, ohne UnRAR):
+  `cargo build --release --locked --no-default-features`; Prüfen:
+  `cargo fmt --all --check`, `cargo clippy --all-targets --locked --all-features -- -D warnings`,
+  `cargo test --locked --no-default-features` (auch die CI
+  `.github/workflows/ci-querencia.yml`).
+- **Lizenz:** MIT wie Strata ([LICENSE](LICENSE), unverändert); die Querencia-Änderungen
+  ebenfalls MIT, Copyright 2026 Querencia Desktop contributors
+  ([docs/querencia-lizenz.md](docs/querencia-lizenz.md)). Die PDF-Vorschau linkt
+  dynamisch gegen `libpoppler-glib` (Poppler, GPL-2.0 oder GPL-3.0): Ein so gelinktes
+  Binary wird nach den Bedingungen der GPL weitergegeben. Das Upstream-Feature `rar`
+  (UnRAR, unfreie Lizenz) bleibt im Quelltext; Querencia-Pakete bauen ohne es.
+- **Name und Logo:** „Strata“ und das Strata-Logo gehören zum Upstream; Name und Logo
+  „Querencia“ sind keine freien Inhalte ([MARKE.md](MARKE.md)). Sicherheitslücken:
+  [SECURITY.md](SECURITY.md).
+
+- **Fehler melden:** in der gemeinsamen Meldestelle
+  <https://github.com/querencia-desktop/querencia/issues/new/choose>.
+- **Entfernt im Querencia-Zweig:** fünf Workflows von Strata (`.github/workflows/ci.yml`,
+  `release.yml`, `publish-aur.yml`, `pr-policy.yml`, `discord-triage.yml`); sie laufen auf
+  Strata-Infrastruktur. Die Querencia-CI ist `.github/workflows/ci-querencia.yml`.
+  `install.sh` und `scripts/` bleiben als Upstream-Bestand (Tests nutzen sie); sie
+  installieren Strata, nicht Querencia Files. Querencia Files kommt als Debian-Paket
+  `querencia-files` aus der APT-Quelle von Querencia.
+
+---
+
 <div align="center">
 
 <img src="docs/assets/logos/strata-tokyo-night.svg" alt="Strata logo" width="160">
