@@ -40,42 +40,42 @@ Werte ersetzt (`nas-test`, `PC-TEST`, `192.0.2.x` aus TEST-NET-1, Benutzer `user
 | 2 | QF-0c | Dateiliste, Vorschau und Miniaturen holen Symbole aus dem installierten Symbolthema (`src/ui/theme_icons.rs`), damit Ordner und Dateitypen wie in GNOME 2 aussehen. | `bfee3f3a` | nein |
 | 3 | QF-0d | Der Vorschau-Helfer meldet Dekodierfehler im Log und dekodiert Rastergrafiken zusätzlich mit dem Crate `image` (`src/sandbox_helper/raster.rs`), wenn gdk-pixbuf in der Sandbox scheitert. | `c5399aa1` | ja, möglich |
 | 4 | QF-0e | Ein Klick zeigt keine Vorschau mehr (`single_click_previews = false`), wie in Nautilus 2. | `7dc3425c` | nein |
-| 5 | QF-0f (`querencia/qf-0f`) | Visuelle Überarbeitung nach GNOME 2/Human: Symbolthema `gnome-human` (wenn installiert), Farbpalette „Querencia Klassisch“, kleine Symbole in der Werkzeugleiste, hellere Seitenleiste, klassische Dateiliste; `docs/qf-0f-visuelle-ueberarbeitung.md`. | `8d0e4133` | nein |
-| 6 | QF-0g (`querencia/qf-0g`) | Klassische Dateioperationen: Zwischenablage kompatibel zu Nautilus/Caja/Thunar (`x-special/gnome-copied-files`), Strg+R lädt neu, Strg+N öffnet ein Fenster, Menüs Datei/Bearbeiten/Ansicht mit Kürzeln; `docs/qf-w4-dateioperationen.md`. | `1aaa697b` | teilweise (Zwischenablage-Format) |
-| 7 | QF-0h (`querencia/qf-0h`) | Das Pfadvervollständigungs-Popup bleibt am Eingabefeld. | `8e1efb0b` | ja, möglich |
-| 8 | QF-0i (`querencia/qf-0i`) | Kein Strata-„S“ mehr in der Titelleiste (Symbol aus der Ressourcendatei entfernt). | `541a2ec2` | nein |
-| 9 | QF-0j (`querencia/qf-0j`) | Die Auswahl in der Dateiliste hat eine dezente äußere Markierung (CSS). | `8050bd75` | nein |
-| 10 | QF-0k (`querencia/qf-0k`) | Zusammenführung von QF-0h, 0i, 0j als Rückfallziel (ohne Merge-Commit; entfernt eine weitere Zeile aus `data/strata.gresource.xml`). | `059bd3f6` | – |
-| 11 | QF-0l (`querencia/qf-0l`) | Spaltenansicht repariert, keine automatische Erstauswahl, Tooltip nennt die aktive Ansicht. | `768bbde6` | ja, möglich (Spaltenansicht) |
-| 12 | QF-0m (`querencia/qf-0m`) | Netzwerkbrowser: „Mit Server verbinden …“ (SFTP über GVfs), erklärende leere Netzwerkansicht, übersetzte GVfs-Fehler, Lesezeichen für Server; `src/ui/browser/network.rs`. | `1eb527dd` (Seitenzweig) | nein |
-| 13 | QF-0n (`querencia/qf-0n`) | Merge von QF-0l und QF-0m. | `8158d2c4` | – |
-| 14 | QF-0o | Datenträger im Alltag: Gerätesymbole je Typ (eigene SVGs `data/icons/scalable/devices/strata-querencia-*.svg`), Dialog „Der Datenträger wird noch benutzt“ beim Auswerfen, Netzwerkansicht nach Gerät; `docs/querencia-devices.md`. | `79917ab7` | nein |
-| 15 | QF-0o | Netzlaufwerke über ein Zeilensymbol „Trennen“ lösen. | `18b5ba2a` | nein |
-| 16 | QF-0o (`querencia/qf-0o`) | Die Belegt-Frage wird nicht mehr vom Auswurf-Fortschritt verdeckt. | `2dc504bc` | nein |
-| 17 | QF-0o-1 (`querencia/qf-0o-1`) | Die SFTP-Host-Key-Frage wird auch mit deutschem und anderssprachigem GVfs erkannt. | `3b5f2537` | nein (GVfs-Wortlaut) |
-| 18 | QF-0o-2 | Fingerabdruck in der SFTP-Host-Key-Frage (eigener Abruf des Serverschlüssels, wenn GVfs keinen liefert). | `ef648a6c` | ja, möglich |
-| 19 | QF-0o-2 (`querencia/qf-0o-2-adaf7cec`) | Der Host-Key-Abruf schließt stdin mit leerem Puffer (Absturz behoben). | `7953c3c4` | mit 18 |
-| 20 | QF-0o-2 | Gerade Anführungszeichen in eigenen Kommentaren. | `93f3f9a1` | – |
-| 21 | QF-0o-2 (`querencia/qf-0o-2`) | Der Host-Key-Abruf bietet nie Zugangsdaten an; Fehlschläge stehen im Log. | `8c175c9c` | mit 18 |
-| 22 | QF-0o-2 | Begründete Ausnahmen für die Prüfung mit ai-clean (`.clean-check-ignore`, nur Kommentare). | `22c5eaf7` | – |
-| 23 | QF-0o-2-1 (`querencia/qf-0o-2-1`) | Lizenzvermerk der eigenen Dateien (SPDX, Copyright „Querencia Desktop contributors“). | `15ad1b66` | – |
-| 24 | QF-0o-2-2 (`querencia/qf-0o-2-2`) | Copyright-Zeile ans Dateiende, Lizenzdoku als `docs/querencia-lizenz.md`. | `78182ae9` | – |
-| 25 | QF-0o-3 (`querencia/qf-0o-3`) | Menüleiste und Menüeinträge schreiben dunkel auf den Akzentverlauf (Kontrast 5,6:1 bis 7,0:1). | `1a3f8d3d` | nein |
-| 26 | QF-0p | Testdaten, Doku und ein Beispiel ohne Namen und Adressen aus einem privaten Netz (`nas-test`, `PC-TEST`, `192.0.2.x`, Benutzer `user`), wie die Ersetzung oben. | `9308e32a` | – |
-| 27 | QF-0p | Das Bild auf der Seite „Über“ ist das Querencia-Programmsymbol statt des Strata-Logos (erste Fassung mit eingebetteter Kopie, siehe 32). | `3a9dfe6f` | nein |
-| 28 | QF-0p | Nach „Trotzdem anmelden“ in der SFTP-Host-Key-Frage gleicht Files `known_hosts` mit dem gezeigten Schlüssel ab und bricht bei einem anderen Schlüssel ab. | `58cef371` | ja, möglich |
-| 29 | QF-0p | Die D-Bus-Namen von `org.freedesktop.FileManager1` werden ohne gio-Rückruf angefordert (kein Abbruch mehr beim Ende des Busses). | `241ab9a2` | ja, möglich |
-| 30 | QF-0p | „Hier entpacken“ und „Komprimieren …“ rufen Querencia Archiv auf, wenn es installiert ist (`src/ui/browser/querencia_archive.rs`, `docs/querencia-archiv.md`). | `1d422b72` | nein |
-| 31 | QF-0p | Kommentare im Archiv-Anschluss ohne Backticks und Ellipse (ai-clean). Bis hier reicht die erste Fassung von QF-0p; sie wurde verworfen, 32 und 33 ersetzen sie. | `42cc7251` | – |
-| 32 | QF-0p | Info-Dialog ohne eingebettetes Bild: fehlt das Programmsymbol im Symbolthema, zeigt er `system-file-manager`. | `b974e47e` | nein |
-| 33 | QF-0p | Nur „Hier entpacken“ geht über Querencia Archiv; „Komprimieren …“ und „Entpacken nach …“ bleiben beim eingebauten Archivmodul, der eigene Komprimieren-Dialog aus 30 entfällt. | `067b2630` | nein |
-| 34 | QF-0p (`querencia/qf-0p`) | Files meldet das GTK-Farbschema nach dem Start einmal, damit ein neu gestartetes Files bei `prefer-dark` dunkel erscheint (QD-081). | `3c133d8e` | ja, möglich |
-| 35 | QF-0q (Tag des Erststands nicht übernommen) | Der Update-Prüfer von Strata ist stillgelegt; Querencia Files kommt über die Paketquelle. | `e69fe314` | nein |
-| 36 | QF-0q-1 (`querencia/qf-0q-1`) | Paketquellen-Hinweis als reine Textzeile, Suchtest korrigiert. | `1ba20f30` | nein |
-| 37 | QF-0r (`querencia/qf-0r-1`) | Das Programm heißt überall „Querencia Files“; Strata steht nur noch als Herkunft auf der Seite „Über“ (mit Lizenztext); der Starter `data/io.github.lgse.Strata.desktop` heißt „Querencia Files“. | `7e5803ca` | nein |
-| 38 | – | Upstream-Dateien `docs/evidence/928/*` wiederhergestellt (siehe „Entfernt“). | `880ff048` | – |
-| 39 | – | Veröffentlichungsvorlagen: Querencia-Abschnitt im README, diese Datei, `MARKE.md`, `SECURITY.md`, `.github/workflows/ci-querencia.yml`, Meldestelle. | (dieser Stand) | – |
-| 40 | – | Fünf Upstream-Workflows entfernt (siehe „Entfernt“). | (Commit nach den Vorlagen) | – |
+| 5 | QF-0f (`querencia/qf-0f`) | Visuelle Überarbeitung nach GNOME 2/Human: Symbolthema `gnome-human` (wenn installiert), Farbpalette „Querencia Klassisch“, kleine Symbole in der Werkzeugleiste, hellere Seitenleiste, klassische Dateiliste; `docs/qf-0f-visuelle-ueberarbeitung.md`. | `1e26244e` | nein |
+| 6 | QF-0g (`querencia/qf-0g`) | Klassische Dateioperationen: Zwischenablage kompatibel zu Nautilus/Caja/Thunar (`x-special/gnome-copied-files`), Strg+R lädt neu, Strg+N öffnet ein Fenster, Menüs Datei/Bearbeiten/Ansicht mit Kürzeln; `docs/qf-w4-dateioperationen.md`. | `b5db7449` | teilweise (Zwischenablage-Format) |
+| 7 | QF-0h (`querencia/qf-0h`) | Das Pfadvervollständigungs-Popup bleibt am Eingabefeld. | `c03d6059` | ja, möglich |
+| 8 | QF-0i (`querencia/qf-0i`) | Kein Strata-„S“ mehr in der Titelleiste (Symbol aus der Ressourcendatei entfernt). | `1ccde2a2` | nein |
+| 9 | QF-0j (`querencia/qf-0j`) | Die Auswahl in der Dateiliste hat eine dezente äußere Markierung (CSS). | `fe15f253` | nein |
+| 10 | QF-0k (`querencia/qf-0k`) | Zusammenführung von QF-0h, 0i, 0j als Rückfallziel (ohne Merge-Commit; entfernt eine weitere Zeile aus `data/strata.gresource.xml`). | `368abdda` | – |
+| 11 | QF-0l (`querencia/qf-0l`) | Spaltenansicht repariert, keine automatische Erstauswahl, Tooltip nennt die aktive Ansicht. | `4a0f5e6b` | ja, möglich (Spaltenansicht) |
+| 12 | QF-0m (`querencia/qf-0m`) | Netzwerkbrowser: „Mit Server verbinden …“ (SFTP über GVfs), erklärende leere Netzwerkansicht, übersetzte GVfs-Fehler, Lesezeichen für Server; `src/ui/browser/network.rs`. | `15ce5ccd` (Seitenzweig) | nein |
+| 13 | QF-0n (`querencia/qf-0n`) | Merge von QF-0l und QF-0m. | `9afdc888` | – |
+| 14 | QF-0o | Datenträger im Alltag: Gerätesymbole je Typ (eigene SVGs `data/icons/scalable/devices/strata-querencia-*.svg`), Dialog „Der Datenträger wird noch benutzt“ beim Auswerfen, Netzwerkansicht nach Gerät; `docs/querencia-devices.md`. | `06ae6ce1` | nein |
+| 15 | QF-0o | Netzlaufwerke über ein Zeilensymbol „Trennen“ lösen. | `b3910ec6` | nein |
+| 16 | QF-0o (`querencia/qf-0o`) | Die Belegt-Frage wird nicht mehr vom Auswurf-Fortschritt verdeckt. | `4b90e29a` | nein |
+| 17 | QF-0o-1 (`querencia/qf-0o-1`) | Die SFTP-Host-Key-Frage wird auch mit deutschem und anderssprachigem GVfs erkannt. | `e0d021cd` | nein (GVfs-Wortlaut) |
+| 18 | QF-0o-2 | Fingerabdruck in der SFTP-Host-Key-Frage (eigener Abruf des Serverschlüssels, wenn GVfs keinen liefert). | `30519044` | ja, möglich |
+| 19 | QF-0o-2 (`querencia/qf-0o-2-adaf7cec`) | Der Host-Key-Abruf schließt stdin mit leerem Puffer (Absturz behoben). | `6996b7ae` | mit 18 |
+| 20 | QF-0o-2 | Gerade Anführungszeichen in eigenen Kommentaren. | `637ead82` | – |
+| 21 | QF-0o-2 (`querencia/qf-0o-2`) | Der Host-Key-Abruf bietet nie Zugangsdaten an; Fehlschläge stehen im Log. | `f28be021` | mit 18 |
+| 22 | QF-0o-2 | Begründete Ausnahmen für die Prüfung mit ai-clean (`.clean-check-ignore`, nur Kommentare). | `e0282294` | – |
+| 23 | QF-0o-2-1 (`querencia/qf-0o-2-1`) | Lizenzvermerk der eigenen Dateien (SPDX, Copyright „Querencia Desktop contributors“). | `951d50c0` | – |
+| 24 | QF-0o-2-2 (`querencia/qf-0o-2-2`) | Copyright-Zeile ans Dateiende, Lizenzdoku als `docs/querencia-lizenz.md`. | `3d9a0ce8` | – |
+| 25 | QF-0o-3 (`querencia/qf-0o-3`) | Menüleiste und Menüeinträge schreiben dunkel auf den Akzentverlauf (Kontrast 5,6:1 bis 7,0:1). | `2a716552` | nein |
+| 26 | QF-0p | Testdaten, Doku und ein Beispiel ohne Namen und Adressen aus einem privaten Netz (`nas-test`, `PC-TEST`, `192.0.2.x`, Benutzer `user`), wie die Ersetzung oben. | `e40ca122` | – |
+| 27 | QF-0p | Das Bild auf der Seite „Über“ ist das Querencia-Programmsymbol statt des Strata-Logos (erste Fassung mit eingebetteter Kopie, siehe 32). | `4dbf1a58` | nein |
+| 28 | QF-0p | Nach „Trotzdem anmelden“ in der SFTP-Host-Key-Frage gleicht Files `known_hosts` mit dem gezeigten Schlüssel ab und bricht bei einem anderen Schlüssel ab. | `8acfb61e` | ja, möglich |
+| 29 | QF-0p | Die D-Bus-Namen von `org.freedesktop.FileManager1` werden ohne gio-Rückruf angefordert (kein Abbruch mehr beim Ende des Busses). | `5055adaa` | ja, möglich |
+| 30 | QF-0p | „Hier entpacken“ und „Komprimieren …“ rufen Querencia Archiv auf, wenn es installiert ist (`src/ui/browser/querencia_archive.rs`, `docs/querencia-archiv.md`). | `947ff114` | nein |
+| 31 | QF-0p | Kommentare im Archiv-Anschluss ohne Backticks und Ellipse (ai-clean). Bis hier reicht die erste Fassung von QF-0p; sie wurde verworfen, 32 und 33 ersetzen sie. | `5f192eb4` | – |
+| 32 | QF-0p | Info-Dialog ohne eingebettetes Bild: fehlt das Programmsymbol im Symbolthema, zeigt er `system-file-manager`. | `9409a6ca` | nein |
+| 33 | QF-0p | Nur „Hier entpacken“ geht über Querencia Archiv; „Komprimieren …“ und „Entpacken nach …“ bleiben beim eingebauten Archivmodul, der eigene Komprimieren-Dialog aus 30 entfällt. | `ee048eb8` | nein |
+| 34 | QF-0p (`querencia/qf-0p`) | Files meldet das GTK-Farbschema nach dem Start einmal, damit ein neu gestartetes Files bei `prefer-dark` dunkel erscheint (QD-081). | `fe43a2a9` | ja, möglich |
+| 35 | QF-0q (Tag des Erststands nicht übernommen) | Der Update-Prüfer von Strata ist stillgelegt; Querencia Files kommt über die Paketquelle. | `dd20017a` | nein |
+| 36 | QF-0q-1 (`querencia/qf-0q-1`) | Paketquellen-Hinweis als reine Textzeile, Suchtest korrigiert. | `fa91f4a0` | nein |
+| 37 | QF-0r (`querencia/qf-0r-1`) | Das Programm heißt überall „Querencia Files“; Strata steht nur noch als Herkunft auf der Seite „Über“ (mit Lizenztext); der Starter `data/io.github.lgse.Strata.desktop` heißt „Querencia Files“. | `da939d5b` | nein |
+| 38 | – | Upstream-Dateien `docs/evidence/928/*` wiederhergestellt (siehe „Entfernt“). | `a1afd69e` | – |
+| 39 | – | Veröffentlichungsvorlagen: Querencia-Abschnitt im README, diese Datei, `MARKE.md`, `SECURITY.md`, `.github/workflows/ci-querencia.yml`, Meldestelle. | `617e36c0` | – |
+| 40 | – | Sechs Upstream-Workflows entfernt (siehe „Entfernt“). | (dieser Commit) | – |
 
 ### Neue Dateien
 
@@ -89,8 +89,8 @@ am Anfang von `README.md`.
 ### Entfernt
 
 Bewusst entfernt (Entscheidung des Besitzers, 21.10.2026): die Workflows
-`.github/workflows/ci.yml`, `release.yml`, `publish-aur.yml`, `pr-policy.yml` und
-`discord-triage.yml`. Sie laufen auf Strata-Infrastruktur (Blacksmith-Runner,
+`.github/workflows/ci.yml`, `release.yml`, `publish-aur.yml`, `pr-policy.yml`,
+`discord-triage.yml` und `packaging.yml`. Sie laufen auf Strata-Infrastruktur (Blacksmith-Runner,
 AUR-Schlüssel, Discord) und würden in diesem Fork Strata bauen, veröffentlichen oder
 Pull Requests nach Strata-Regeln bewerten. Die Querencia-CI ist `ci-querencia.yml`.
 `install.sh`, `.github/release.yml` und `scripts/` bleiben: Tests des Upstreams nutzen
@@ -162,9 +162,9 @@ GUI-Prüfung.
 
 **Workflows des Upstreams abschalten** (Fork und internes Repo: *Actions* →
 Workflow → *Disable workflow*, oder Actions nur für `ci-querencia.yml` zulassen):
-`packaging.yml`, `sync-upstream-main.yml`, `e2e-images.yml` und `e2e-cache.yml` sind auf
+`sync-upstream-main.yml`, `e2e-images.yml` und `e2e-cache.yml` sind auf
 Strata-Infrastruktur zugeschnitten und bleiben als Upstream-Bestand liegen; deaktivieren.
-Die fünf übrigen Strata-Workflows sind entfernt (siehe „Entfernt“).
+Die sechs übrigen Strata-Workflows sind entfernt (siehe „Entfernt“).
 
 ## Zurück an den Upstream
 

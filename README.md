@@ -36,8 +36,8 @@ German, the Strata README below is unchanged.
 
 - **Fehler melden:** in der gemeinsamen Meldestelle
   <https://github.com/querencia-desktop/querencia/issues/new/choose>.
-- **Entfernt im Querencia-Zweig:** fünf Workflows von Strata (`.github/workflows/ci.yml`,
-  `release.yml`, `publish-aur.yml`, `pr-policy.yml`, `discord-triage.yml`); sie laufen auf
+- **Entfernt im Querencia-Zweig:** sechs Workflows von Strata (`.github/workflows/ci.yml`,
+  `release.yml`, `publish-aur.yml`, `pr-policy.yml`, `discord-triage.yml`, `packaging.yml`); sie laufen auf
   Strata-Infrastruktur. Die Querencia-CI ist `.github/workflows/ci-querencia.yml`.
   `install.sh` und `scripts/` bleiben als Upstream-Bestand (Tests nutzen sie); sie
   installieren Strata, nicht Querencia Files. Querencia Files kommt als Debian-Paket
