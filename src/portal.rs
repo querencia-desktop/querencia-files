@@ -208,7 +208,7 @@ impl FileChooserBackend {
 
 pub(crate) fn run() -> glib::ExitCode {
     glib::set_prgname(Some(CHOOSER_APPLICATION_ID));
-    glib::set_application_name("Strata");
+    glib::set_application_name("Querencia Files");
 
     // Keep worker-thread invocations queued until GTK is ready on this thread.
     let context = glib::MainContext::default();
@@ -247,13 +247,13 @@ pub(crate) fn run() -> glib::ExitCode {
         });
         if let Err(error) = result {
             failed.store(true, Ordering::SeqCst);
-            eprintln!("Strata portal backend failed: {error}");
+            eprintln!("Querencia Files portal backend failed: {error}");
         }
         glib::MainContext::default().invoke(move || service_loop.quit());
     });
 
     if let Err(error) = gtk::init() {
-        eprintln!("Unable to initialize the Strata portal UI: {error}");
+        eprintln!("Unable to initialize the Querencia Files portal UI: {error}");
         return glib::ExitCode::FAILURE;
     }
     crate::metrics::initialize();

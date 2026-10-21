@@ -254,7 +254,7 @@ impl fmt::Display for ActionError {
             }
             Self::UnsupportedSchema { found } => write!(
                 formatter,
-                "This action uses schema version {found}, but this Strata build supports {ACTION_SCHEMA_VERSION}"
+                "This action uses schema version {found}, but this Querencia Files build supports {ACTION_SCHEMA_VERSION}"
             ),
             Self::InvalidId(id) => write!(
                 formatter,

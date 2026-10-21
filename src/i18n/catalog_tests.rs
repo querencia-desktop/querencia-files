@@ -105,3 +105,34 @@ fn catalogs_cover_all_languages_and_preserve_interpolation() {
         }
     }
 }
+
+/// Querencia (QF-0r): what the catalogs show names the program "Querencia
+/// Files"; the name Strata appears only in the origin notice (lowercase
+/// "strata" stays in real paths and in the search keywords of the About page).
+#[test]
+fn querencia_catalog_values_name_strata_only_as_origin() {
+    const ORIGIN_KEYS: [&str; 3] = [
+        "Based on Strata by LGSE Ltd. (MIT)",
+        "settings_keywords.version",
+        "Querencia Files %{value1}\n%{value2}\nCommit: %{value3}\nToolkit: %{value4}\nAuthor: %{value5}\nLicense: MIT\nBased on %{value6} (%{value7}, MIT)",
+    ];
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("data/locales");
+    let mut checked = 0;
+    for folder in [&root, &root.join("messages")] {
+        for locale in LOCALES {
+            for (key, value) in catalog(&folder.join(format!("{locale}.json"))) {
+                let value = value.as_str().expect("translated string");
+                checked += 1;
+                assert!(!value.contains("lgse/strata"), "{locale}: {key}");
+                assert!(!value.contains("stratafiles"), "{locale}: {key}");
+                if value.contains("Strata") {
+                    assert!(
+                        ORIGIN_KEYS.contains(&key.as_str()),
+                        "{locale}: {key}: {value}"
+                    );
+                }
+            }
+        }
+    }
+    assert!(checked > 0);
+}

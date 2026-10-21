@@ -79,7 +79,7 @@ fn the_update_command_names_an_installed_aur_helper() {
 
     assert_eq!(
         managed.update_instruction_with(|helper| helper == "paru"),
-        "Update Strata with: paru -Syu strata-bin",
+        "Update Querencia Files with: paru -Syu strata-bin",
         "the first listed helper that is present wins, not the first listed"
     );
 }
@@ -107,7 +107,7 @@ fn the_update_command_falls_back_when_no_helper_is_installed() {
 
     assert_eq!(
         managed.update_instruction_with(|_| false),
-        "Update Strata with an AUR helper, for example: yay -Syu strata-bin"
+        "Update Querencia Files with an AUR helper, for example: yay -Syu strata-bin"
     );
 }
 
@@ -127,7 +127,7 @@ fn an_explicit_update_command_wins_over_helper_detection() {
 
     assert_eq!(
         managed.update_instruction_with(|_| true),
-        "Update Strata with: sudo apt install --only-upgrade strata"
+        "Update Querencia Files with: sudo apt install --only-upgrade strata"
     );
 }
 
@@ -203,7 +203,7 @@ fn an_empty_marker_falls_back_to_generic_guidance() {
     );
     assert_eq!(
         managed.update_instruction(),
-        "Update Strata through your package manager."
+        "Update Querencia Files through your package manager."
     );
     assert_eq!(managed.alternate_instruction(), None);
 }
@@ -225,7 +225,7 @@ fn blank_values_are_treated_as_absent() {
     assert_eq!(managed.alternate_instruction(), None);
     assert_eq!(
         managed.update_instruction_with(|_| true),
-        "Update Strata through your package manager.",
+        "Update Querencia Files through your package manager.",
         "a blank helper must not render an update command"
     );
 }
@@ -263,7 +263,8 @@ fn a_packaged_install_refuses_to_replace_its_own_binary() {
     assert_eq!(
         ensure_self_managed(&source),
         Err(
-            "Installed by pacman as strata-bin. Update Strata with: yay -Syu strata-bin".to_owned()
+            "Installed by pacman as strata-bin. Update Querencia Files with: yay -Syu strata-bin"
+                .to_owned()
         )
     );
 }

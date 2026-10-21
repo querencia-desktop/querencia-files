@@ -4,8 +4,24 @@ use crate::services::{BuildKind, Version};
 
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 pub const COMMIT: &str = env!("STRATA_BUILD_COMMIT");
+/// Querencia: the upstream Strata repository. The About page no longer links
+/// to it; it stays for the package metadata test.
+#[cfg_attr(
+    not(test),
+    expect(
+        dead_code,
+        reason = "Querencia: the About page links no upstream repository"
+    )
+)]
 pub const REPOSITORY: &str = env!("CARGO_PKG_REPOSITORY");
 pub const AUTHOR: &str = env!("CARGO_PKG_AUTHORS");
+
+/// Querencia: the Querencia Files stage this build was tagged as
+/// (`files/qf-…` in Git). [`VERSION`] stays the Strata version it is based on.
+pub const QUERENCIA_VERSION: &str = "QF-0r-1";
+/// Querencia: the author shown in the About page; Strata's authors stay in
+/// [`AUTHOR`] and are named in the origin notice.
+pub const QUERENCIA_AUTHOR: &str = "Querencia Desktop contributors";
 
 /// The release tag this build was published under, e.g. `v0.5.0` or
 /// `v0.5.0-rc.1`.

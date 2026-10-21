@@ -43,10 +43,21 @@ as data; they keep their content unchanged and are covered by this notice:
 - `src/ui/browser/querencia_archive/tests.rs`
 - `docs/querencia-updates.md`
 - `src/ui/settings/package_updates.rs`
+- `src/ui/settings/about/tests.rs`
 - `docs/querencia-lizenz.md` (this file)
 
-Upstream Strata files that Querencia changed (QF-0a … QF-0q) keep their
+Upstream Strata files that Querencia changed (QF-0a … QF-0r) keep their
 upstream notice; the Querencia changes in them are MIT-licensed as well. The
 history of every change is in the Git log (commits starting with `QF-` or
 `feat(querencia)`).
+
+## Name and origin in the program
+
+Since QF-0r everything the program shows calls it "Querencia Files". Strata is
+named only as its origin: the About page (Settings → About) shows "Based on
+Strata by LGSE Ltd. (MIT)", the Strata version it is based on, and expands to
+the full text of `LICENSE` (embedded in the program), and "Copy version info"
+ends with "Based on Strata <version> (LGSE Ltd., MIT)". The application ID
+`io.github.lgse.Strata`, resource paths, D-Bus names, file names and internal
+identifiers still carry the Strata name; renaming them is a separate step.
 

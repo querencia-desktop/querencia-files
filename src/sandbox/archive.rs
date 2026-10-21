@@ -117,7 +117,7 @@ fn spawn(archive_path: &Path, password: Option<&str>) -> Result<Child, String> {
     let output =
         PrivateOutput::create().map_err(|error| crate::services::io_error_message(&error))?;
     let current_executable = std::env::current_exe()
-        .map_err(|error| format!("Unable to locate the Strata executable: {error}"))?;
+        .map_err(|error| format!("Unable to locate the Querencia Files executable: {error}"))?;
     let running_executable = PathBuf::from(format!("/proc/{}/exe", std::process::id()));
     let executable =
         resolve_renderer_executable(&current_executable, &running_executable, output.path())?;

@@ -317,13 +317,13 @@ const TARGETS: &[Target] = &[
         id: "version",
         page: "about",
         title: "Version information",
-        aliases: "strata build commit toolkit gtk copy author",
+        aliases: "querencia files strata build commit toolkit gtk copy author",
     },
     Target {
         id: "website",
         page: "about",
         title: "Website",
-        aliases: "links stratafiles home",
+        aliases: "links querencialinux home",
     },
     Target {
         id: "source",
@@ -351,8 +351,14 @@ const PACKAGE_UPDATES: &str = "package-updates";
 /// [`crate::services::SELF_UPDATE`] is off.
 const SELF_UPDATE_TARGETS: [&str; 4] = ["check", "auto-updates", "channel", "notes"];
 
+/// Querencia: Strata's issue tracker is not linked from the About page.
+const UPSTREAM_ONLY_TARGETS: [&str; 1] = ["issue"];
+
 /// Whether the Settings dialog builds a row for `target`.
 fn offered(target: &Target) -> bool {
+    if UPSTREAM_ONLY_TARGETS.contains(&target.id) {
+        return false;
+    }
     if crate::services::SELF_UPDATE {
         target.id != PACKAGE_UPDATES
     } else {

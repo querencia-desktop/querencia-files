@@ -114,7 +114,7 @@ pub(crate) fn install() -> Result<String, String> {
     let config = install_at(&context, &executable)?;
     let restart_warning = restart_udiskie(RestartMode::EnsureRunning);
     Ok(format!(
-        "Installed Strata as the encrypted-volume unlock handler.\nConfiguration: {}{}",
+        "Installed Querencia Files as the encrypted-volume unlock handler.\nConfiguration: {}{}",
         config.display(),
         restart_warning
     ))
@@ -125,7 +125,7 @@ pub(crate) fn uninstall() -> Result<String, String> {
     uninstall_at(&context)?;
     let restart_warning = restart_udiskie(RestartMode::ReloadIfRunning);
     Ok(format!(
-        "Removed the Strata encrypted-volume unlock integration.{restart_warning}"
+        "Removed the Querencia Files encrypted-volume unlock integration.{restart_warning}"
     ))
 }
 
@@ -784,7 +784,7 @@ fn read_state(directory: &Path) -> Result<Option<UdiskieInstallState>, String> {
 fn utf8_path(path: &Path) -> Result<String, String> {
     path.to_str()
         .map(str::to_owned)
-        .ok_or_else(|| "Strata must be installed at a UTF-8 path".to_owned())
+        .ok_or_else(|| crate::i18n::tr("Strata must be installed at a UTF-8 path"))
 }
 
 fn program_on_path(name: &str) -> Option<PathBuf> {

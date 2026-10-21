@@ -48,7 +48,7 @@ pub(crate) fn install() -> Result<String, String> {
     dismiss_prompt_at(&context)?;
     let restart_warning = refresh_portals();
     Ok(format!(
-        "Installed Strata as the per-user file chooser.\nConfiguration: {}{}",
+        "Installed Querencia Files as the per-user file chooser.\nConfiguration: {}{}",
         config.display(),
         restart_warning
     ))
@@ -60,12 +60,12 @@ pub(crate) fn uninstall() -> Result<String, String> {
     dismiss_prompt_at(&context)?;
     let restart_warning = refresh_portals();
     let edit_note = if preserved_edits {
-        "\nKept the remaining portal configuration and removed only Strata."
+        "\nKept the remaining portal configuration and removed only Querencia Files."
     } else {
         ""
     };
     Ok(format!(
-        "Removed the per-user Strata file chooser integration.{edit_note}{restart_warning}"
+        "Removed the per-user Querencia Files file chooser integration.{edit_note}{restart_warning}"
     ))
 }
 
@@ -83,7 +83,7 @@ pub(crate) fn install_file_manager() -> Result<String, String> {
     set_default_file_manager()?;
     omarchy::install(&context, &executable)?;
     reload_dbus();
-    Ok("Installed Strata as the default file manager. Reveal and Open Containing Folder from other apps will now use Strata.".into())
+    Ok("Installed Querencia Files as the default file manager. Reveal and Open Containing Folder from other apps will now use Querencia Files.".into())
 }
 
 pub(crate) fn uninstall_file_manager() -> Result<String, String> {
@@ -101,10 +101,10 @@ pub(crate) fn uninstall_file_manager() -> Result<String, String> {
     reload_dbus();
     Ok(if let Some(restored) = restored {
         format!(
-            "Removed the Strata file manager integration. Restored the folder handler: {restored}."
+            "Removed the Querencia Files file manager integration. Restored the folder handler: {restored}."
         )
     } else {
-        "Removed the Strata file manager integration. Your system default file manager will handle folders again.".into()
+        "Removed the Querencia Files file manager integration. Your system default file manager will handle folders again.".into()
     })
 }
 

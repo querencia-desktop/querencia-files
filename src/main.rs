@@ -122,7 +122,7 @@ fn run_udiskie_hook(arguments: &[OsString]) -> gtk::glib::ExitCode {
         return gtk::glib::ExitCode::SUCCESS;
     };
     let Ok(executable) = std::env::current_exe() else {
-        eprintln!("Unable to locate the Strata executable");
+        eprintln!("Unable to locate the Querencia Files executable");
         return gtk::glib::ExitCode::FAILURE;
     };
     let error = std::process::Command::new(executable)
@@ -190,7 +190,7 @@ fn main() -> gtk::glib::ExitCode {
         // GTK selects its renderer during startup. Re-exec before initializing GTK
         // rather than mutating the environment after libraries may start threads.
         let Ok(executable) = std::env::current_exe() else {
-            eprintln!("Unable to locate Strata to select the Cairo renderer");
+            eprintln!("Unable to locate Querencia Files to select the Cairo renderer");
             return gtk::glib::ExitCode::FAILURE;
         };
         let error = std::process::Command::new(executable)
@@ -198,7 +198,7 @@ fn main() -> gtk::glib::ExitCode {
             .env("GSK_RENDERER", "cairo")
             .env(CAIRO_SELECTED_BY_STRATA, "1")
             .exec();
-        eprintln!("Unable to restart Strata with Cairo renderer: {error}");
+        eprintln!("Unable to restart Querencia Files with Cairo renderer: {error}");
         return gtk::glib::ExitCode::FAILURE;
     }
 
@@ -355,7 +355,7 @@ fn handle_command_line(
 
 fn install_application_identity() {
     glib::set_prgname(Some(APPLICATION_ID));
-    glib::set_application_name("Strata");
+    glib::set_application_name("Querencia Files");
 }
 
 fn install_x11_program_class() {
@@ -453,7 +453,9 @@ fn restart_with_local_vfs_if_gvfs_is_unresponsive() {
         .args(std::env::args_os().skip(1))
         .envs(GIO_FALLBACK_BACKENDS)
         .exec();
-    eprintln!("Unable to restart Strata with local filesystem and volume support: {error}");
+    eprintln!(
+        "Unable to restart Querencia Files with local filesystem and volume support: {error}"
+    );
 }
 
 fn gvfs_probe_marker_path() -> Option<std::path::PathBuf> {

@@ -190,7 +190,7 @@ def test_unsaved_changes_show_one_notice_and_return_focus(strata):
     text = " ".join(
         node.text for _, node in strata.wait(notice, "the save notice").walk() if node.text
     )
-    assert "Changes last only until Strata closes" in text
+    assert "Changes last only until Querencia Files closes" in text
     assert str(settings) in text.replace("\n", "")
     assert toggle.has_state("checked")
     strata.keyboard.press("Escape")

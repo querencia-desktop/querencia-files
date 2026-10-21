@@ -248,7 +248,7 @@ fn settings_row_polls_availability_while_hidden() {
                 "row should start hidden before status returns"
             );
             wait_until(
-                || has_action_label(&row, "Use Strata"),
+                || has_action_label(&row, "Use Querencia Files"),
                 "construction reload to finish",
             );
             assert!(

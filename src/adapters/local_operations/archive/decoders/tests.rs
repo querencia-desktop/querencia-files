@@ -1254,7 +1254,10 @@ fn error_translation_preserves_passwords_unsupported_formats_and_io_failures() {
         ),
         (ZipError::FileNotFound, super::INVALID_ARCHIVE),
     ] {
-        assert_eq!(super::zip_error(error).to_string(), expected);
+        assert_eq!(
+            super::zip_error(error).to_string(),
+            crate::i18n::tr(expected)
+        );
     }
     assert_eq!(
         super::zip_error(ZipError::InvalidPassword),
@@ -1298,7 +1301,7 @@ fn error_translation_preserves_passwords_unsupported_formats_and_io_failures() {
     ] {
         assert_eq!(
             super::sevenz_decode_error(error).to_string(),
-            super::UNSUPPORTED_ARCHIVE
+            crate::i18n::tr(super::UNSUPPORTED_ARCHIVE)
         );
     }
     for error in [

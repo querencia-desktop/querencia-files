@@ -284,7 +284,7 @@ fn unreadable_preferences_are_preserved_while_live_changes_still_apply() {
                     &notices[0],
                     "Settings file can't be read",
                     &format!(
-                        "Strata couldn't read “{}” when it started:",
+                        "Querencia Files couldn't read “{}” when it started:",
                         settings_path().display()
                     ),
                 );
@@ -418,7 +418,7 @@ fn failed_saves_show_one_notice_per_failure_streak() {
                 &notices[0],
                 "Settings can't be saved",
                 &format!(
-                    "Strata couldn't write “{path}”: The destination “{path}” is not a regular file.",
+                    "Querencia Files couldn't write “{path}”: The destination “{path}” is not a regular file.",
                     path = settings_path().display()
                 ),
             );
@@ -508,7 +508,10 @@ fn save_notices(window: &gtk::Window) -> Vec<SaveNoticeText> {
 fn assert_notice(notice: &SaveNoticeText, title: &str, detail_start: &str) {
     let compact = |text: &str| text.split_whitespace().collect::<String>();
     assert_eq!(notice.title, title);
-    assert_eq!(notice.summary, "Changes last only until Strata closes");
+    assert_eq!(
+        notice.summary,
+        "Changes last only until Querencia Files closes"
+    );
     assert!(
         compact(&notice.detail).starts_with(&compact(detail_start)),
         "{notice:?}"
