@@ -57,7 +57,7 @@ Werte ersetzt (`nas-test`, `PC-TEST`, `192.0.2.x` aus TEST-NET-1, Benutzer `user
 | 19 | QF-0o-2 (`querencia/qf-0o-2-adaf7cec`) | Der Host-Key-Abruf schließt stdin mit leerem Puffer (Absturz behoben). | `6996b7ae` | mit 18 |
 | 20 | QF-0o-2 | Gerade Anführungszeichen in eigenen Kommentaren. | `637ead82` | – |
 | 21 | QF-0o-2 (`querencia/qf-0o-2`) | Der Host-Key-Abruf bietet nie Zugangsdaten an; Fehlschläge stehen im Log. | `f28be021` | mit 18 |
-| 22 | QF-0o-2 | Begründete Ausnahmen für die Prüfung mit ai-clean (`.clean-check-ignore`, nur Kommentare). | `e0282294` | – |
+| 22 | QF-0o-2 | Begründete Ausnahmen für eine interne Veröffentlichungsprüfung (nur Kommentare; im öffentlichen Stand wieder entfernt). | `e0282294` | – |
 | 23 | QF-0o-2-1 (`querencia/qf-0o-2-1`) | Lizenzvermerk der eigenen Dateien (SPDX, Copyright „Querencia Desktop contributors“). | `951d50c0` | – |
 | 24 | QF-0o-2-2 (`querencia/qf-0o-2-2`) | Copyright-Zeile ans Dateiende, Lizenzdoku als `docs/querencia-lizenz.md`. | `3d9a0ce8` | – |
 | 25 | QF-0o-3 (`querencia/qf-0o-3`) | Menüleiste und Menüeinträge schreiben dunkel auf den Akzentverlauf (Kontrast 5,6:1 bis 7,0:1). | `2a716552` | nein |

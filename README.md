@@ -1,12 +1,14 @@
 <!-- Querencia-Abschnitt: von Querencia ergänzt. Darunter folgt der unveränderte Strata-README. -->
 # Querencia Files
 
-Dateimanager von [Querencia Desktop](https://github.com/querencia-desktop/querencia) –
+Dateimanager von [Querencia Desktop](https://querencialinux.org) –
 einer klassischen Desktopumgebung im GNOME-2-Stil für Wayland (labwc, Rust, GTK 4).
 Querencia Files ist ein **Fork von [Strata](https://github.com/lgse/strata)** (LGSE Ltd.,
 MIT) mit Bedienung und Optik nach Nautilus 2.30: Menüleiste, Werkzeugleiste,
 Ortszeile, Symbolthema GNOME Human, klassische Dateioperationen, Datenträger und
 Netzwerk wie in GNOME 2.
+Installiert wird es zusammen mit Querencia Desktop aus der APT-Quelle;
+Anleitung auf <https://querencialinux.org>.
 
 *English summary:* Querencia Files is a fork of Strata, restyled after the GNOME 2
 file manager for the Querencia Desktop. Alpha software; the Querencia notes are in
