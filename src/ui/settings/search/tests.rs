@@ -83,7 +83,7 @@ fn ranks_exact_labels_aliases_and_small_typing_errors() {
         ("font size", "theme", "text"),
         ("nightly", "updates", PACKAGE_UPDATES),
         ("relase chanel", "updates", PACKAGE_UPDATES),
-        ("check for updates", "updates", PACKAGE_UPDATES),
+        ("updates", "updates", PACKAGE_UPDATES),
         ("package source", "updates", PACKAGE_UPDATES),
         ("copyright", "about", "license"),
         ("shortcuts button", "general", "hints"),

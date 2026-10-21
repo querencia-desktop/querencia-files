@@ -5,8 +5,7 @@
 //! ([`crate::services::SELF_UPDATE`]). It only says where updates come from;
 //! it has no switch, no release channel, no release notes and no network access.
 
-use super::{control_row, page_content, scrollable_page, settings_group};
-use crate::assets::icons;
+use super::{page_content, scrollable_page, settings_group, settings_option};
 use gtk::prelude::*;
 
 pub(super) const TITLE: &str = "Updates come from the package source";
@@ -16,8 +15,9 @@ pub(super) fn package_updates_page() -> gtk::Widget {
     let content = page_content();
     content.add_css_class("settings-updates-page");
     let group = settings_group(&content, "");
-    let icon = crate::assets::primary_icon(icons::INFO, 18);
-    icon.set_valign(gtk::Align::Center);
-    group.append(&control_row(TITLE, DESCRIPTION, &icon));
+    // A plain note: the row of a switch without the switch.
+    let (row, switch) = settings_option(TITLE, DESCRIPTION, false);
+    row.remove(&switch);
+    group.append(&row);
     scrollable_page(&content, None)
 }
