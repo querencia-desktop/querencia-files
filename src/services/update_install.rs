@@ -486,6 +486,12 @@ fn parse_package_version(value: &str) -> Option<Version> {
 /// executable. Package-owned executables are rejected before download.
 pub fn install_update(request: InstallRequest, cancel: InstallCancel) -> Receiver<UpdateInstall> {
     let (sender, receiver) = mpsc::channel();
+    if !super::SELF_UPDATE {
+        let _sent = sender.send(UpdateInstall::Failed(crate::i18n::tr(
+            "Querencia Files is updated through the system's package source.",
+        )));
+        return receiver;
+    }
     let spawned = std::thread::Builder::new()
         .name("strata-update-install".into())
         .spawn(move || {

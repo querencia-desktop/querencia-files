@@ -94,6 +94,11 @@ pub(crate) use transfer_action::{
 // business calling it. Widening this re-export would make that bypass
 // reachable from UI code.
 pub(crate) use release_channel::{BuildKind, Channel, Version};
+/// Querencia: Files is updated through the system's package source. Strata's
+/// own update check, release notes download and in-place installer stay in the
+/// tree for upstream merges but are never started: no request to GitHub, the
+/// AUR or a package repository, at startup, on a timer or from Settings.
+pub(crate) const SELF_UPDATE: bool = false;
 pub(crate) use remote_download::{
     RemoteDownload, download_remote, prune_stale_downloads, remote_file_name, remote_file_url,
 };

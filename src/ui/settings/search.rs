@@ -284,6 +284,12 @@ const TARGETS: &[Target] = &[
         aliases: "appearance graphics cairo gtk gpu text artifacts performance restart",
     },
     Target {
+        id: PACKAGE_UPDATES,
+        page: "updates",
+        title: super::package_updates::TITLE,
+        aliases: "check automatically version status install download upgrade apt package source github release channel stable preview nightly notes",
+    },
+    Target {
         id: "check",
         page: "updates",
         title: "Check for updates",
@@ -338,6 +344,21 @@ const TARGETS: &[Target] = &[
         aliases: "links mit copyright",
     },
 ];
+
+/// Querencia: the search target of the package source note on the Updates page.
+const PACKAGE_UPDATES: &str = "package-updates";
+/// Querencia: targets of Strata's own update rows, never built while
+/// [`crate::services::SELF_UPDATE`] is off.
+const SELF_UPDATE_TARGETS: [&str; 4] = ["check", "auto-updates", "channel", "notes"];
+
+/// Whether the Settings dialog builds a row for `target`.
+fn offered(target: &Target) -> bool {
+    if crate::services::SELF_UPDATE {
+        target.id != PACKAGE_UPDATES
+    } else {
+        !SELF_UPDATE_TARGETS.contains(&target.id)
+    }
+}
 
 pub(super) fn tag(widget: &impl IsA<gtk::Widget>, title: &str) {
     if let Some(target) = TARGETS.iter().find(|target| target.title == title) {
@@ -477,7 +498,7 @@ fn find_matches(query: &str) -> Matches {
     }
     let mut result = Matches::default();
     let mut best = -1;
-    for target in TARGETS {
+    for target in TARGETS.iter().filter(|target| offered(target)) {
         if let Some(score) = score(query, target) {
             result.ids.insert(target.id);
             result.pages.insert(target.page);

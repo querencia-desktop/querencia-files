@@ -79,3 +79,45 @@ fn settings_launcher_refuses_to_open_over_another_modal() {
         },
     );
 }
+
+/// Querencia: even a published update offer leaves the sidebar without an
+/// "Update available" entry.
+#[test]
+fn querencia_sidebar_never_shows_an_update_entry() {
+    crate::test_support::gtk_test(
+        "ui::window::composition::settings::tests::querencia_sidebar_never_shows_an_update_entry",
+        || {
+            crate::ui::prepare_portal_ui();
+            let browser = crate::ui::browser::BrowserView::new(
+                Rc::new(crate::adapters::LocalFileSource),
+                crate::ui::browser::PeekBehavior::default(),
+            );
+            let sidebar = super::super::super::sidebar::build_sidebar(
+                browser,
+                PreferenceManager::shared(),
+                true,
+            );
+            let available: AvailableUpdate = Rc::new(RefCell::new(None));
+            let notice = notice_handler(&sidebar, available.clone());
+            let release = ReleaseMetadata {
+                version: "99.0.0".to_owned(),
+                url: String::new(),
+                notes: String::new(),
+                note_blocks: Vec::new(),
+                kind: BuildKind::Stable,
+                tag: "v99.0.0".to_owned(),
+                published_at: None,
+                commit: None,
+            };
+            let install = InstallRequest {
+                tag: "v99.0.0".to_owned(),
+                asset_name: "strata.tar.gz".to_owned(),
+                advertised_url: "http://127.0.0.1:9/strata.tar.gz".to_owned(),
+            };
+            notice(Some((release, install, UpdateMethod::InPlace)));
+            assert!(!sidebar.update_area.is_visible());
+            assert!(sidebar.update_label.text().is_empty());
+            assert!(available.borrow().is_none());
+        },
+    );
+}

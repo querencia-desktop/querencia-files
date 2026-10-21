@@ -27,6 +27,7 @@ mod actions;
 mod bindings;
 mod exclusions;
 mod general;
+mod package_updates;
 mod search;
 mod theme;
 mod wrap;
@@ -214,7 +215,7 @@ fn force_due_update_check(last: Option<Instant>) -> bool {
 }
 
 pub(super) fn maybe_run_due_update_check(manager: &Rc<PreferenceManager>) {
-    if !manager.checks_for_updates() || CHECK_IN_FLIGHT.get() {
+    if !services::SELF_UPDATE || !manager.checks_for_updates() || CHECK_IN_FLIGHT.get() {
         return;
     }
     let last_completed = LAST_COMPLETED_CHECK.get();
@@ -886,6 +887,14 @@ pub fn build_layer(
                         let page = actions::actions_page();
                         search::apply(&page, &search_state);
                         stack.add_named(&page, Some("actions"));
+                    }
+                    "updates" if !services::SELF_UPDATE => {
+                        let page = package_updates::package_updates_page();
+                        search::apply(&page, &search_state);
+                        while let Some(child) = updates_container.first_child() {
+                            updates_container.remove(&child);
+                        }
+                        updates_container.append(&page);
                     }
                     "updates" => {
                         let container = updates_container.clone();
@@ -2985,7 +2994,11 @@ static NAVIGATION: [NavigationEntry; 5] = [
     NavigationEntry {
         page: "updates",
         label: "Updates",
-        subtitle: "Channel, release notes",
+        subtitle: if services::SELF_UPDATE {
+            "Channel, release notes"
+        } else {
+            "Package source"
+        },
         icon: icons::DOWNLOADS,
         accessible_label: None,
     },

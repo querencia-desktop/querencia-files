@@ -660,6 +660,11 @@ pub fn check_for_updates(
     force: bool,
 ) -> Receiver<UpdateCheck> {
     let (sender, receiver) = mpsc::channel();
+    if !super::SELF_UPDATE {
+        // Querencia: the dropped sender disconnects the receiver, so callers settle
+        // without a result and without network access.
+        return receiver;
+    }
     let spawned = std::thread::Builder::new()
         .name("strata-update-check".into())
         .spawn(move || {
@@ -683,6 +688,9 @@ pub fn check_for_updates(
 /// [`crate::build_info::RELEASE_TAG`].
 pub fn fetch_release_notes(tag: &'static str) -> Receiver<ReleaseNotes> {
     let (sender, receiver) = mpsc::channel();
+    if !super::SELF_UPDATE {
+        return receiver;
+    }
     let spawned = std::thread::Builder::new()
         .name("strata-release-notes".into())
         .spawn(move || {

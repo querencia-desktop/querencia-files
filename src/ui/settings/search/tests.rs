@@ -81,8 +81,10 @@ fn ranks_exact_labels_aliases_and_small_typing_errors() {
         ("show recent", "general", "sidebar-places"),
         ("tezt size", "theme", "text"),
         ("font size", "theme", "text"),
-        ("nightly", "updates", "channel"),
-        ("relase chanel", "updates", "channel"),
+        ("nightly", "updates", PACKAGE_UPDATES),
+        ("relase chanel", "updates", PACKAGE_UPDATES),
+        ("check for updates", "updates", PACKAGE_UPDATES),
+        ("package source", "updates", PACKAGE_UPDATES),
         ("copyright", "about", "license"),
         ("shortcuts button", "general", "hints"),
         ("keybindings", "general", "hints"),
@@ -255,31 +257,20 @@ fn late_page_filter_uses_the_current_query_and_recovers_its_sections() {
         "ui::settings::search::tests::late_page_filter_uses_the_current_query_and_recovers_its_sections",
         || {
             crate::ui::prepare_portal_ui();
-            for (method, channel_available) in [
-                (crate::services::UpdateMethod::InPlace, true),
-                (crate::services::UpdateMethod::Pacman, false),
-            ] {
-                let state = Rc::new(RefCell::new(Some(find_matches("nightly"))));
-                let (page, _) = super::super::updates_page(
-                    PreferenceManager::shared(),
-                    Rc::new(|_| {}),
-                    super::super::install_guard(),
-                    method,
-                );
+            // Querencia: the Updates page is the package source note.
+            for (query, shown) in [("nightly", true), ("folder peeking", false)] {
+                let state = Rc::new(RefCell::new(Some(find_matches(&normalized(query)))));
+                let page = super::super::package_updates::package_updates_page();
                 apply(&page, &state);
-                assert_eq!(item(&page, "channel").is_visible(), channel_available);
-                assert!(!item(&page, "check").is_visible());
-                assert!(!item(&page, "auto-updates").is_visible());
+                assert_eq!(item(&page, PACKAGE_UPDATES).is_visible(), shown, "{query}");
                 let empty = descendants(&page)
                     .into_iter()
                     .find(|widget| widget.has_css_class("settings-search-page-empty"))
                     .expect("installation-specific empty state");
-                assert_eq!(empty.is_visible(), !channel_available);
+                assert_eq!(empty.is_visible(), !shown, "{query}");
                 state.replace(None);
                 apply(&page, &state);
-                assert!(item(&page, "check").is_visible());
-                assert!(item(&page, "auto-updates").is_visible());
-                assert_eq!(item(&page, "channel").is_visible(), channel_available);
+                assert!(item(&page, PACKAGE_UPDATES).is_visible());
                 assert!(!empty.is_visible());
             }
         },
@@ -378,7 +369,7 @@ fn global_search_routes_every_target_to_its_page() {
                 .and_then(|widget| widget.downcast::<gtk::Label>().ok())
                 .expect("settings title");
             let mut failures = Vec::new();
-            for target in TARGETS {
+            for target in TARGETS.iter().filter(|target| offered(target)) {
                 let shown_title = super::super::translated(target.title);
                 entry.set_text(&shown_title);
                 let mut fail = |problem: String| {
@@ -485,13 +476,7 @@ fn every_page_row_is_registered_for_search() {
                 ("actions", super::super::actions::actions_page()),
                 (
                     "updates",
-                    super::super::updates_page(
-                        manager.clone(),
-                        Rc::new(|_| {}),
-                        super::super::install_guard(),
-                        crate::services::UpdateMethod::InPlace,
-                    )
-                    .0,
+                    super::super::package_updates::package_updates_page(),
                 ),
                 ("about", super::super::about_page()),
             ];
@@ -519,7 +504,7 @@ fn every_page_row_is_registered_for_search() {
                 );
             }
             let mut failures = Vec::new();
-            for target in TARGETS {
+            for target in TARGETS.iter().filter(|target| offered(target)) {
                 let on_page = pages.iter().any(|(page, root)| {
                     *page == target.page
                         && descendants(root)

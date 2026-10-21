@@ -449,3 +449,26 @@ fn a_not_modified_response_reuses_the_cached_representation() {
     assert!(result.is_none());
     server.join().expect("test server should stop");
 }
+
+/// Querencia: with [`crate::services::SELF_UPDATE`] off, neither entry point
+/// starts a worker, so no request can leave the process.
+#[test]
+fn querencia_update_check_and_release_notes_never_start() {
+    for method in [
+        super::UpdateMethod::InPlace,
+        super::UpdateMethod::Aur,
+        super::UpdateMethod::Omarchy,
+        super::UpdateMethod::Pacman,
+    ] {
+        let receiver = super::check_for_updates(Channel::Stable, version("0.0.1"), method, true);
+        assert!(matches!(
+            receiver.recv_timeout(std::time::Duration::from_secs(1)),
+            Err(std::sync::mpsc::RecvTimeoutError::Disconnected)
+        ));
+    }
+    let notes = super::fetch_release_notes("v0.0.1");
+    assert!(matches!(
+        notes.recv_timeout(std::time::Duration::from_secs(1)),
+        Err(std::sync::mpsc::RecvTimeoutError::Disconnected)
+    ));
+}

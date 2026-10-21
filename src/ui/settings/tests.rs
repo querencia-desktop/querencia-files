@@ -104,3 +104,27 @@ pub(super) fn page_text(root: &gtk::Widget) -> String {
     }
     text.join("\n")
 }
+
+/// Querencia: no background update check starts, neither on the first paint
+/// of a new process nor after a simulated jump of more than a day.
+#[test]
+fn querencia_due_update_check_never_starts() {
+    crate::test_support::gtk_test(
+        "ui::settings::tests::querencia_due_update_check_never_starts",
+        || {
+            let manager = super::PreferenceManager::shared();
+            let generation = super::CHECK_GENERATION.get();
+            for last in [
+                None,
+                Instant::now().checked_sub(Duration::from_secs(25 * 3600)),
+                Instant::now().checked_sub(Duration::from_secs(7 * 24 * 3600)),
+            ] {
+                super::LAST_COMPLETED_CHECK.set(last);
+                super::maybe_run_due_update_check(&manager);
+                assert!(!super::CHECK_IN_FLIGHT.get());
+                assert_eq!(super::CHECK_GENERATION.get(), generation);
+            }
+            super::LAST_COMPLETED_CHECK.set(None);
+        },
+    );
+}

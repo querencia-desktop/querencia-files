@@ -927,3 +927,24 @@ fn cancel_stops_a_silent_metadata_fetch_without_waiting_for_a_timeout() {
     assert!(matches!(result, Err(InstallStop::Cancelled)), "{result:?}");
     assert!(stopped < Duration::from_secs(3), "{stopped:?}");
 }
+
+/// Querencia: the in-place installer refuses at once, before any download.
+#[test]
+fn querencia_install_update_refuses_without_downloading() {
+    let receiver = super::install_update(
+        InstallRequest {
+            tag: "v99.0.0".to_owned(),
+            asset_name: super::super::update_check::archive_name("99.0.0"),
+            advertised_url: "http://127.0.0.1:9/strata.tar.gz".to_owned(),
+        },
+        InstallCancel::new(),
+    );
+    assert!(matches!(
+        receiver.recv_timeout(Duration::from_secs(1)),
+        Ok(UpdateInstall::Failed(_))
+    ));
+    assert!(matches!(
+        receiver.recv_timeout(Duration::from_secs(1)),
+        Err(mpsc::RecvTimeoutError::Disconnected)
+    ));
+}

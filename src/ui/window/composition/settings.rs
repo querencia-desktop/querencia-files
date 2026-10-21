@@ -198,6 +198,8 @@ fn notice_handler(sidebar: &SidebarView, available: AvailableUpdate) -> UpdateNo
     let version = sidebar.update_version.clone();
     let area = sidebar.update_area.clone();
     Rc::new(move |release| {
+        // Querencia: no "Update available" entry; updates come from the package source.
+        let release = release.filter(|_| crate::services::SELF_UPDATE);
         if let Some((release, install, update_method)) = release {
             crate::ui::accessibility::set_description(
                 &button,
