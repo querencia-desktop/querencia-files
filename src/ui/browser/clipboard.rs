@@ -10,7 +10,7 @@ use crate::services::{
 };
 use crate::ui::browser::ViewState;
 use crate::ui::browser::columns::set_mark_path_style;
-use crate::ui::browser::paths::{can_remove_location, is_trash_location};
+use crate::ui::browser::paths::{can_remove_location, is_trash_item, is_trash_location};
 use crate::ui::browser::transfer::ConflictFocus;
 use gtk::prelude::*;
 use gtk::{glib, graphene};
@@ -557,9 +557,7 @@ fn transfer_dropped_files(
     true
 }
 
-pub(crate) fn drag_actions_for_modifiers(
-    modifiers: gtk::gdk::ModifierType,
-) -> gtk::gdk::DragAction {
+fn drag_actions_for_modifiers(modifiers: gtk::gdk::ModifierType) -> gtk::gdk::DragAction {
     if modifiers.contains(gtk::gdk::ModifierType::CONTROL_MASK) {
         gtk::gdk::DragAction::COPY
     } else if modifiers.contains(gtk::gdk::ModifierType::SHIFT_MASK) {
@@ -567,6 +565,45 @@ pub(crate) fn drag_actions_for_modifiers(
     } else {
         gtk::gdk::DragAction::COPY | gtk::gdk::DragAction::MOVE
     }
+}
+
+/// Dragging out of Trash restores: a copy would leave the item and its trashinfo behind.
+pub(crate) fn file_drag_actions(
+    modifiers: gtk::gdk::ModifierType,
+    entries: &[FileEntry],
+) -> gtk::gdk::DragAction {
+    drag_actions_for_sources(modifiers, entries.iter().map(|entry| &entry.location))
+}
+
+fn drag_actions_for_sources<'a>(
+    modifiers: gtk::gdk::ModifierType,
+    sources: impl Iterator<Item = &'a Location>,
+) -> gtk::gdk::DragAction {
+    if all_trash_items(sources) {
+        gtk::gdk::DragAction::MOVE
+    } else {
+        drag_actions_for_modifiers(modifiers)
+    }
+}
+
+/// Files leaving Trash are only moved, also when the drop target would copy.
+fn drop_actions_for_sources(
+    offered: gtk::gdk::DragAction,
+    sources: &[Location],
+) -> gtk::gdk::DragAction {
+    if all_trash_items(sources.iter()) {
+        offered & gtk::gdk::DragAction::MOVE
+    } else {
+        offered
+    }
+}
+
+fn all_trash_items<'a>(mut locations: impl Iterator<Item = &'a Location>) -> bool {
+    let mut any = false;
+    locations.all(|location| {
+        any = true;
+        is_trash_item(location)
+    }) && any
 }
 
 pub(crate) fn file_drop_action(
@@ -628,7 +665,10 @@ fn classify_file_drop(
     let source_actions = drop
         .as_ref()
         .map_or_else(|| target.actions(), |drop| drop.actions());
-    let offered = offered_file_actions(target.actions(), source_actions);
+    let offered = drop_actions_for_sources(
+        offered_file_actions(target.actions(), source_actions),
+        &sources,
+    );
     let strategy = current_cross_volume_drop_strategy();
     if commit {
         tracing::debug!(

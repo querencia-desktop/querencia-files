@@ -7,8 +7,9 @@ use gtk::prelude::*;
 #[cfg(test)]
 mod tests;
 
-/// Querencia: the project website. The source code has no public home yet.
+/// Querencia: the project website and the public source repository.
 const WEBSITE: &str = "https://querencialinux.org";
+const SOURCE_CODE: &str = "https://github.com/querencia-desktop/querencia-files";
 /// Querencia: Strata's MIT license, embedded so that the About page shows the
 /// copyright notice and permission text of the program it is based on.
 const LICENSE_TEXT: &str = include_str!("../../../LICENSE");
@@ -63,36 +64,31 @@ pub(super) fn about_page() -> gtk::Widget {
 
     let build = settings_group(&content, "BUILD");
     super::search::tag(&build, "Version information");
-    append_about_detail(&build, "Version", crate::build_info::QUERENCIA_VERSION);
+    append_about_detail(&build, "Version", &display_version());
     append_about_detail(&build, "Based on", &strata_version());
     append_about_detail(&build, "Commit", crate::build_info::COMMIT);
     append_about_detail(&build, "Toolkit", &toolkit_version());
     let links = settings_group(&content, "LINKS");
-    let website = gtk::LinkButton::builder().uri(WEBSITE).build();
-    website.add_css_class("about-repository");
-    super::search::tag(&website, "Website");
-    let label = crate::i18n::tr("Website");
-    crate::ui::accessibility::set_label(&website, &label);
-    website.set_child(Some(&about_row(
-        icons::GLOBE,
+    links.append(&link_row(WEBSITE, icons::GLOBE, "Website"));
+    links.append(&link_row(SOURCE_CODE, icons::CODE_XML, "Source code"));
+    links.append(&license_row());
+    scrollable_page(&content, None)
+}
+
+fn link_row(uri: &str, icon: &str, label: &'static str) -> gtk::LinkButton {
+    let button = gtk::LinkButton::builder().uri(uri).build();
+    button.add_css_class("about-repository");
+    super::search::tag(&button, label);
+    let label = crate::i18n::tr(label);
+    crate::ui::accessibility::set_label(&button, &label);
+    button.set_child(Some(&about_row(
+        icon,
         &label,
         None,
         "",
         icons::EXTERNAL_LINK,
     )));
-    links.append(&website);
-
-    let source = gtk::Box::new(gtk::Orientation::Vertical, 0);
-    source.add_css_class("about-static-row");
-    super::search::tag(&source, "Source code");
-    let label = crate::i18n::tr("Source code");
-    crate::ui::accessibility::set_label(&source, &label);
-    let pending = crate::i18n::tr("Coming with the public release");
-    source.append(&about_row(icons::CODE_XML, &label, Some(&pending), "", ""));
-    links.append(&source);
-
-    links.append(&license_row());
-    scrollable_page(&content, None)
+    button
 }
 
 /// Querencia: the license row names Strata as the origin and expands to the
@@ -185,6 +181,14 @@ fn about_row(
     row
 }
 
+fn display_version() -> String {
+    format!(
+        "{} ({})",
+        crate::build_info::QUERENCIA_PACKAGE_VERSION,
+        crate::build_info::QUERENCIA_RELEASE
+    )
+}
+
 fn strata_version() -> String {
     format!("Strata {}", crate::build_info::installed_version())
 }
@@ -213,14 +217,15 @@ fn toolkit_version() -> String {
 
 fn version_info() -> String {
     rust_i18n::t!(
-        "Querencia Files %{value1}\n%{value2}\nCommit: %{value3}\nToolkit: %{value4}\nAuthor: %{value5}\nLicense: MIT\nBased on %{value6} (%{value7}, MIT)",
-        value1 = crate::build_info::QUERENCIA_VERSION,
+        "Querencia Files %{value1}\n%{value2}\nBuild: %{value8}\nCommit: %{value3}\nToolkit: %{value4}\nAuthor: %{value5}\nLicense: MIT\nBased on %{value6} (%{value7}, MIT)",
+        value1 = display_version(),
         value2 = crate::i18n::tr("The file manager of Querencia Desktop."),
         value3 = crate::build_info::COMMIT,
         value4 = toolkit_version(),
         value5 = crate::build_info::QUERENCIA_AUTHOR,
         value6 = strata_version(),
-        value7 = crate::build_info::AUTHOR
+        value7 = crate::build_info::AUTHOR,
+        value8 = crate::build_info::QUERENCIA_VERSION
     )
     .into_owned()
 }

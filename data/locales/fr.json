@@ -180,7 +180,6 @@
   "Code copied": "Code copié",
   "Column width": "Largeur de colonne",
   "Columns": "Colonnes",
-  "Coming with the public release": "Disponible lors de la publication",
   "Comma separated, without dots": "Séparées par des virgules, sans point",
   "Command": "Commande",
   "Command actions must not declare an entrypoint script": "Les actions de type commande ne doivent pas déclarer de script de démarrage",
@@ -598,7 +597,7 @@
   "Older output was discarded to bound memory": "Les anciennes sorties ont été supprimées pour limiter la mémoire",
   "Omarchy variant": "Variante Omarchy",
   "On": "Activé",
-  "On Arch or Omarchy, install the required GStreamer plugins, then restart Strata.": "Sous Arch ou Omarchy, installez les greffons GStreamer requis, puis redémarrez Querencia Files.",
+  "On Arch or Omarchy, install the required GStreamer plugins, then restart Strata.": "Sous Ubuntu, installez les greffons GStreamer requis, puis redémarrez Querencia Files.",
   "On failure": "En cas d’échec",
   "Once, or once per selected item": "Une fois, ou une fois par élément sélectionné",
   "One argument per line; {path}, {paths}, or {parent}": "Un argument par ligne ; {path}, {paths} ou {parent}",
@@ -1090,7 +1089,7 @@
   "Update available": "Nouvelle version",
   "Updates": "Mises à jour",
   "Use Strata": "Utiliser Querencia Files",
-  "Use Strata for Open and Save dialogs, opening folders, and Reveal in File Manager. On Omarchy, this also sets file-manager keyboard shortcuts. Close open file dialogs before changing setup.": "Utiliser Querencia Files pour les boîtes de dialogue Ouvrir et Enregistrer, l’ouverture de dossiers et « Afficher dans le gestionnaire de fichiers ». Sur Omarchy, cela définit aussi les raccourcis du gestionnaire. Fermez les boîtes de dialogue ouvertes avant de modifier la configuration.",
+  "Use Strata for Open and Save dialogs, opening folders, and Reveal in File Manager. On Omarchy, this also sets file-manager keyboard shortcuts. Close open file dialogs before changing setup.": "Utiliser Querencia Files pour les boîtes de dialogue Ouvrir et Enregistrer, l’ouverture de dossiers et « Afficher dans le gestionnaire de fichiers ». Fermez les boîtes de dialogue ouvertes avant de modifier la configuration.",
   "Use the active Omarchy Quattro theme and switch when the system theme changes.": "Utiliser le thème Omarchy Quattro actif et suivre les changements du thème système.",
   "Used": "Utilisé",
   "Username": "Nom d’utilisateur",
@@ -1312,5 +1311,7 @@
   "The device is still in use": "Le périphérique est encore utilisé",
   "Unmount Anyway": "Démonter quand même",
   "The programs could not be determined.": "Les programmes n’ont pas pu être déterminés.",
-  "Close the files and programs that use it, then try again. Unmounting anyway can lose data these programs have not saved.": "Fermez les fichiers et programmes qui l’utilisent, puis réessayez. Démonter quand même peut faire perdre les données non enregistrées de ces programmes."
+  "Close the files and programs that use it, then try again. Unmounting anyway can lose data these programs have not saved.": "Fermez les fichiers et programmes qui l’utilisent, puis réessayez. Démonter quand même peut faire perdre les données non enregistrées de ces programmes.",
+  "Online help": "Aide en ligne",
+  "Report a bug": "Signaler un bogue"
 }

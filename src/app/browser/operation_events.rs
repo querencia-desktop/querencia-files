@@ -20,6 +20,12 @@ use super::{
     push_regenerated_undo,
 };
 
+fn is_trash_item(location: &Location) -> bool {
+    location
+        .parent()
+        .is_some_and(|parent| parent.uri_value() == Some("trash:///"))
+}
+
 struct OperationContext {
     request_id: OperationRequestId,
     rename: bool,
@@ -102,7 +108,18 @@ impl OperationCompletion {
                         .filter(|source| !merged.sources.contains(*source))
                         .cloned()
                         .collect();
-                    publish(UndoEntry::Move(move_records(&movable, destination)));
+                    let records = move_records(&movable, destination);
+                    // Querencia: moving out of Trash restores, and GVfs cannot move
+                    // an item back into trash://, so undo trashes it again.
+                    if !records.is_empty()
+                        && records.iter().all(|record| is_trash_item(&record.original))
+                    {
+                        publish(UndoEntry::Copy(
+                            records.into_iter().map(|record| record.current).collect(),
+                        ));
+                    } else {
+                        publish(UndoEntry::Move(records));
+                    }
                 }
             }
             Some(false) if merged.overwritten.is_empty() && merged.created.is_empty() => {

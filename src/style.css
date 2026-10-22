@@ -6409,25 +6409,13 @@ two-column presentation. */
   border-top: 1px solid alpha(@strata_border, 0.55);
 }
 
-/* Querencia: About rows without a link (source code) and the license
-   expander with the embedded Strata license text. */
-.about-static-row {
-  min-height: 54px;
-  padding: 0 18px;
-  color: @strata_text;
-}
-
-.about-repository + .about-static-row,
-.about-static-row + box > .about-repository {
+/* Querencia: the license expander with the embedded Strata license text. */
+.about-repository + box > .about-repository {
   border-top: 1px solid alpha(@strata_border, 0.55);
 }
 
 .about-origin {
   font-size: 0.9em;
-}
-
-.settings-dialog .about-static-row image {
-  -gtk-icon-filter: saturate(0) opacity(0.65);
 }
 
 .about-license-toggle .about-end-icon {

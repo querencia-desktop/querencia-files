@@ -33,6 +33,9 @@ use super::{
 /// Prefix of the per-window action group the menus and toolbar activate.
 const ACTIONS: &str = "classic";
 
+/// Help ▸ Report a bug: the issue forms of the Querencia Desktop project.
+const REPORT_BUG_URI: &str = "https://github.com/querencia-desktop/querencia/issues/new/choose";
+
 /// How long "Connect to Server ▸ Add bookmark" waits for the connection.
 const PENDING_BOOKMARK_TIMEOUT: Duration = Duration::from_secs(300);
 
@@ -144,6 +147,26 @@ impl ClassicChrome {
         self.actions.add_action(&action);
     }
 
+    /// Help ▸ Online help and Report a bug open their pages in the browser.
+    fn install_help_links(&self, window: &gtk::ApplicationWindow) {
+        for (name, uri) in [
+            ("online-help", online_help_uri(&rust_i18n::locale())),
+            ("report-bug", REPORT_BUG_URI.to_owned()),
+        ] {
+            let action = gio::SimpleAction::new(name, None);
+            let window = window.downgrade();
+            action.connect_activate(move |_, _| {
+                let context = window
+                    .upgrade()
+                    .map(|window| WidgetExt::display(&window).app_launch_context());
+                if let Err(error) = gio::AppInfo::launch_default_for_uri(&uri, context.as_ref()) {
+                    tracing::warn!(%error, %uri, "unable to open a help link");
+                }
+            });
+            self.actions.add_action(&action);
+        }
+    }
+
     fn install_actions(
         self: &Rc<Self>,
         window: &gtk::ApplicationWindow,
@@ -152,6 +175,7 @@ impl ClassicChrome {
         header: &Header,
         preferences: &Rc<PreferenceManager>,
     ) {
+        self.install_help_links(window);
         let browser = view.browser();
         self.add_view_action(window, view, "back", {
             let browser = Rc::downgrade(&browser);
@@ -864,15 +888,29 @@ fn menu_model(bookmarks: &gio::Menu) -> gio::Menu {
     model.append_submenu(Some(&tr("Bookmarks")), &bookmarks_menu);
 
     let help = gio::Menu::new();
+    let section = gio::Menu::new();
+    section.append(Some(&tr("Online help")), Some(&action("online-help")));
     item(
-        &help,
+        &section,
         "Keyboard shortcuts",
         &action("keyboard-shortcuts"),
         Some(REFERENCE),
     );
-    help.append(Some(&tr("About")), Some(&action("about")));
+    help.append_section(None, &section);
+    let section = gio::Menu::new();
+    section.append(Some(&tr("Report a bug")), Some(&action("report-bug")));
+    help.append_section(None, &section);
+    let section = gio::Menu::new();
+    section.append(Some(&tr("About")), Some(&action("about")));
+    help.append_section(None, &section);
     model.append_submenu(Some(&tr("Help")), &help);
     model
+}
+
+/// The documentation exists in German and English; other languages get English.
+fn online_help_uri(locale: &str) -> String {
+    let language = if locale == "de" { "de" } else { "en" };
+    format!("https://querencialinux.org/{language}/docs/")
 }
 
 /// Classic toolbar icon size: GTK 2's "small toolbar" (QF-0f; the former
@@ -968,6 +1006,22 @@ fn build_location_row(view: &BrowserView) -> gtk::Box {
     location.set_hexpand(true);
     row.append(&location);
     row
+}
+
+#[cfg(test)]
+mod help_tests {
+    use super::online_help_uri;
+
+    #[test]
+    fn online_help_opens_the_german_or_english_documentation() {
+        assert_eq!(online_help_uri("de"), "https://querencialinux.org/de/docs/");
+        for locale in ["en", "fr", "es", "it", "zh-CN"] {
+            assert_eq!(
+                online_help_uri(locale),
+                "https://querencialinux.org/en/docs/"
+            );
+        }
+    }
 }
 
 #[cfg(test)]

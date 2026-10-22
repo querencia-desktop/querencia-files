@@ -9,10 +9,9 @@ use crate::ui::{
     browser::{
         ViewState,
         clipboard::{
-            ClipboardMark, PreparedFileDrop, clear_active_drag, clipboard_mark,
-            drag_actions_for_modifiers, drag_preview_icon, file_drag_content,
-            file_drag_hover_target, file_drop_action, file_drop_commit,
-            locations_from_file_list_value, prepare_file_drop_target,
+            ClipboardMark, PreparedFileDrop, clear_active_drag, clipboard_mark, drag_preview_icon,
+            file_drag_actions, file_drag_content, file_drag_hover_target, file_drop_action,
+            file_drop_commit, locations_from_file_list_value, prepare_file_drop_target,
         },
         collection::{ViewMap, activate_recursive_search_result},
         entry::{
@@ -194,7 +193,6 @@ pub(super) fn column_rows(
                 {
                     return None;
                 }
-                source.set_actions(drag_actions_for_modifiers(source.current_event_state()));
                 let state = weak_state_for_drag.upgrade()?;
                 let dragged_item = dragged_item.upgrade()?;
                 let position = dragged_item.position();
@@ -229,6 +227,7 @@ pub(super) fn column_rows(
                         vec![entry]
                     }
                 };
+                source.set_actions(file_drag_actions(source.current_event_state(), &entries));
                 if let Some((texture, hot_x, hot_y)) = drag_preview_icon(&prepare_row, &entries) {
                     source.set_icon(Some(&texture), hot_x, hot_y);
                 }

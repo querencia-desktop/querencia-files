@@ -180,7 +180,6 @@
   "Code copied": "Код скопирован",
   "Column width": "Ширина столбца",
   "Columns": "Столбцы",
-  "Coming with the public release": "Появится с публикацией",
   "Comma separated, without dots": "Через запятую, без точек",
   "Command": "Команда",
   "Command actions must not declare an entrypoint script": "Действие-команда не должно указывать сценарий точки входа",
@@ -598,7 +597,7 @@
   "Older output was discarded to bound memory": "Старые выходные данные удалены для ограничения расхода памяти",
   "Omarchy variant": "Вариант Omarchy",
   "On": "Вкл.",
-  "On Arch or Omarchy, install the required GStreamer plugins, then restart Strata.": "В Arch или Omarchy установите необходимые плагины GStreamer, затем перезапустите Querencia Files.",
+  "On Arch or Omarchy, install the required GStreamer plugins, then restart Strata.": "В Ubuntu установите необходимые плагины GStreamer, затем перезапустите Querencia Files.",
   "On failure": "При ошибке",
   "Once, or once per selected item": "Один раз или по разу для каждого выбранного элемента",
   "One argument per line; {path}, {paths}, or {parent}": "По одному аргументу в строке; {path}, {paths} или {parent}",
@@ -1090,7 +1089,7 @@
   "Update available": "Есть обновление",
   "Updates": "Обновления",
   "Use Strata": "Использовать Querencia Files",
-  "Use Strata for Open and Save dialogs, opening folders, and Reveal in File Manager. On Omarchy, this also sets file-manager keyboard shortcuts. Close open file dialogs before changing setup.": "Использовать Querencia Files в диалогах открытия и сохранения, при открытии папок и для команды «Показать в файловом менеджере». В Omarchy также настраиваются комбинации клавиш файлового менеджера. Закройте открытые файловые диалоги перед изменением настройки.",
+  "Use Strata for Open and Save dialogs, opening folders, and Reveal in File Manager. On Omarchy, this also sets file-manager keyboard shortcuts. Close open file dialogs before changing setup.": "Использовать Querencia Files в диалогах открытия и сохранения, при открытии папок и для команды «Показать в файловом менеджере». Закройте открытые файловые диалоги перед изменением настройки.",
   "Use the active Omarchy Quattro theme and switch when the system theme changes.": "Использовать активную тему Omarchy Quattro и переключаться при изменении системной темы.",
   "Used": "Занято",
   "Username": "Имя пользователя",
@@ -1312,5 +1311,7 @@
   "The device is still in use": "Устройство всё ещё используется",
   "Unmount Anyway": "Всё равно отключить",
   "The programs could not be determined.": "Не удалось определить программы.",
-  "Close the files and programs that use it, then try again. Unmounting anyway can lose data these programs have not saved.": "Закройте файлы и программы, которые к нему обращаются, и повторите попытку. При принудительном отключении несохранённые данные этих программ могут быть потеряны."
+  "Close the files and programs that use it, then try again. Unmounting anyway can lose data these programs have not saved.": "Закройте файлы и программы, которые к нему обращаются, и повторите попытку. При принудительном отключении несохранённые данные этих программ могут быть потеряны.",
+  "Online help": "Справка в Интернете",
+  "Report a bug": "Сообщить об ошибке"
 }

@@ -180,7 +180,6 @@
   "Code copied": "コードをコピーしました",
   "Column width": "列の幅",
   "Columns": "カラム",
-  "Coming with the public release": "公開時に提供予定",
   "Comma separated, without dots": "カンマ区切り、ドットなし",
   "Command": "コマンド",
   "Command actions must not declare an entrypoint script": "コマンドのアクションではエントリポイントのスクリプトを指定できません",
@@ -598,7 +597,7 @@
   "Older output was discarded to bound memory": "メモリ使用量を制限するため古い出力を破棄しました",
   "Omarchy variant": "Omarchy バリエーション",
   "On": "オン",
-  "On Arch or Omarchy, install the required GStreamer plugins, then restart Strata.": "Arch または Omarchy では、必要な GStreamer プラグインをインストールしてから Querencia Files を再起動してください。",
+  "On Arch or Omarchy, install the required GStreamer plugins, then restart Strata.": "Ubuntu では、必要な GStreamer プラグインをインストールしてから Querencia Files を再起動してください。",
   "On failure": "失敗時",
   "Once, or once per selected item": "1 回、または選択した項目ごとに 1 回",
   "One argument per line; {path}, {paths}, or {parent}": "1 行に 1 つの引数。{path}、{paths}、{parent} を使用できます",
@@ -1090,7 +1089,7 @@
   "Update available": "更新があります",
   "Updates": "更新",
   "Use Strata": "Querencia Files を使用",
-  "Use Strata for Open and Save dialogs, opening folders, and Reveal in File Manager. On Omarchy, this also sets file-manager keyboard shortcuts. Close open file dialogs before changing setup.": "「開く」「保存」ダイアログ、フォルダーを開く操作、「ファイルマネージャーで表示」に Querencia Files を使用します。Omarchy ではファイルマネージャーのキーボードショートカットも設定します。変更前に開いているファイルダイアログを閉じてください。",
+  "Use Strata for Open and Save dialogs, opening folders, and Reveal in File Manager. On Omarchy, this also sets file-manager keyboard shortcuts. Close open file dialogs before changing setup.": "「開く」「保存」ダイアログ、フォルダーを開く操作、「ファイルマネージャーで表示」に Querencia Files を使用します。変更前に開いているファイルダイアログを閉じてください。",
   "Use the active Omarchy Quattro theme and switch when the system theme changes.": "アクティブな Omarchy Quattro テーマを使用し、システムテーマの変更時に切り替えます。",
   "Used": "使用済み",
   "Username": "ユーザー名",
@@ -1312,5 +1311,7 @@
   "The device is still in use": "デバイスはまだ使用中です",
   "Unmount Anyway": "強制的にマウント解除",
   "The programs could not be determined.": "プログラムを特定できませんでした。",
-  "Close the files and programs that use it, then try again. Unmounting anyway can lose data these programs have not saved.": "使用しているファイルやプログラムを閉じてから、もう一度お試しください。強制的にマウント解除すると、これらのプログラムの未保存のデータが失われることがあります。"
+  "Close the files and programs that use it, then try again. Unmounting anyway can lose data these programs have not saved.": "使用しているファイルやプログラムを閉じてから、もう一度お試しください。強制的にマウント解除すると、これらのプログラムの未保存のデータが失われることがあります。",
+  "Online help": "オンラインヘルプ",
+  "Report a bug": "不具合を報告"
 }

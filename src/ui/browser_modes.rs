@@ -4059,9 +4059,6 @@ fn install_list_drag_drop(
         {
             return None;
         }
-        source.set_actions(super::browser::drag_actions_for_modifiers(
-            source.current_event_state(),
-        ));
         let browser = browser_for_drag.upgrade()?;
         let dragged_item = dragged_item.upgrade()?;
         let position = dragged_item.position();
@@ -4079,6 +4076,10 @@ fn install_list_drag_drop(
         } else {
             vec![entry]
         };
+        source.set_actions(super::browser::file_drag_actions(
+            source.current_event_state(),
+            &entries,
+        ));
         if let Some((texture, hot_x, hot_y)) =
             super::browser::drag_preview_icon(&prepare_row, &entries)
         {

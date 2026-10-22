@@ -180,7 +180,6 @@
   "Code copied": "已复制代码",
   "Column width": "栏宽",
   "Columns": "分栏",
-  "Coming with the public release": "将随正式发布提供",
   "Comma separated, without dots": "用英文逗号分隔，不带点",
   "Command": "命令",
   "Command actions must not declare an entrypoint script": "命令类操作不能指定入口脚本",
@@ -598,7 +597,7 @@
   "Older output was discarded to bound memory": "为限制内存占用，已丢弃较早的输出",
   "Omarchy variant": "Omarchy 主题变体",
   "On": "开",
-  "On Arch or Omarchy, install the required GStreamer plugins, then restart Strata.": "在 Arch 或 Omarchy 上，请安装所需的 GStreamer 插件，然后重启 Querencia Files。",
+  "On Arch or Omarchy, install the required GStreamer plugins, then restart Strata.": "在 Ubuntu 上，请安装所需的 GStreamer 插件，然后重启 Querencia Files。",
   "On failure": "出错时",
   "Once, or once per selected item": "运行一次，或对每个所选项目各运行一次",
   "One argument per line; {path}, {paths}, or {parent}": "每行一个参数；可使用 {path}、{paths} 或 {parent}",
@@ -1090,7 +1089,7 @@
   "Update available": "有可用更新",
   "Updates": "更新",
   "Use Strata": "使用 Querencia Files",
-  "Use Strata for Open and Save dialogs, opening folders, and Reveal in File Manager. On Omarchy, this also sets file-manager keyboard shortcuts. Close open file dialogs before changing setup.": "将 Querencia Files 用于“打开”和“保存”对话框、打开文件夹以及“在文件管理器中显示”。在 Omarchy 上还会设置文件管理器的键盘快捷键。更改此设置前，需先关闭已打开的文件对话框。",
+  "Use Strata for Open and Save dialogs, opening folders, and Reveal in File Manager. On Omarchy, this also sets file-manager keyboard shortcuts. Close open file dialogs before changing setup.": "将 Querencia Files 用于“打开”和“保存”对话框、打开文件夹以及“在文件管理器中显示”。更改此设置前，需先关闭已打开的文件对话框。",
   "Use the active Omarchy Quattro theme and switch when the system theme changes.": "使用当前的 Omarchy Quattro 主题，并在系统主题更改时随之切换。",
   "Used": "已用",
   "Username": "用户名",
@@ -1312,5 +1311,7 @@
   "The device is still in use": "设备仍在使用中",
   "Unmount Anyway": "仍然卸载",
   "The programs could not be determined.": "无法确定相关程序。",
-  "Close the files and programs that use it, then try again. Unmounting anyway can lose data these programs have not saved.": "请关闭正在使用它的文件和程序，然后重试。仍然卸载可能会丢失这些程序中未保存的数据。"
+  "Close the files and programs that use it, then try again. Unmounting anyway can lose data these programs have not saved.": "请关闭正在使用它的文件和程序，然后重试。仍然卸载可能会丢失这些程序中未保存的数据。",
+  "Online help": "在线帮助",
+  "Report a bug": "报告错误"
 }

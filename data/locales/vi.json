@@ -180,7 +180,6 @@
   "Code copied": "Đã sao chép mã",
   "Column width": "Chiều rộng cột",
   "Columns": "Cột",
-  "Coming with the public release": "Sẽ có khi phát hành",
   "Comma separated, without dots": "Phân tách bằng dấu phẩy, không có dấu chấm",
   "Command": "Lệnh",
   "Command actions must not declare an entrypoint script": "Hành động dạng lệnh không được khai báo tập lệnh khởi chạy",
@@ -598,7 +597,7 @@
   "Older output was discarded to bound memory": "Đầu ra cũ đã bị loại bỏ để giới hạn bộ nhớ",
   "Omarchy variant": "Biến thể Omarchy",
   "On": "Bật",
-  "On Arch or Omarchy, install the required GStreamer plugins, then restart Strata.": "Trên Arch hoặc Omarchy, hãy cài đặt các plugin GStreamer cần thiết rồi khởi động lại Querencia Files.",
+  "On Arch or Omarchy, install the required GStreamer plugins, then restart Strata.": "Trên Ubuntu, hãy cài đặt các plugin GStreamer cần thiết rồi khởi động lại Querencia Files.",
   "On failure": "Khi thất bại",
   "Once, or once per selected item": "Một lần, hoặc một lần cho mỗi mục đã chọn",
   "One argument per line; {path}, {paths}, or {parent}": "Mỗi dòng một đối số; {path}, {paths} hoặc {parent}",
@@ -1090,7 +1089,7 @@
   "Update available": "Có bản cập nhật",
   "Updates": "Bản cập nhật",
   "Use Strata": "Dùng Querencia Files",
-  "Use Strata for Open and Save dialogs, opening folders, and Reveal in File Manager. On Omarchy, this also sets file-manager keyboard shortcuts. Close open file dialogs before changing setup.": "Dùng Querencia Files cho hộp thoại Mở và Lưu, mở thư mục và Hiển thị trong Trình quản lý tệp. Trên Omarchy, tùy chọn này cũng đặt phím tắt trình quản lý tệp. Hãy đóng các hộp thoại tệp đang mở trước khi thay đổi thiết lập.",
+  "Use Strata for Open and Save dialogs, opening folders, and Reveal in File Manager. On Omarchy, this also sets file-manager keyboard shortcuts. Close open file dialogs before changing setup.": "Dùng Querencia Files cho hộp thoại Mở và Lưu, mở thư mục và Hiển thị trong Trình quản lý tệp. Hãy đóng các hộp thoại tệp đang mở trước khi thay đổi thiết lập.",
   "Use the active Omarchy Quattro theme and switch when the system theme changes.": "Dùng chủ đề Omarchy Quattro hiện hoạt và chuyển đổi khi chủ đề hệ thống thay đổi.",
   "Used": "Đã dùng",
   "Username": "Tên người dùng",
@@ -1312,5 +1311,7 @@
   "The device is still in use": "Thiết bị vẫn đang được sử dụng",
   "Unmount Anyway": "Vẫn tháo gắn",
   "The programs could not be determined.": "Không xác định được các chương trình.",
-  "Close the files and programs that use it, then try again. Unmounting anyway can lose data these programs have not saved.": "Hãy đóng các tệp và chương trình đang dùng nó rồi thử lại. Nếu vẫn tháo gắn, dữ liệu chưa lưu của các chương trình này có thể bị mất."
+  "Close the files and programs that use it, then try again. Unmounting anyway can lose data these programs have not saved.": "Hãy đóng các tệp và chương trình đang dùng nó rồi thử lại. Nếu vẫn tháo gắn, dữ liệu chưa lưu của các chương trình này có thể bị mất.",
+  "Online help": "Trợ giúp trực tuyến",
+  "Report a bug": "Báo lỗi"
 }

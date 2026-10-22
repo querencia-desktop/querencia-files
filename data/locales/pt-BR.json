@@ -180,7 +180,6 @@
   "Code copied": "Código copiado",
   "Column width": "Largura da coluna",
   "Columns": "Colunas",
-  "Coming with the public release": "Disponível com a publicação",
   "Comma separated, without dots": "Separadas por vírgulas, sem pontos",
   "Command": "Comando",
   "Command actions must not declare an entrypoint script": "Ações de comando não devem declarar um script de entrada",
@@ -598,7 +597,7 @@
   "Older output was discarded to bound memory": "A saída antiga foi descartada para limitar o uso de memória",
   "Omarchy variant": "Variante do Omarchy",
   "On": "Ativado",
-  "On Arch or Omarchy, install the required GStreamer plugins, then restart Strata.": "No Arch ou no Omarchy, instale os plugins do GStreamer necessários e reinicie o Querencia Files.",
+  "On Arch or Omarchy, install the required GStreamer plugins, then restart Strata.": "No Ubuntu, instale os plugins do GStreamer necessários e reinicie o Querencia Files.",
   "On failure": "Em caso de falha",
   "Once, or once per selected item": "Uma vez, ou uma vez por item selecionado",
   "One argument per line; {path}, {paths}, or {parent}": "Um argumento por linha; {path}, {paths} ou {parent}",
@@ -1090,7 +1089,7 @@
   "Update available": "Nova versão",
   "Updates": "Atualizações",
   "Use Strata": "Usar o Querencia Files",
-  "Use Strata for Open and Save dialogs, opening folders, and Reveal in File Manager. On Omarchy, this also sets file-manager keyboard shortcuts. Close open file dialogs before changing setup.": "Usar o Querencia Files para caixas de diálogo Abrir e Salvar, abrir pastas e Mostrar no gerenciador de arquivos. No Omarchy, isso também configura os atalhos de teclado do gerenciador de arquivos. Feche as caixas de diálogo de arquivos abertas antes de alterar a configuração.",
+  "Use Strata for Open and Save dialogs, opening folders, and Reveal in File Manager. On Omarchy, this also sets file-manager keyboard shortcuts. Close open file dialogs before changing setup.": "Usar o Querencia Files para caixas de diálogo Abrir e Salvar, abrir pastas e Mostrar no gerenciador de arquivos. Feche as caixas de diálogo de arquivos abertas antes de alterar a configuração.",
   "Use the active Omarchy Quattro theme and switch when the system theme changes.": "Usar o tema Omarchy Quattro ativo e alternar quando o tema do sistema mudar.",
   "Used": "Usado",
   "Username": "Nome de usuário",
@@ -1312,5 +1311,7 @@
   "The device is still in use": "O dispositivo ainda está em uso",
   "Unmount Anyway": "Desmontar mesmo assim",
   "The programs could not be determined.": "Não foi possível identificar os programas.",
-  "Close the files and programs that use it, then try again. Unmounting anyway can lose data these programs have not saved.": "Feche os arquivos e programas que o utilizam e tente novamente. Desmontar mesmo assim pode perder dados não salvos desses programas."
+  "Close the files and programs that use it, then try again. Unmounting anyway can lose data these programs have not saved.": "Feche os arquivos e programas que o utilizam e tente novamente. Desmontar mesmo assim pode perder dados não salvos desses programas.",
+  "Online help": "Ajuda online",
+  "Report a bug": "Relatar um erro"
 }
