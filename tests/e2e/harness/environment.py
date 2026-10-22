@@ -129,7 +129,7 @@ class TestEnvironment:
 
     @property
     def settings_path(self) -> Path:
-        return self.config_home / "strata" / "settings.toml"
+        return self.config_home / "querencia-files" / "settings.toml"
 
     @property
     def trash_files(self) -> Path:
@@ -142,7 +142,7 @@ class TestEnvironment:
         modal dialog over every scenario.
         """
 
-        marker = self.config_home / "strata" / PORTAL_OFFER_MARKER
+        marker = self.config_home / "querencia-files" / PORTAL_OFFER_MARKER
         marker.parent.mkdir(parents=True, exist_ok=True)
         marker.write_text("1\n")
 

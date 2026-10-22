@@ -31,7 +31,7 @@ fn querencia_version_info_names_querencia_files_and_the_strata_origin() {
                 format!(
                     "Querencia Files {} ({})",
                     crate::build_info::QUERENCIA_PACKAGE_VERSION,
-                    crate::build_info::QUERENCIA_RELEASE
+                    crate::querencia_release::current().version
                 )
             );
             assert_eq!(lines[1], "The file manager of Querencia Desktop.");
@@ -112,7 +112,7 @@ fn querencia_about_page_links_the_website_and_source_and_names_strata_as_origin(
                 == format!(
                     "{} ({})",
                     crate::build_info::QUERENCIA_PACKAGE_VERSION,
-                    crate::build_info::QUERENCIA_RELEASE
+                    crate::querencia_release::current().version
                 )));
             assert!(
                 !labels

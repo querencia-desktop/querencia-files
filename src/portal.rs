@@ -32,8 +32,8 @@ use gio::prelude::*;
 
 use crate::model::{FileEntry, Location};
 
-const BACKEND_NAME: &str = "org.freedesktop.impl.portal.desktop.strata";
-pub(crate) const CHOOSER_APPLICATION_ID: &str = "io.github.lgse.Strata.FileChooser";
+const BACKEND_NAME: &str = "org.freedesktop.impl.portal.desktop.querencia";
+pub(crate) const CHOOSER_APPLICATION_ID: &str = "org.querencia.Files.FileChooser";
 pub(crate) const FILE_CHOOSER_VERSION: u32 = 4;
 const MAX_ACTIVE_REQUESTS: usize = 16;
 const MAX_CHOICES: usize = 16;
@@ -260,7 +260,7 @@ pub(crate) fn run() -> glib::ExitCode {
     crate::logging::initialize();
     tracing::info!(
         version = FILE_CHOOSER_VERSION,
-        "starting Strata FileChooser portal backend"
+        "starting Querencia Files FileChooser portal backend"
     );
     if let Err(error) = crate::assets::prepare() {
         eprintln!("Unable to prepare bundled assets: {error}");

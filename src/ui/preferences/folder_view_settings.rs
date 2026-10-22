@@ -90,7 +90,7 @@ impl FolderViewStore {
         };
         if let Some(error) = &load_failure {
             tracing::warn!(%error, path = %path.display(),
-                "unable to load folder settings; using none without saving; fix the file and restart Strata");
+                "unable to load folder settings; using none without saving; fix the file and restart Querencia Files");
         }
         Self {
             views: RefCell::new(views),

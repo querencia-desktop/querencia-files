@@ -294,7 +294,7 @@ pub(crate) fn start(registration: Registration) -> Client {
                         .is_none_or(|at: Instant| at.elapsed() >= Duration::from_secs(10))
                     {
                         eprintln!(
-                            "Strata provider {} unavailable: {}",
+                            "Querencia Files provider {} unavailable: {}",
                             registration.manifest.id, failure.reason
                         );
                         last_diagnostic = Some(Instant::now());

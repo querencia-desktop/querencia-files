@@ -7,8 +7,8 @@ use std::{
 };
 
 use super::{
-    InstallSource, ManagedInstall, ensure_self_managed, marker_path_for_executable,
-    replaced_executable_path,
+    InstallSource, ManagedInstall, ensure_self_managed, legacy_marker_path_for_executable,
+    marker_path_for_executable, replaced_executable_path,
 };
 use crate::services::Channel;
 
@@ -233,13 +233,19 @@ fn blank_values_are_treated_as_absent() {
 #[test]
 fn the_marker_is_resolved_relative_to_the_install_prefix() {
     assert_eq!(
-        marker_path_for_executable(Path::new("/usr/bin/strata")),
+        marker_path_for_executable(Path::new("/usr/bin/querencia-files")),
+        Some(PathBuf::from(
+            "/usr/share/querencia-files/install-source.toml"
+        ))
+    );
+    assert_eq!(
+        legacy_marker_path_for_executable(Path::new("/usr/bin/querencia-files")),
         Some(PathBuf::from("/usr/share/strata/install-source.toml"))
     );
     assert_eq!(
         marker_path_for_executable(Path::new("/opt/strata/bin/strata")),
         Some(PathBuf::from(
-            "/opt/strata/share/strata/install-source.toml"
+            "/opt/strata/share/querencia-files/install-source.toml"
         ))
     );
     assert_eq!(marker_path_for_executable(Path::new("strata")), None);

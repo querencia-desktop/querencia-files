@@ -239,7 +239,7 @@ fn resolve_commit(release: &mut ReleaseMetadata) {
 }
 
 fn cache_dir() -> PathBuf {
-    glib::user_cache_dir().join("strata")
+    crate::storage::cache_directory()
 }
 
 fn update_check_cache_path() -> PathBuf {

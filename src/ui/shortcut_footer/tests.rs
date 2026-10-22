@@ -229,7 +229,7 @@ fn footer_tracks_modes_and_shields_files_while_open() {
     }
     let settings =
         std::path::PathBuf::from(std::env::var_os("XDG_CONFIG_HOME").expect("isolated config"))
-            .join("strata/settings.toml");
+            .join("querencia-files/settings.toml");
     let saved: toml::Value =
         toml::from_str(&std::fs::read_to_string(settings).expect("saved preferences"))
             .expect("valid preferences");

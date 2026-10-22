@@ -46,7 +46,7 @@ as data; they keep their content unchanged and are covered by this notice:
 - `src/ui/settings/about/tests.rs`
 - `docs/querencia-lizenz.md` (this file)
 
-Upstream Strata files that Querencia changed (QF-0a … QF-0s) keep their
+Upstream Strata files that Querencia changed (QF-0a … QF-0t) keep their
 upstream notice; the Querencia changes in them are MIT-licensed as well. The
 history of every change is in the Git log (commits starting with `QF-` or
 `feat(querencia)`).
@@ -61,7 +61,10 @@ ends with "Based on Strata <version> (LGSE Ltd., MIT)". Since QF-0s the About
 page shows the package version and the Querencia Desktop release (for example
 "0.1.0~alpha6 (Alpha 2)") and links the source code at
 https://github.com/querencia-desktop/querencia-files; the build stage (`QF-…`)
-appears only in "Copy version info". The application ID
-`io.github.lgse.Strata`, resource paths, D-Bus names, file names and internal
-identifiers still carry the Strata name; renaming them is a separate step.
+appears only in "Copy version info". Since QF-0t the release name and the
+website, help and bug report links come from `/usr/share/querencia/release`,
+and the application ID is `org.querencia.Files` (desktop entry, D-Bus names,
+resource paths, per-user directories `querencia-files`). Internal identifiers
+(crate name, CSS classes, bundled icon names, GObject type names, build
+variables) keep the Strata name. See [CHANGELOG.md](../CHANGELOG.md).
 

@@ -12,7 +12,9 @@ use serde::Deserialize;
 
 use crate::services::Channel;
 
-const MARKER_RELATIVE_PATH: &str = "share/strata/install-source.toml";
+const MARKER_RELATIVE_PATH: &str = "share/querencia-files/install-source.toml";
+/// Querencia (QF-0t): where packages built before the rename put the marker.
+const LEGACY_MARKER_RELATIVE_PATH: &str = "share/strata/install-source.toml";
 
 const UNNAMED_MANAGER: &str = "your package manager";
 
@@ -208,11 +210,11 @@ fn replaced_executable_path(executable: &Path) -> PathBuf {
 }
 
 fn marker_path() -> Option<PathBuf> {
-    installed_executable()
-        .ok()
-        .as_deref()
-        .and_then(marker_path_for_executable)
-        .filter(|path| path.is_file())
+    let executable = installed_executable().ok()?;
+    marker_path_for_executable(&executable)
+        .into_iter()
+        .chain(legacy_marker_path_for_executable(&executable))
+        .find(|path| path.is_file())
 }
 
 fn on_path(program: &str) -> bool {
@@ -229,6 +231,15 @@ fn on_path(program: &str) -> bool {
 
 fn marker_path_for_executable(executable: &Path) -> Option<PathBuf> {
     Some(executable.parent()?.parent()?.join(MARKER_RELATIVE_PATH))
+}
+
+fn legacy_marker_path_for_executable(executable: &Path) -> Option<PathBuf> {
+    Some(
+        executable
+            .parent()?
+            .parent()?
+            .join(LEGACY_MARKER_RELATIVE_PATH),
+    )
 }
 
 pub(crate) fn ensure_self_managed(source: &InstallSource) -> Result<(), String> {

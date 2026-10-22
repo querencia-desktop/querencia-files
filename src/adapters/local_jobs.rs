@@ -77,7 +77,7 @@ fn runtime_root() -> PathBuf {
         .filter(|value| !value.is_empty())
         .map(PathBuf::from)
         .unwrap_or_else(std::env::temp_dir)
-        .join("strata")
+        .join(crate::storage::APP_DIRECTORY)
 }
 
 impl ActionRunner for LocalActionRunner {

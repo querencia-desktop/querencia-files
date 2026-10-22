@@ -24,16 +24,23 @@ use glib::{KeyFile, KeyFileFlags};
 pub(crate) use omarchy::omarchy_is_present;
 
 const FILE_CHOOSER_KEY: &str = "org.freedesktop.impl.portal.FileChooser";
-const PORTAL_FILE: &str = "strata.portal";
-const SERVICE_FILE: &str = "org.freedesktop.impl.portal.desktop.strata.service";
-const STATE_DIRECTORY: &str = "strata/portal-install";
+const PORTAL_FILE: &str = "querencia.portal";
+const SERVICE_FILE: &str = "org.freedesktop.impl.portal.desktop.querencia.service";
+const STATE_DIRECTORY: &str = "querencia-files/portal-install";
 const STATE_FILE: &str = "state.toml";
-const PORTAL_BACKEND_UNIT: &str = "dbus-:*-org.freedesktop.impl.portal.desktop.strata@*.service";
-const DESKTOP_ID: &str = "io.github.lgse.Strata.desktop";
-const FILE_MANAGER_SERVICE: &str = "io.github.lgse.Strata.FileManager1.service";
-const FILE_MANAGER_STATE_DIRECTORY: &str = "strata/file-manager-install";
+const PORTAL_BACKEND_UNIT: &str = "dbus-:*-org.freedesktop.impl.portal.desktop.querencia@*.service";
+const DESKTOP_ID: &str = "org.querencia.Files.desktop";
+const FILE_MANAGER_SERVICE: &str = "org.querencia.Files.FileManager1.service";
+const FILE_MANAGER_STATE_DIRECTORY: &str = "querencia-files/file-manager-install";
 const FILE_MANAGER_STATE_FILE: &str = "state.toml";
 const INODE_DIRECTORY: &str = "inode/directory";
+/// The portal backend name in `portals.conf`; Strata registered `strata`.
+const PORTAL_NAME: &str = "querencia";
+const LEGACY_PORTAL_NAME: &str = "strata";
+
+fn is_own_portal(value: &str) -> bool {
+    value == PORTAL_NAME || value == LEGACY_PORTAL_NAME
+}
 
 pub(crate) fn install() -> Result<String, String> {
     let executable = crate::services::installed_executable().map_err(|error| {
@@ -153,7 +160,7 @@ fn install_file_manager_at(
         .into_owned());
     }
 
-    let service = include_str!("../data/io.github.lgse.Strata.FileManager1.service")
+    let service = include_str!("../data/org.querencia.Files.FileManager1.service")
         .replace("/usr/bin/strata", executable);
     let state_directory = context.data_home.join(FILE_MANAGER_STATE_DIRECTORY);
     if read_file_manager_state(&state_directory)?.is_none() {
@@ -560,7 +567,7 @@ fn status_at(context: &SetupContext) -> Result<PortalStatus, String> {
             .is_ok_and(|value| {
                 backend_values(&value)
                     .first()
-                    .is_some_and(|name| name == "strata")
+                    .is_some_and(|name| name == PORTAL_NAME)
             })
     } else {
         false
@@ -589,7 +596,7 @@ fn take_prompt_offer_at(context: &SetupContext) -> Result<bool, String> {
 }
 
 fn prompt_path(context: &SetupContext) -> PathBuf {
-    context.config_home.join("strata/portal-opt-in-v1")
+    context.config_home.join("querencia-files/portal-opt-in-v1")
 }
 
 fn dismiss_prompt_at(context: &SetupContext) -> Result<bool, String> {
@@ -768,10 +775,10 @@ fn install_at(context: &SetupContext, executable: &Path) -> Result<PathBuf, Stri
     }
     write_public(
         &portal_directory.join(PORTAL_FILE),
-        include_bytes!("../data/portal/strata.portal"),
+        include_bytes!("../data/portal/querencia.portal"),
     )?;
     let service =
-        include_str!("../data/portal/org.freedesktop.impl.portal.desktop.strata.service.in")
+        include_str!("../data/portal/org.freedesktop.impl.portal.desktop.querencia.service.in")
             .replace("@STRATA_EXECUTABLE@", executable);
     write_public(&service_directory.join(SERVICE_FILE), service.as_bytes())?;
     if let Some(state) = state {
@@ -956,20 +963,20 @@ fn update_config(contents: &str, enable: bool) -> Result<String, String> {
     let mut fallback = config
         .value("preferred", "default")
         .map_or_else(|_| vec!["*".to_owned()], |value| backend_values(&value));
-    fallback.retain(|value| value != "strata");
+    fallback.retain(|value| !is_own_portal(value));
     if fallback.is_empty() {
         fallback.push("*".to_owned());
     }
     let mut values = chooser
         .as_deref()
         .map_or_else(|| fallback.clone(), backend_values);
-    values.retain(|value| value != "strata");
+    values.retain(|value| !is_own_portal(value));
 
     if enable {
         if values.is_empty() {
             values = fallback;
         }
-        values.insert(0, "strata".to_owned());
+        values.insert(0, PORTAL_NAME.to_owned());
         config.set_value(
             "preferred",
             FILE_CHOOSER_KEY,

@@ -18,7 +18,7 @@ fn custom_text_size_loads_and_updates_two_windows_and_new_content_with_desktop_s
     gtk_test(
         "ui::theme::tests::text_size::custom_text_size_loads_and_updates_two_windows_and_new_content_with_desktop_scaling",
         || {
-            let directory = glib::user_config_dir().join("strata");
+            let directory = glib::user_config_dir().join("querencia-files");
             std::fs::create_dir_all(&directory).expect("isolated preferences directory");
             std::fs::write(
                 directory.join("settings.toml"),

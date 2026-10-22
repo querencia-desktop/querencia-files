@@ -177,7 +177,7 @@ impl Hub {
                 .is_none_or(|at| at.elapsed() >= Duration::from_secs(10))
             {
                 eprintln!(
-                    "Strata provider {}: host queue full or closed; request not sent",
+                    "Querencia Files provider {}: host queue full or closed; request not sent",
                     provider.id
                 );
                 provider.last_busy = Some(Instant::now());

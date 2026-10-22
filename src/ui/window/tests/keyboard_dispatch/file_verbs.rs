@@ -988,7 +988,7 @@ fn close_dialog(fixture: &KeyboardFixture) {
 }
 
 fn history_path() -> PathBuf {
-    gtk::glib::user_data_dir().join("strata/recent-apps.toml")
+    gtk::glib::user_data_dir().join("querencia-files/recent-apps.toml")
 }
 
 #[test]

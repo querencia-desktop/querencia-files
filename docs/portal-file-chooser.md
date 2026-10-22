@@ -47,8 +47,8 @@ and the controls' minimum usable size continue to apply.
 
 On native Wayland under Hyprland, floating choosers open at the center of their
 monitor by default, rather than at the center of the calling application. The portal process identifies its
-windows as `io.github.lgse.Strata.FileChooser`, separate from the normal file
-manager's `io.github.lgse.Strata` identity.
+windows as `org.querencia.Files.FileChooser`, separate from the normal file
+manager's `org.querencia.Files` identity.
 
 Before showing a chooser, Strata registers the named runtime rule
 `strata-file-chooser-center` through Hyprland's IPC socket. The rule matches only

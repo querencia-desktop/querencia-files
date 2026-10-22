@@ -301,7 +301,7 @@ impl Notifier {
 }
 
 fn notification_image(icon: &str) -> Option<glib::Variant> {
-    let path = format!("/io/github/lgse/Strata/icons/scalable/devices/{icon}.svg");
+    let path = format!("/org/querencia/Files/icons/scalable/devices/{icon}.svg");
     let pixbuf = gdk_pixbuf::Pixbuf::from_resource_at_scale(
         &path,
         NOTIFICATION_ICON_SIZE,

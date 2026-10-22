@@ -18,6 +18,7 @@ mod metrics;
 mod model;
 mod portal;
 mod portal_setup;
+mod querencia_release;
 #[cfg(feature = "rar")]
 mod rar_extraction;
 mod sandbox;
@@ -38,7 +39,7 @@ use gtk::{gio, glib, prelude::*};
 
 use ui::UnlockTarget;
 
-const APPLICATION_ID: &str = "io.github.lgse.Strata";
+const APPLICATION_ID: &str = "org.querencia.Files";
 const CAIRO_SELECTED_BY_STRATA: &str = "STRATA_CAIRO_SELECTED_BY_STRATA";
 const GVFS_PROBE_ARGUMENT: &str = "--gvfs-probe";
 const GVFS_PROBE_TIMEOUT: Duration = Duration::from_secs(2);
@@ -89,9 +90,9 @@ fn should_select_cairo(
 
 fn version_line() -> String {
     format!(
-        "{} {}",
-        env!("CARGO_PKG_NAME"),
-        build_info::installed_version()
+        "querencia-files {} ({})",
+        build_info::QUERENCIA_PACKAGE_VERSION,
+        build_info::QUERENCIA_VERSION
     )
 }
 
@@ -158,6 +159,7 @@ fn main() -> gtk::glib::ExitCode {
             return gtk::glib::ExitCode::SUCCESS;
         }
         LaunchMode::Portal => {
+            storage::migrate_legacy_directories();
             restart_with_local_vfs_if_gvfs_is_unresponsive();
             return portal::run();
         }
@@ -183,6 +185,7 @@ fn main() -> gtk::glib::ExitCode {
     install_application_identity();
     metrics::initialize();
     logging::initialize();
+    storage::migrate_legacy_directories();
     if should_select_cairo(
         std::env::var_os("GSK_RENDERER").as_deref(),
         ui::preferences::PreferenceManager::shared().interface_renderer(),
@@ -203,7 +206,7 @@ fn main() -> gtk::glib::ExitCode {
     }
 
     if let Err(error) = portal_setup::refresh_stale_portal() {
-        tracing::warn!(%error, "could not refresh the stale Strata portal");
+        tracing::warn!(%error, "could not refresh the stale Querencia Files portal");
     }
 
     // Timed from here so `window presented` covers the whole launch, the way

@@ -2897,7 +2897,7 @@ paned > separator {
 
 .preview-document-table > header sort-indicator.ascending,
 .preview-document-table > header sort-indicator.descending {
-  -gtk-icon-source: -gtk-recolor(url("resource:///io/github/lgse/Strata/icons/scalable/actions/strata-caret.svg"));
+  -gtk-icon-source: -gtk-recolor(url("resource:///org/querencia/Files/icons/scalable/actions/strata-caret.svg"));
   -gtk-icon-size: 10px;
   min-width: 12px;
   min-height: 12px;

@@ -18,6 +18,7 @@ use super::preferences::{
 };
 
 mod omarchy;
+mod system_colors;
 
 thread_local! {
     static SHARED_MANAGER: RefCell<Option<Rc<ThemeManager>>> = const { RefCell::new(None) };
@@ -243,6 +244,7 @@ impl ThemeManager {
         manager.monitor_text_scaling();
         manager.monitor_omarchy();
         manager.monitor_custom_themes();
+        manager.monitor_system_colors();
         manager
     }
 
@@ -408,11 +410,46 @@ impl ThemeManager {
 
     pub(in crate::ui) fn current_tokens(&self) -> Option<ThemeTokens> {
         let id = self.preferences.selected_theme_id();
-        self.themes
+        let tokens = self
+            .themes
             .borrow()
             .iter()
             .find(|theme| theme.id == id)
-            .map(|theme| theme.tokens.clone())
+            .map(|theme| theme.tokens.clone())?;
+        if id != system_colors::SYSTEM_THEME_ID {
+            return Some(tokens);
+        }
+        Some(
+            system_colors::current_theme_colors()
+                .and_then(|colors| system_colors::dark_tokens(&tokens, &colors))
+                .unwrap_or(tokens),
+        )
+    }
+
+    /// Querencia: re-applies "Querencia Klassisch" when the GTK theme or its
+    /// colour scheme changes. GTK reloads the theme after the notification,
+    /// so its colours are read once the main loop is idle again.
+    fn monitor_system_colors(self: &Rc<Self>) {
+        let Some(settings) = gtk::Settings::default() else {
+            return;
+        };
+        for property in ["gtk-interface-color-scheme", "gtk-theme-name"] {
+            if settings.find_property(property).is_none() {
+                continue;
+            }
+            let weak = Rc::downgrade(self);
+            settings.connect_notify_local(Some(property), move |_, _| {
+                let weak = weak.clone();
+                glib::idle_add_local_once(move || {
+                    if let Some(manager) = weak.upgrade()
+                        && !manager.follows_omarchy()
+                        && manager.selected_id() == system_colors::SYSTEM_THEME_ID
+                    {
+                        manager.apply_selected();
+                    }
+                });
+            });
+        }
     }
 
     fn apply_tokens(&self, tokens: &ThemeTokens, source_palette: Option<&SourcePalette>) {
@@ -942,7 +979,7 @@ fn ensure_source_style_scheme_installed() {
     let Some((tokens, palette)) = pending else {
         return;
     };
-    let directory = glib::user_cache_dir().join("strata").join("source-styles");
+    let directory = crate::storage::cache_directory().join("source-styles");
     if let Err(error) = fs::create_dir_all(&directory).and_then(|()| {
         let value = source_style_scheme_xml(&tokens, palette.as_ref());
         crate::storage::atomic_write(&directory.join("strata-current.xml"), value.as_bytes())
@@ -1082,7 +1119,7 @@ fn source_style_scheme_xml(tokens: &ThemeTokens, palette: Option<&SourcePalette>
     let palette = resolved_source_palette(tokens, palette);
     format!(
         r#"<?xml version="1.0" encoding="UTF-8"?>
-<style-scheme id="strata-current" _name="Strata Current Theme" version="1.0">
+<style-scheme id="strata-current" _name="Querencia Files Current Theme" version="1.0">
   <color name="background" value="{}"/>
   <color name="surface" value="{}"/>
   <color name="text" value="{}"/>

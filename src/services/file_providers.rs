@@ -136,7 +136,7 @@ pub(crate) fn discover(root: &Path) -> Vec<Registration> {
                     .filter(|id| slug(id))
                     .unwrap_or("invalid-id");
                 eprintln!(
-                    "Strata provider {id}: registration rejected (permissions, manifest or artwork)"
+                    "Querencia Files provider {id}: registration rejected (permissions, manifest or artwork)"
                 );
             }
             loaded
@@ -149,7 +149,7 @@ pub(crate) fn config_root() -> Option<PathBuf> {
         .map(PathBuf::from)
         .filter(|p| p.is_absolute())
         .or_else(|| std::env::var_os("HOME").map(|p| PathBuf::from(p).join(".config")))?;
-    Some(base.join("strata/providers"))
+    Some(base.join(crate::storage::APP_DIRECTORY).join("providers"))
 }
 #[cfg(test)]
 mod tests;

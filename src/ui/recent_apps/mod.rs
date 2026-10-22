@@ -13,7 +13,7 @@ use serde::{Deserialize, Serialize};
 
 pub(super) const MAX_PER_TYPE: usize = 5;
 const STATE_VERSION: u32 = 1;
-const STATE_FILE: &str = "strata/recent-apps.toml";
+const STATE_FILE: &str = "recent-apps.toml";
 
 #[cfg(test)]
 mod tests;
@@ -33,7 +33,7 @@ struct Entry {
 }
 
 pub(super) fn history_path() -> PathBuf {
-    gtk::glib::user_data_dir().join(STATE_FILE)
+    crate::storage::data_directory().join(STATE_FILE)
 }
 
 // History failures must not prevent launching files.

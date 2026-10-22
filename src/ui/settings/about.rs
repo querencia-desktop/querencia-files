@@ -7,8 +7,8 @@ use gtk::prelude::*;
 #[cfg(test)]
 mod tests;
 
-/// Querencia: the project website and the public source repository.
-const WEBSITE: &str = "https://querencialinux.org";
+/// Querencia: the public source repository; the website comes from the
+/// release file.
 const SOURCE_CODE: &str = "https://github.com/querencia-desktop/querencia-files";
 /// Querencia: Strata's MIT license, embedded so that the About page shows the
 /// copyright notice and permission text of the program it is based on.
@@ -69,7 +69,11 @@ pub(super) fn about_page() -> gtk::Widget {
     append_about_detail(&build, "Commit", crate::build_info::COMMIT);
     append_about_detail(&build, "Toolkit", &toolkit_version());
     let links = settings_group(&content, "LINKS");
-    links.append(&link_row(WEBSITE, icons::GLOBE, "Website"));
+    links.append(&link_row(
+        &crate::querencia_release::current().home_url,
+        icons::GLOBE,
+        "Website",
+    ));
     links.append(&link_row(SOURCE_CODE, icons::CODE_XML, "Source code"));
     links.append(&license_row());
     scrollable_page(&content, None)
@@ -185,7 +189,7 @@ fn display_version() -> String {
     format!(
         "{} ({})",
         crate::build_info::QUERENCIA_PACKAGE_VERSION,
-        crate::build_info::QUERENCIA_RELEASE
+        crate::querencia_release::current().version
     )
 }
 

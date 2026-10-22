@@ -33,9 +33,6 @@ use super::{
 /// Prefix of the per-window action group the menus and toolbar activate.
 const ACTIONS: &str = "classic";
 
-/// Help ▸ Report a bug: the issue forms of the Querencia Desktop project.
-const REPORT_BUG_URI: &str = "https://github.com/querencia-desktop/querencia/issues/new/choose";
-
 /// How long "Connect to Server ▸ Add bookmark" waits for the connection.
 const PENDING_BOOKMARK_TIMEOUT: Duration = Duration::from_secs(300);
 
@@ -149,9 +146,13 @@ impl ClassicChrome {
 
     /// Help ▸ Online help and Report a bug open their pages in the browser.
     fn install_help_links(&self, window: &gtk::ApplicationWindow) {
+        let release = crate::querencia_release::current();
         for (name, uri) in [
-            ("online-help", online_help_uri(&rust_i18n::locale())),
-            ("report-bug", REPORT_BUG_URI.to_owned()),
+            (
+                "online-help",
+                release.documentation_url_for(&rust_i18n::locale()),
+            ),
+            ("report-bug", release.bug_report_url.clone()),
         ] {
             let action = gio::SimpleAction::new(name, None);
             let window = window.downgrade();
@@ -907,12 +908,6 @@ fn menu_model(bookmarks: &gio::Menu) -> gio::Menu {
     model
 }
 
-/// The documentation exists in German and English; other languages get English.
-fn online_help_uri(locale: &str) -> String {
-    let language = if locale == "de" { "de" } else { "en" };
-    format!("https://querencialinux.org/{language}/docs/")
-}
-
 /// Classic toolbar icon size: GTK 2's "small toolbar" (QF-0f; the former
 /// 24 px "large toolbar" icons dominated the compact bar).
 const TOOLBAR_ICON_PX: i32 = 16;
@@ -1006,22 +1001,6 @@ fn build_location_row(view: &BrowserView) -> gtk::Box {
     location.set_hexpand(true);
     row.append(&location);
     row
-}
-
-#[cfg(test)]
-mod help_tests {
-    use super::online_help_uri;
-
-    #[test]
-    fn online_help_opens_the_german_or_english_documentation() {
-        assert_eq!(online_help_uri("de"), "https://querencialinux.org/de/docs/");
-        for locale in ["en", "fr", "es", "it", "zh-CN"] {
-            assert_eq!(
-                online_help_uri(locale),
-                "https://querencialinux.org/en/docs/"
-            );
-        }
-    }
 }
 
 #[cfg(test)]

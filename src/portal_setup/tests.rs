@@ -20,7 +20,7 @@ fn chooser_preference_uses_existing_backends_and_round_trips() {
     let original = "[preferred]\ndefault=hyprland;gtk;\norg.example.Other=gtk;\n";
     let enabled = enable_config(original).expect("enable Strata");
 
-    assert!(enabled.contains(&format!("{FILE_CHOOSER}=strata;hyprland;gtk;")));
+    assert!(enabled.contains(&format!("{FILE_CHOOSER}=querencia;hyprland;gtk;")));
     assert_eq!(enable_config(&enabled).expect("enable again"), enabled);
     assert_eq!(disable_config(&enabled).expect("disable Strata"), original);
 }
@@ -30,8 +30,17 @@ fn chooser_preference_preserves_explicit_fallbacks() {
     let original = format!("[preferred]\ndefault=gnome;gtk;\n{FILE_CHOOSER}=kde;gtk;\n");
     let enabled = enable_config(&original).expect("enable Strata");
 
-    assert!(enabled.contains(&format!("{FILE_CHOOSER}=strata;kde;gtk;")));
+    assert!(enabled.contains(&format!("{FILE_CHOOSER}=querencia;kde;gtk;")));
     assert_eq!(disable_config(&enabled).expect("disable Strata"), original);
+}
+
+#[test]
+fn enabling_replaces_the_strata_backend_name() {
+    let original = format!("[preferred]\ndefault=gtk;\n{FILE_CHOOSER}=strata;gtk;\n");
+    let enabled = enable_config(&original).expect("enable Querencia Files");
+
+    assert!(enabled.contains(&format!("{FILE_CHOOSER}=querencia;gtk;")));
+    assert!(!enabled.contains("strata"));
 }
 
 #[test]
@@ -150,19 +159,19 @@ fn install_and_uninstall_restore_an_existing_user_configuration() {
     assert!(
         fs::read_to_string(&config)
             .expect("installed config")
-            .contains("strata;gtk;")
+            .contains("querencia;gtk;")
     );
     assert!(
         context
             .data_home
-            .join("xdg-desktop-portal/portals/strata.portal")
+            .join("xdg-desktop-portal/portals/querencia.portal")
             .is_file()
     );
     assert!(
         fs::read_to_string(
             context
                 .data_home
-                .join("dbus-1/services/org.freedesktop.impl.portal.desktop.strata.service")
+                .join("dbus-1/services/org.freedesktop.impl.portal.desktop.querencia.service")
         )
         .expect("D-Bus service")
         .contains(&format!(
@@ -191,14 +200,14 @@ fn uninstall_keeps_later_configuration_edits() {
     fs::write(
         &config,
         format!(
-            "[preferred]\ndefault=gtk;\n{FILE_CHOOSER}=strata;gtk;\norg.example.Other=custom;\n"
+            "[preferred]\ndefault=gtk;\n{FILE_CHOOSER}=querencia;gtk;\norg.example.Other=custom;\n"
         ),
     )
     .expect("edit portal config");
 
     assert!(uninstall_at(&context).expect("uninstall portal"));
     let remaining = fs::read_to_string(config).expect("preserved config");
-    assert!(!remaining.contains("strata"));
+    assert!(!remaining.contains("querencia"));
     assert!(remaining.contains("org.example.Other=custom;"));
 }
 
@@ -217,7 +226,7 @@ fn generated_override_is_removed_on_uninstall() {
     assert!(
         fs::read_to_string(&generated)
             .expect("generated config")
-            .contains("strata;")
+            .contains("querencia;")
     );
     assert!(!uninstall_at(&context).expect("uninstall portal"));
     assert!(!generated.exists());
@@ -306,7 +315,7 @@ fn status_uses_the_active_configuration_and_requires_activation_files() {
     let status = super::status_at(&context).expect("external preference");
     assert!(!status.configured);
     assert!(status.has_installation);
-    fs::write(&config, "[preferred]\ndefault=strata;gtk;\n").expect("prefer Strata");
+    fs::write(&config, "[preferred]\ndefault=querencia;gtk;\n").expect("prefer Strata");
     assert!(
         super::status_at(&context)
             .expect("default preference")
