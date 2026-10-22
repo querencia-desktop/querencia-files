@@ -22,3 +22,10 @@
 # Byte-gleich mit Upstream, Testdaten. Belege im Querencia-Arbeitsbericht zu
 # QF-0o-2, Abschnitt 10 (nicht im Repo).
 #
+# QF-0t (Status-Session, 22.10.2026): genau diese zwei Dateien als Pfadeinträge, damit
+# clean_check nicht mehr blockiert. scripts/test_sign_update_manifest.py ist byte-gleich mit
+# Upstream; src/assets/tests.rs weicht seit QF-0t nur im Ressourcenpfad /org/querencia/Files
+# ab (2 Zeilen, Zeile 126 unverändert). Ändert ein Commit sonst etwas daran, die Einträge
+# entfernen und neu prüfen. Die Datei wird dadurch ganz ausgenommen (Format ohne Zeilen).
+scripts/test_sign_update_manifest.py
+src/assets/tests.rs
