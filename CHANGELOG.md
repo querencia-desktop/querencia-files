@@ -3,6 +3,11 @@
 Querencia Files stages (`files/qf-…` tags). Earlier stages (QF-0a to QF-0s)
 are summarized in [docs/querencia-lizenz.md](docs/querencia-lizenz.md).
 
+## QF-0t-2 – 2026-10-22
+
+- QF-0t merged with the `querencia` branch (integration folders QF-0r-1 and
+  QF-0s), so the build descends from the live line. No code change.
+
 ## QF-0t – 2026-10-22
 
 - About page and Help menu read the Querencia Desktop release from
