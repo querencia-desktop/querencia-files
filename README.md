@@ -14,7 +14,7 @@ Anleitung auf <https://querencialinux.org>.
 file manager for the Querencia Desktop. Alpha software; the Querencia notes are in
 German, the Strata README below is unchanged.
 
-> **Alpha.** Querencia-Zweig `querencia`, Stand QF-0r-1 (Tag `querencia/qf-0r-1`).
+> **Alpha.** Querencia-Zweig `querencia`, Stand QF-0t-3 (Tag `querencia/qf-0t-3`).
 > Keine Sicherheits- oder Datenverlustgarantie. Querencia ist mit LGSE Ltd. und Strata
 > weder verbunden noch von ihnen unterstützt; Fehler in Querencia Files bitte an die
 > Meldestelle von Querencia melden, nicht bei Strata.

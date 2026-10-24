@@ -75,7 +75,15 @@ Werte ersetzt (`nas-test`, `PC-TEST`, `192.0.2.x` aus TEST-NET-1, Benutzer `user
 | 37 | QF-0r (`querencia/qf-0r-1`) | Das Programm heißt überall „Querencia Files“; Strata steht nur noch als Herkunft auf der Seite „Über“ (mit Lizenztext); der Starter `data/io.github.lgse.Strata.desktop` heißt „Querencia Files“. | `da939d5b` | nein |
 | 38 | – | Upstream-Dateien `docs/evidence/928/*` wiederhergestellt (siehe „Entfernt“). | `a1afd69e` | – |
 | 39 | – | Veröffentlichungsvorlagen: Querencia-Abschnitt im README, diese Datei, `MARKE.md`, `SECURITY.md`, `.github/workflows/ci-querencia.yml`, Meldestelle. | `617e36c0` | – |
-| 40 | – | Sechs Upstream-Workflows entfernt (siehe „Entfernt“). | (dieser Commit) | – |
+| 40 | – | Sechs Upstream-Workflows entfernt (siehe „Entfernt“). | `e530517c` | – |
+| 41 | – | Doku: interne Bezüge entfernt, Installationshinweis ergänzt. | `af837e0e` | – |
+| 42 | QF-0s (`querencia/qf-0s`) | Ziehen in den Papierkorb verschiebt, Info-Dialog mit Paketversion, Hilfe-Menü. | `06de6129` | nein |
+| 43 | QF-0t | Versionsdatei, Dunkelmodus, App-ID `org.querencia.Files`, letzte Strata-Reste in Texten. | `fdcbfa2d` | nein |
+| 44 | QF-0t (`querencia/qf-0t`) | Tests auf die neue `--version`-Zeile und die Dateiwähler-ID. | `637aef74` | nein |
+| 45 | QF-0t-2 (`querencia/qf-0t-2`) | Kennung nach dem Zusammenführen. | `1f4ca2f3` | nein |
+| 46 | QF-0t-3 (`querencia/qf-0t-3`) | Kennung QF-0t-3; Ausnahmeliste für die Upstream-Testdaten (`.clean-check-ignore`, im veröffentlichten Stand nicht enthalten). | `939cdf53` | nein |
+| 47 | – | Quellstand bis QF-0t-3 mit den Veröffentlichungsvorlagen zusammengeführt. | `6728b84d` | – |
+| 48 | – | Diese Tabelle und der README-Stand nachgeführt. | (dieser Commit) | – |
 
 ### Neue Dateien
 
