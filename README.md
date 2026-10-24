@@ -1,6 +1,15 @@
 <!-- Querencia-Abschnitt: von Querencia ergänzt. Darunter folgt der unveränderte Strata-README. -->
 # Querencia Files
 
+> **Archiv – abgelöst durch Querencia Dateien.** Seit Querencia Desktop Alpha 3 ist der Dateimanager
+> Querencia Dateien (Crate `crates/querencia-dateien` im Repo
+> [querencia-shell](https://github.com/querencia-desktop/querencia-shell)). Querencia Files wird nicht
+> mehr weiterentwickelt; dieses Repo bleibt als Archiv lesbar. Fehler und Wünsche zum Dateimanager bitte
+> an die Meldestelle von Querencia.
+>
+> *Archived – superseded by Querencia Dateien* (`crates/querencia-dateien` in
+> [querencia-shell](https://github.com/querencia-desktop/querencia-shell)) since Querencia Desktop Alpha 3.
+
 Dateimanager von [Querencia Desktop](https://querencialinux.org) –
 einer klassischen Desktopumgebung im GNOME-2-Stil für Wayland (labwc, Rust, GTK 4).
 Querencia Files ist ein **Fork von [Strata](https://github.com/lgse/strata)** (LGSE Ltd.,

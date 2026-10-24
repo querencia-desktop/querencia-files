@@ -83,7 +83,8 @@ Werte ersetzt (`nas-test`, `PC-TEST`, `192.0.2.x` aus TEST-NET-1, Benutzer `user
 | 45 | QF-0t-2 (`querencia/qf-0t-2`) | Kennung nach dem Zusammenführen. | `1f4ca2f3` | nein |
 | 46 | QF-0t-3 (`querencia/qf-0t-3`) | Kennung QF-0t-3; Ausnahmeliste für die Upstream-Testdaten (`.clean-check-ignore`, im veröffentlichten Stand nicht enthalten). | `939cdf53` | nein |
 | 47 | – | Quellstand bis QF-0t-3 mit den Veröffentlichungsvorlagen zusammengeführt. | `6728b84d` | – |
-| 48 | – | Diese Tabelle und der README-Stand nachgeführt. | (dieser Commit) | – |
+| 48 | – | Diese Tabelle und der README-Stand nachgeführt. | `c7d6ce0a` | – |
+| 49 | – | README: Archiv-Hinweis, abgelöst durch Querencia Dateien (Alpha 3). | (dieser Commit) | – |
 
 ### Neue Dateien
 
