@@ -9,8 +9,66 @@ use std::{
 };
 
 use super::{
-    LinkPolicy, MAX_LINK_HOPS, NEXT_TEMP_FILE, atomic_write, atomic_write_config, atomic_write_with,
+    LinkPolicy, MAX_LINK_HOPS, NEXT_TEMP_FILE, atomic_write, atomic_write_config,
+    atomic_write_with, migrate_legacy_directory,
 };
+
+#[test]
+fn the_strata_directory_moves_to_the_querencia_name_and_stays_readable_under_the_old_one()
+-> io::Result<()> {
+    let base = tempfile::tempdir()?;
+    let legacy = base.path().join("strata");
+    fs::create_dir(&legacy)?;
+    fs::write(
+        legacy.join("settings.toml"),
+        "theme = \"querencia-classic\"\n",
+    )?;
+
+    assert!(migrate_legacy_directory(base.path())?);
+
+    let current = base.path().join("querencia-files");
+    assert!(fs::symlink_metadata(&current)?.is_dir());
+    assert_eq!(fs::read_link(&legacy)?, PathBuf::from("querencia-files"));
+    assert_eq!(
+        fs::read_to_string(legacy.join("settings.toml"))?,
+        "theme = \"querencia-classic\"\n"
+    );
+    fs::write(current.join("tabs.toml"), "neu")?;
+    assert_eq!(fs::read_to_string(legacy.join("tabs.toml"))?, "neu");
+
+    assert!(!migrate_legacy_directory(base.path())?);
+    Ok(())
+}
+
+#[test]
+fn a_linked_strata_directory_is_linked_again_and_an_existing_querencia_directory_wins()
+-> io::Result<()> {
+    let base = tempfile::tempdir()?;
+    let dotfiles = base.path().join("dotfiles");
+    fs::create_dir(&dotfiles)?;
+    symlink("dotfiles", base.path().join("strata"))?;
+
+    assert!(migrate_legacy_directory(base.path())?);
+    assert_eq!(
+        fs::read_link(base.path().join("querencia-files"))?,
+        PathBuf::from("dotfiles")
+    );
+    assert_eq!(
+        fs::read_link(base.path().join("strata"))?,
+        PathBuf::from("dotfiles")
+    );
+
+    let other = tempfile::tempdir()?;
+    fs::create_dir(other.path().join("strata"))?;
+    fs::create_dir(other.path().join("querencia-files"))?;
+    assert!(!migrate_legacy_directory(other.path())?);
+    assert!(fs::symlink_metadata(other.path().join("strata"))?.is_dir());
+
+    let empty = tempfile::tempdir()?;
+    assert!(!migrate_legacy_directory(empty.path())?);
+    assert!(fs::read_dir(empty.path())?.next().is_none());
+    Ok(())
+}
 
 #[test]
 fn write_failure_preserves_destination_and_removes_temporary_file() -> io::Result<()> {

@@ -470,8 +470,9 @@ fn install_result_interactions(
             .into_iter()
             .filter_map(|position| collection_entry(&model_for_drag, position))
             .collect();
-        source.set_actions(crate::ui::browser::drag_actions_for_modifiers(
+        source.set_actions(crate::ui::browser::file_drag_actions(
             source.current_event_state(),
+            &entries,
         ));
         if let Some((texture, hot_x, hot_y)) =
             crate::ui::browser::drag_preview_icon(&widget, &entries)

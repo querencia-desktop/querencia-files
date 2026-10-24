@@ -224,9 +224,7 @@ impl HistoryMatcher {
 }
 
 fn default_history_path() -> PathBuf {
-    glib::user_state_dir()
-        .join("strata")
-        .join("navigation-history.json")
+    crate::storage::state_directory().join("navigation-history.json")
 }
 
 fn unix_time() -> u64 {

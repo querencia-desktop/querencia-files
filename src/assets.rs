@@ -268,8 +268,7 @@ pub fn set_catppuccin_theme_colors(enabled: bool) {
 pub fn prepare() -> Result<(), Box<dyn std::error::Error>> {
     gio::resources_register_include!("strata.gresource")?;
 
-    let font_directory = glib::user_cache_dir()
-        .join("strata")
+    let font_directory = crate::storage::cache_directory()
         .join("fonts")
         .join(FONT_VERSION);
     fs::create_dir_all(&font_directory)?;
@@ -283,7 +282,7 @@ pub fn prepare() -> Result<(), Box<dyn std::error::Error>> {
 
 pub fn register_icon_theme() {
     if let Some(display) = gdk::Display::default() {
-        gtk::IconTheme::for_display(&display).add_resource_path("/io/github/lgse/Strata/icons");
+        gtk::IconTheme::for_display(&display).add_resource_path("/org/querencia/Files/icons");
     }
     // Desktop shells resolve the window icon by matching the application ID to a
     // desktop entry, but GTK also needs the name to expose the bundled icon on its
@@ -546,7 +545,7 @@ fn primary_icon_texture_at(
     if name.starts_with(CATPPUCCIN_ICON_PREFIX) {
         return catppuccin_icon_texture_at(name, color, texture_px, logical_px, context);
     }
-    let path = format!("/io/github/lgse/Strata/icons/scalable/actions/{name}.svg");
+    let path = format!("/org/querencia/Files/icons/scalable/actions/{name}.svg");
     let data = gio::resources_lookup_data(&path, gio::ResourceLookupFlags::NONE).ok()?;
     let source = std::str::from_utf8(data.as_ref()).ok()?;
     let mut source = recolor_icon_source(source, color);
@@ -573,7 +572,7 @@ fn catppuccin_icon_texture_at(
     logical_px: i32,
     context: IconContext,
 ) -> Option<gdk::Texture> {
-    let path = format!("/io/github/lgse/Strata/icons/catppuccin/{name}.svg");
+    let path = format!("/org/querencia/Files/icons/catppuccin/{name}.svg");
     let data = gio::resources_lookup_data(&path, gio::ResourceLookupFlags::NONE).ok()?;
     let flavor = CATPPUCCIN_FLAVOR.get();
     let themed = CATPPUCCIN_THEME_COLORS.get();
@@ -682,7 +681,7 @@ pub(crate) fn sized_folder_decoration_paintable(
         .max(logical_px.saturating_mul(scale_factor))
         .clamp(24, 768);
     let folder_data = gio::resources_lookup_data(
-        "/io/github/lgse/Strata/icons/scalable/actions/strata-folder.svg",
+        "/org/querencia/Files/icons/scalable/actions/strata-folder.svg",
         gio::ResourceLookupFlags::NONE,
     )
     .ok()?;
@@ -704,7 +703,7 @@ pub(crate) fn sized_folder_decoration_paintable(
     }
 
     let foreground = contrasting_foreground(color);
-    let path = format!("/io/github/lgse/Strata/icons/scalable/actions/{decoration}.svg");
+    let path = format!("/org/querencia/Files/icons/scalable/actions/{decoration}.svg");
     let data = gio::resources_lookup_data(&path, gio::ResourceLookupFlags::NONE).ok()?;
     let badge = std::str::from_utf8(data.as_ref()).ok()?;
     let body = svg_body(badge)?;

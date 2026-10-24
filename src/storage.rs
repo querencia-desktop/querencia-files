@@ -146,12 +146,66 @@ impl DestinationError {
     }
 }
 
+/// Querencia (QF-0t): the per-user directory name under the XDG base
+/// directories. Strata's [`LEGACY_APP_DIRECTORY`] is moved there once.
+pub(crate) const APP_DIRECTORY: &str = "querencia-files";
+const LEGACY_APP_DIRECTORY: &str = "strata";
+
 pub(crate) fn config_directory() -> PathBuf {
-    gtk::glib::user_config_dir().join("strata")
+    gtk::glib::user_config_dir().join(APP_DIRECTORY)
 }
 
 pub(crate) fn state_directory() -> PathBuf {
-    gtk::glib::user_state_dir().join("strata")
+    gtk::glib::user_state_dir().join(APP_DIRECTORY)
+}
+
+pub(crate) fn data_directory() -> PathBuf {
+    gtk::glib::user_data_dir().join(APP_DIRECTORY)
+}
+
+pub(crate) fn cache_directory() -> PathBuf {
+    gtk::glib::user_cache_dir().join(APP_DIRECTORY)
+}
+
+/// Moves Strata's configuration, state and data directories to their
+/// Querencia names. Caches are rebuilt instead.
+pub(crate) fn migrate_legacy_directories() {
+    for base in [
+        gtk::glib::user_config_dir(),
+        gtk::glib::user_state_dir(),
+        gtk::glib::user_data_dir(),
+    ] {
+        if let Err(error) = migrate_legacy_directory(&base) {
+            tracing::warn!(%error, base = %base.display(), "unable to move the Strata directory");
+        }
+    }
+}
+
+/// Renames `base/strata` to `base/querencia-files` and leaves a relative
+/// link at the old name, so an older build reading the old path still finds
+/// the same files. A linked old directory (dotfiles) is linked again under
+/// the new name instead. Does nothing once the new name exists.
+pub(crate) fn migrate_legacy_directory(base: &Path) -> io::Result<bool> {
+    let current = base.join(APP_DIRECTORY);
+    let legacy = base.join(LEGACY_APP_DIRECTORY);
+    if fs::symlink_metadata(&current).is_ok() {
+        return Ok(false);
+    }
+    let metadata = match fs::symlink_metadata(&legacy) {
+        Ok(metadata) => metadata,
+        Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(false),
+        Err(error) => return Err(error),
+    };
+    if metadata.file_type().is_symlink() {
+        std::os::unix::fs::symlink(fs::read_link(&legacy)?, &current)?;
+        return Ok(true);
+    }
+    if !metadata.is_dir() {
+        return Ok(false);
+    }
+    fs::rename(&legacy, &current)?;
+    std::os::unix::fs::symlink(APP_DIRECTORY, &legacy)?;
+    Ok(true)
 }
 
 pub(crate) fn atomic_write(path: &Path, contents: &[u8]) -> io::Result<()> {

@@ -17,8 +17,15 @@ pub const REPOSITORY: &str = env!("CARGO_PKG_REPOSITORY");
 pub const AUTHOR: &str = env!("CARGO_PKG_AUTHORS");
 
 /// Querencia: the Querencia Files stage this build was tagged as
-/// (`files/qf-…` in Git). [`VERSION`] stays the Strata version it is based on.
-pub const QUERENCIA_VERSION: &str = "QF-0r-1";
+/// (`files/qf-…` in Git), named only in the copied version information.
+/// [`VERSION`] stays the Strata version it is based on.
+pub const QUERENCIA_VERSION: &str = "QF-0t-3";
+/// Querencia: the package version the About page shows; package builds may
+/// pass their own through `QUERENCIA_PACKAGE_VERSION`.
+pub const QUERENCIA_PACKAGE_VERSION: &str = match option_env!("QUERENCIA_PACKAGE_VERSION") {
+    Some(version) => version,
+    None => "0.1.0~alpha6",
+};
 /// Querencia: the author shown in the About page; Strata's authors stay in
 /// [`AUTHOR`] and are named in the origin notice.
 pub const QUERENCIA_AUTHOR: &str = "Querencia Desktop contributors";

@@ -217,6 +217,73 @@ fn drag_actions_follow_copy_and_move_modifiers() {
 }
 
 #[test]
+fn trash_items_are_dragged_and_dropped_only_as_moves() {
+    let trashed = [
+        Location::uri("trash:///a.txt"),
+        Location::uri("trash:///ordner"),
+    ];
+    let inside_trashed_folder = [Location::uri("trash:///ordner/b.txt")];
+    let mixed = [
+        Location::uri("trash:///a.txt"),
+        Location::local("/fixture/c.txt"),
+    ];
+    let both = gtk::gdk::DragAction::COPY | gtk::gdk::DragAction::MOVE;
+
+    for modifiers in [
+        gtk::gdk::ModifierType::empty(),
+        gtk::gdk::ModifierType::CONTROL_MASK,
+    ] {
+        assert_eq!(
+            drag_actions_for_sources(modifiers, trashed.iter()),
+            gtk::gdk::DragAction::MOVE
+        );
+    }
+    assert_eq!(
+        drag_actions_for_sources(
+            gtk::gdk::ModifierType::empty(),
+            inside_trashed_folder.iter()
+        ),
+        both
+    );
+    assert_eq!(
+        drag_actions_for_sources(gtk::gdk::ModifierType::empty(), mixed.iter()),
+        both
+    );
+    assert_eq!(
+        drag_actions_for_sources(gtk::gdk::ModifierType::empty(), [].iter()),
+        both
+    );
+
+    let offered = offered_file_actions(both, gtk::gdk::DragAction::MOVE);
+    assert_eq!(
+        drop_actions_for_sources(offered, &trashed),
+        gtk::gdk::DragAction::MOVE
+    );
+    assert_eq!(drop_actions_for_sources(offered, &mixed), offered);
+    for (override_with, strategy) in [
+        (
+            crate::services::DropOverride::None,
+            crate::services::CrossVolumeDropStrategy::Ask,
+        ),
+        (
+            crate::services::DropOverride::ForceCopy,
+            crate::services::CrossVolumeDropStrategy::Copy,
+        ),
+    ] {
+        assert_eq!(
+            drop_commit_action(preferred_file_drop_commit(
+                drop_actions_for_sources(offered, &trashed),
+                override_with,
+                crate::services::VolumeRelation::Unknown,
+                false,
+                strategy,
+            )),
+            gtk::gdk::DragAction::MOVE
+        );
+    }
+}
+
+#[test]
 fn file_drop_action_follows_volume_relation_not_local_vs_external() {
     let both = gtk::gdk::DragAction::COPY | gtk::gdk::DragAction::MOVE;
     let ask = crate::services::CrossVolumeDropStrategy::Ask;

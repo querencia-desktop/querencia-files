@@ -157,7 +157,7 @@ def test_startup_with_closed_pipes(strata, closed_streams):
 
         def target_window_exists():
             assert process.poll() is None, f"Strata exited during startup: {process.returncode}"
-            application = tree.find_application("io.github.lgse.Strata")
+            application = tree.find_application("org.querencia.Files")
             if application is None:
                 return False
             windows = application.find_all(role="frame", name="Strata")

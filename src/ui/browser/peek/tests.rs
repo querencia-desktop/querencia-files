@@ -17,7 +17,7 @@ struct Fixture {
 
 impl Fixture {
     fn new() -> Self {
-        let settings = glib::user_config_dir().join("strata/settings.toml");
+        let settings = glib::user_config_dir().join("querencia-files/settings.toml");
         std::fs::create_dir_all(settings.parent().expect("settings directory"))
             .expect("create settings directory");
         std::fs::write(

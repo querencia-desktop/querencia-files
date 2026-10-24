@@ -76,8 +76,8 @@ install -Dm755 target/release/strata "$bin_dir/strata"
 install -Dm644 data/icons/scalable/apps/io.github.lgse.Strata.svg \
   "$data_home/icons/hicolor/scalable/apps/io.github.lgse.Strata.svg"
 install -d "$data_home/applications"
-sed "s|^Exec=strata |Exec=$bin_dir/strata |" data/io.github.lgse.Strata.desktop \
-  > "$data_home/applications/io.github.lgse.Strata.desktop"
+sed "s|^Exec=strata |Exec=$bin_dir/strata |" data/org.querencia.Files.desktop \
+  > "$data_home/applications/org.querencia.Files.desktop"
 update-desktop-database "$data_home/applications" 2>/dev/null || true
 gtk-update-icon-cache -qtf "$data_home/icons/hicolor" 2>/dev/null || true
 '''
@@ -93,14 +93,14 @@ bin_dir="${BIN_DIR:-$HOME/.local/bin}"
 install -d "$data_home/dbus-1/services"
 conflict="$(grep -l '^Name=org\.freedesktop\.FileManager1$' \
   "$data_home"/dbus-1/services/*.service 2>/dev/null | \
-  grep -v '/io.github.lgse.Strata.FileManager1.service$' | head -n 1 || true)"
+  grep -v '/org.querencia.Files.FileManager1.service$' | head -n 1 || true)"
 if [[ -n "$conflict" ]]; then
   echo "Refusing to override the per-user FileManager1 provider: $conflict" >&2
   exit 1
 fi
 sed "s|^Exec=/usr/bin/strata |Exec=$bin_dir/strata |" \
-  data/io.github.lgse.Strata.FileManager1.service \
-  > "$data_home/dbus-1/services/io.github.lgse.Strata.FileManager1.service"
+  data/org.querencia.Files.FileManager1.service \
+  > "$data_home/dbus-1/services/org.querencia.Files.FileManager1.service"
 '''
 
 [tasks.uninstall-file-manager]
@@ -109,7 +109,7 @@ run = '''
 #!/usr/bin/env bash
 set -euo pipefail
 data_home="${DATA_HOME:-$HOME/.local/share}"
-rm -f "$data_home/dbus-1/services/io.github.lgse.Strata.FileManager1.service"
+rm -f "$data_home/dbus-1/services/org.querencia.Files.FileManager1.service"
 '''
 
 [tasks.uninstall-local]
@@ -121,7 +121,7 @@ set -euo pipefail
 data_home="${DATA_HOME:-$HOME/.local/share}"
 bin_dir="${BIN_DIR:-$HOME/.local/bin}"
 rm -f "$bin_dir/strata" \
-  "$data_home/applications/io.github.lgse.Strata.desktop" \
+  "$data_home/applications/org.querencia.Files.desktop" \
   "$data_home/icons/hicolor/scalable/apps/io.github.lgse.Strata.svg"
 update-desktop-database "$data_home/applications" 2>/dev/null || true
 gtk-update-icon-cache -qtf "$data_home/icons/hicolor" 2>/dev/null || true

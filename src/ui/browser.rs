@@ -78,7 +78,7 @@ pub(super) use crate::ui::browser::clipboard::{
 };
 pub(crate) use crate::ui::browser::clipboard::{
     PreparedFileDrop, arm_spring_load_navigation, clear_active_drag, clipboard_may_paste,
-    drag_actions_for_modifiers, file_drag_hover_target, file_drop_action, file_drop_commit,
+    file_drag_actions, file_drag_hover_target, file_drop_action, file_drop_commit,
     locations_from_file_list_value, prepare_file_drop_target,
 };
 pub(crate) use crate::ui::browser::collection::{

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <gresources>
-  <gresource prefix="/io/github/lgse/Strata">
+  <gresource prefix="/org/querencia/Files">
     <file>brand/strata-logo-white.svg</file>
     <file>icons/scalable/actions/strata-arrow-down.svg</file>
     <file>icons/scalable/actions/strata-arrow-down-wide-narrow.svg</file>

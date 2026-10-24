@@ -144,6 +144,30 @@ impl ClassicChrome {
         self.actions.add_action(&action);
     }
 
+    /// Help ▸ Online help and Report a bug open their pages in the browser.
+    fn install_help_links(&self, window: &gtk::ApplicationWindow) {
+        let release = crate::querencia_release::current();
+        for (name, uri) in [
+            (
+                "online-help",
+                release.documentation_url_for(&rust_i18n::locale()),
+            ),
+            ("report-bug", release.bug_report_url.clone()),
+        ] {
+            let action = gio::SimpleAction::new(name, None);
+            let window = window.downgrade();
+            action.connect_activate(move |_, _| {
+                let context = window
+                    .upgrade()
+                    .map(|window| WidgetExt::display(&window).app_launch_context());
+                if let Err(error) = gio::AppInfo::launch_default_for_uri(&uri, context.as_ref()) {
+                    tracing::warn!(%error, %uri, "unable to open a help link");
+                }
+            });
+            self.actions.add_action(&action);
+        }
+    }
+
     fn install_actions(
         self: &Rc<Self>,
         window: &gtk::ApplicationWindow,
@@ -152,6 +176,7 @@ impl ClassicChrome {
         header: &Header,
         preferences: &Rc<PreferenceManager>,
     ) {
+        self.install_help_links(window);
         let browser = view.browser();
         self.add_view_action(window, view, "back", {
             let browser = Rc::downgrade(&browser);
@@ -864,13 +889,21 @@ fn menu_model(bookmarks: &gio::Menu) -> gio::Menu {
     model.append_submenu(Some(&tr("Bookmarks")), &bookmarks_menu);
 
     let help = gio::Menu::new();
+    let section = gio::Menu::new();
+    section.append(Some(&tr("Online help")), Some(&action("online-help")));
     item(
-        &help,
+        &section,
         "Keyboard shortcuts",
         &action("keyboard-shortcuts"),
         Some(REFERENCE),
     );
-    help.append(Some(&tr("About")), Some(&action("about")));
+    help.append_section(None, &section);
+    let section = gio::Menu::new();
+    section.append(Some(&tr("Report a bug")), Some(&action("report-bug")));
+    help.append_section(None, &section);
+    let section = gio::Menu::new();
+    section.append(Some(&tr("About")), Some(&action("about")));
+    help.append_section(None, &section);
     model.append_submenu(Some(&tr("Help")), &help);
     model
 }

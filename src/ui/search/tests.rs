@@ -586,7 +586,7 @@ fn global_search_reads_saved_exclusions_before_settings_and_on_each_window_invoc
     crate::test_support::gtk_test(
         "ui::search::tests::global_search_reads_saved_exclusions_before_settings_and_on_each_window_invocation",
         || {
-            let config = glib::user_config_dir().join("strata");
+            let config = glib::user_config_dir().join("querencia-files");
             std::fs::create_dir_all(&config).expect("isolated config directory");
             std::fs::write(
                 config.join("settings.toml"),

@@ -114,7 +114,7 @@ fn querencia_catalog_values_name_strata_only_as_origin() {
     const ORIGIN_KEYS: [&str; 3] = [
         "Based on Strata by LGSE Ltd. (MIT)",
         "settings_keywords.version",
-        "Querencia Files %{value1}\n%{value2}\nCommit: %{value3}\nToolkit: %{value4}\nAuthor: %{value5}\nLicense: MIT\nBased on %{value6} (%{value7}, MIT)",
+        "Querencia Files %{value1}\n%{value2}\nBuild: %{value8}\nCommit: %{value3}\nToolkit: %{value4}\nAuthor: %{value5}\nLicense: MIT\nBased on %{value6} (%{value7}, MIT)",
     ];
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("data/locales");
     let mut checked = 0;
@@ -135,4 +135,27 @@ fn querencia_catalog_values_name_strata_only_as_origin() {
         }
     }
     assert!(checked > 0);
+}
+
+/// Querencia (QF-0s): hints shown on every system name Ubuntu, not Arch or
+/// Omarchy; the keys keep Strata's English text.
+#[test]
+fn querencia_media_and_portal_hints_do_not_name_arch_or_omarchy() {
+    const KEYS: [&str; 2] = [
+        "On Arch or Omarchy, install the required GStreamer plugins, then restart Strata.",
+        "Use Strata for Open and Save dialogs, opening folders, and Reveal in File Manager. On Omarchy, this also sets file-manager keyboard shortcuts. Close open file dialogs before changing setup.",
+    ];
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("data/locales");
+    for locale in LOCALES {
+        let values = catalog(&root.join(format!("{locale}.json")));
+        for key in KEYS {
+            let value = values[key].as_str().expect("translated string");
+            assert!(
+                !value.contains("Arch") && !value.contains("Omarchy"),
+                "{locale}: {value}"
+            );
+        }
+        let media = values[KEYS[0]].as_str().expect("translated string");
+        assert!(media.contains("Ubuntu"), "{locale}: {media}");
+    }
 }

@@ -85,7 +85,7 @@ fn syntax_pickers_preview_cancel_and_save_to_custom_theme() {
                 .expect("save button");
             save.emit_clicked();
             let source = std::fs::read_to_string(
-                glib::user_config_dir().join("strata/themes/syntax-fixture.toml"),
+                glib::user_config_dir().join("querencia-files/themes/syntax-fixture.toml"),
             )
             .expect("saved custom theme");
             let restored: ThemeTokens = toml::from_str(&source).expect("valid custom theme");

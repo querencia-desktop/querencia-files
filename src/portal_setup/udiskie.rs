@@ -22,7 +22,7 @@ use super::{
 #[cfg(test)]
 mod tests;
 
-const STATE_DIRECTORY: &str = "strata/udiskie-install";
+const STATE_DIRECTORY: &str = "querencia-files/udiskie-install";
 const STATE_FILE: &str = "state.toml";
 const CONFIG_YML: &str = "config.yml";
 const CONFIG_JSON: &str = "config.json";

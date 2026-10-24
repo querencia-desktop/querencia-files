@@ -118,6 +118,29 @@ fn a_completed_move_records_where_each_item_landed() {
 }
 
 #[test]
+fn a_move_out_of_trash_is_undone_by_trashing_the_restored_items() {
+    let browser = Browser::new(Rc::new(FakeFileSource));
+    browser.set_operation_provider(Rc::new(ImmediateOperationProvider));
+
+    browser.transfer(
+        Location::local("/fixture/archive"),
+        vec![PasteItem {
+            source: Location::uri("trash:///report.txt"),
+            conflict: TransferConflict::FailIfExists,
+        }],
+        true,
+        true,
+    );
+
+    assert_eq!(
+        pending_undo_entry(),
+        Some(UndoEntry::Copy(vec![Location::local(
+            "/fixture/archive/report.txt"
+        )]))
+    );
+}
+
+#[test]
 fn a_completed_copy_records_the_destinations_it_created() {
     let browser = Browser::new(Rc::new(FakeFileSource));
     browser.set_operation_provider(Rc::new(ImmediateOperationProvider));

@@ -634,7 +634,7 @@ fn try_install(
 
     refresh_desktop_metadata(&package_dir, current_exe, &glib::user_data_dir());
     if let Err(error) = crate::portal_setup::refresh_after_in_place_update() {
-        tracing::warn!(%error, "could not refresh the configured Strata portal after updating");
+        tracing::warn!(%error, "could not refresh the configured Querencia Files portal after updating");
     }
     retire_old_instances(Path::new("/proc"), current_exe, &old_executable);
 
@@ -887,7 +887,7 @@ fn read_metadata_body(
 /// updating instance alive to report success and relaunch the replacement.
 fn retire_old_instances(proc_root: &Path, install_path: &Path, old_executable: &fs::Metadata) {
     let Ok(entries) = fs::read_dir(proc_root) else {
-        tracing::warn!("could not enumerate old Strata processes after updating");
+        tracing::warn!("could not enumerate old Querencia Files processes after updating");
         return;
     };
     let mut retirees = Vec::new();
@@ -912,7 +912,7 @@ fn retire_old_instances(proc_root: &Path, install_path: &Path, old_executable: &
         let fd = match rustix::process::pidfd_open(pid, rustix::process::PidfdFlags::empty()) {
             Ok(fd) => fd,
             Err(error) => {
-                tracing::warn!(%error, pid = pid.as_raw_pid(), "could not identify old Strata process safely");
+                tracing::warn!(%error, pid = pid.as_raw_pid(), "could not identify old Querencia Files process safely");
                 continue;
             }
         };
@@ -920,7 +920,7 @@ fn retire_old_instances(proc_root: &Path, install_path: &Path, old_executable: &
             match rustix::process::pidfd_send_signal(&fd, rustix::process::Signal::TERM) {
                 Ok(()) => retirees.push((pid, fd)),
                 Err(error) => {
-                    tracing::warn!(%error, pid = pid.as_raw_pid(), "could not stop old Strata instance")
+                    tracing::warn!(%error, pid = pid.as_raw_pid(), "could not stop old Querencia Files instance")
                 }
             }
         }
@@ -933,9 +933,12 @@ fn retire_old_instances(proc_root: &Path, install_path: &Path, old_executable: &
         // A lingering old instance could still own the GApplication bus name.
         // Do not relaunch into it after the replacement has been installed.
         if let Err(error) = rustix::process::pidfd_send_signal(&fd, rustix::process::Signal::KILL) {
-            tracing::warn!(%error, pid = pid.as_raw_pid(), "could not terminate old Strata instance");
+            tracing::warn!(%error, pid = pid.as_raw_pid(), "could not terminate old Querencia Files instance");
         } else if !pidfd_exited(&fd, Instant::now() + Duration::from_secs(2)) {
-            tracing::warn!(pid = pid.as_raw_pid(), "old Strata instance has not exited");
+            tracing::warn!(
+                pid = pid.as_raw_pid(),
+                "old Querencia Files instance has not exited"
+            );
         }
     }
 }

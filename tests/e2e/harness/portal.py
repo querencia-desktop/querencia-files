@@ -18,9 +18,9 @@ from .fixtures import FixtureTree
 from .process import ManagedProcess, terminate
 from .tree import Node
 
-BACKEND = "org.freedesktop.impl.portal.desktop.strata"
+BACKEND = "org.freedesktop.impl.portal.desktop.querencia"
 DESKTOP = "/org/freedesktop/portal/desktop"
-APPLICATION = "io.github.lgse.Strata.FileChooser"
+APPLICATION = "org.querencia.Files.FileChooser"
 
 
 @contextmanager

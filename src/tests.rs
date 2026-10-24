@@ -129,20 +129,15 @@ fn classify_command_line_unlock_volume() {
 }
 
 #[test]
-fn version_line_is_the_package_name_and_installed_version() {
+fn version_line_is_the_program_name_and_package_version() {
     let line = version_line();
-    assert!(
-        line.starts_with("strata "),
-        "the --version line should start with the package name"
-    );
-    assert!(
-        line.contains(&crate::build_info::installed_version().to_string()),
-        "the --version line should include the installed version"
-    );
     assert_eq!(
-        line.lines().count(),
-        1,
-        "the --version line should be a single line"
+        line,
+        format!(
+            "querencia-files {} ({})",
+            crate::build_info::QUERENCIA_PACKAGE_VERSION,
+            crate::build_info::QUERENCIA_VERSION
+        )
     );
 }
 

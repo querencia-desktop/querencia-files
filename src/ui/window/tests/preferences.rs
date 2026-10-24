@@ -1566,7 +1566,7 @@ fn write_settings(contents: &str) {
 }
 
 fn settings_file() -> std::path::PathBuf {
-    gtk::glib::user_config_dir().join("strata/settings.toml")
+    gtk::glib::user_config_dir().join("querencia-files/settings.toml")
 }
 
 fn write_folder_views(contents: &str) {

@@ -63,8 +63,9 @@ const PDF_PAGE_GAP: i32 = 6;
 const HANDOFF_MARGIN_US: u64 = 1_000_000;
 const PDF_MIN_ZOOM: f64 = 1.0;
 const PDF_MAX_ZOOM: f64 = 4.0;
+/// Querencia: the Ubuntu packages behind the "Additional media support" hint.
 const MEDIA_PLUGIN_INSTALL_COMMAND: &str =
-    "sudo pacman -S --needed gst-plugins-base gst-plugins-good";
+    "sudo apt install gstreamer1.0-plugins-base gstreamer1.0-plugins-good";
 const MEDIA_SEEK_STEP_US: i64 = 5_000_000;
 const MEDIA_SEEK_PAGE_US: i64 = 30_000_000;
 const MEDIA_VOLUME_STEP: f64 = 0.1;
